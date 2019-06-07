@@ -1,0 +1,7 @@
+{
+  "packages": [
+    "libraries/*",
+    "starters/*"
+  ],
+  "version": "independent"
+}
