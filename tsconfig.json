@@ -1,0 +1,75 @@
+{
+  // https://www.typescriptlang.org/docs/handbook/compiler-options.html
+  "compilerOptions": {
+    // --------------------------------------------------------------------- INPUT
+
+    // Included libraries for NPM
+    // You can add libs for Dom, Node, etc ...
+    "lib": ["es2018", "dom"],
+
+    // Typings roots. Use node_modules types
+    // and also types folder to be able to create new types
+    "typeRoots": ["./node_modules/@types", "./src/types"],
+
+    // --------------------------------------------------------------------- OUTPUT
+
+    // Compile typescript files to ready-to-use es next modules
+    "module": "esnext",
+    "target": "esnext",
+    "moduleResolution": "node",
+
+    // Create d.ts files from typescript files
+    "declaration": true,
+
+    // Keep as much as source code into generated files.
+    "removeComments": false,
+    "preserveConstEnums": true,
+
+    // --------------------------------------------------------------------- ERRORS
+
+    // Report error on unused locals and parameters
+    //"noUnusedLocals": true,
+    //"noUnusedParameters": true,
+
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+
+    // Report error on missing return or fall through cases in switch
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+
+    // Disallow file generation if there was a typescript error
+    "noEmitOnError": true,
+
+    // --------------------------------------------------------------------- BEHAVIOR
+
+    // Do not allow unreachable code because we are creating a lib
+    "allowUnreachableCode" : false,
+
+    // Do not allow inconsistancy in file names and imports
+    "forceConsistentCasingInFileNames" : true,
+
+    // Allow import as default without default export declared
+    "allowSyntheticDefaultImports" : true,
+    "esModuleInterop" : true,
+
+    // --------------------------------------------------------------------- LOGGING
+
+    // Tweak this to log stuff if needed
+    "listEmittedFiles" : false,
+    "traceResolution": false,
+    "pretty": true
+
+    // --------------------------------------------------------------------- HELPERS
+
+    //"importHelpers" : true,
+    //"noEmitHelpers" : true,
+  },
+
+  // Files to includes and exclude from typescript builds
+  "exclude": ["./node_modules/**"],
+
+  // Configure IDE to not compile typescript
+  "compileOnSave": true,
+  "buildOnSave": true
+}
