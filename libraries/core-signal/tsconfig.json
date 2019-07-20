@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": ["./src/**/*.ts"],
+
+  "exclude": ["./libraries/web-*/**/*.ts"],
+
+  "compilerOptions" : {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "paths" : {
+      //"jquery": ["node_modules/jquery/dist/jquery"]
+    }
+  }
+}

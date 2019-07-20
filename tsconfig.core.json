@@ -1,6 +1,0 @@
-{
-  "extends": "./tsconfig.json",
-  "rootDir": "./libraries/core",
-  "outDir": "./libraries/core",
-  "include": ["./libraries/core/**/*.ts"]
-}

@@ -3,13 +3,13 @@
   "private": true,
   "devDependencies": {
     "@types/node": "^12.6.8",
+    "chalk": "^2.4.2",
+    "glob": "^7.1.4",
     "lerna": "^3.14.1",
     "typescript": "^3.5.3"
   },
   "scripts": {
-    "build": "npm run build-core && npm run build-node && npm run build-web",
-    "build-core": "tsc -p tsconfig.core.json",
-    "build-node": "tsc -p tsconfig.node.json",
-    "build-web": "tsc -p tsconfig.web.json"
+    "clean": "node scripts/clean.js",
+    "build": "node scripts/build.js"
   }
 }

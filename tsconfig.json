@@ -13,8 +13,8 @@
 
     // --------------------------------------------------------------------- OUTPUT
 
-    // Compile typescript files to ready-to-use es next modules
-    "module": "esnext",
+    // Compile typescript files to ready-to-use es next files
+    // build.js will build es next modules (.mjs) and commonjs (.js) files
     "target": "esnext",
     "moduleResolution": "node",
 
