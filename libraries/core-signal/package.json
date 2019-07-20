@@ -1,16 +1,16 @@
 {
+  "name": "@solid-js/signal",
+  "description": "Object based event system. Can replace classic event implementation, with strong typing. Inspired from Robert Penner's as3 Signals.",
   "main": "index.js",
   "module": "index.js",
   "types": "index.d.ts",
   "dependencies": {
     "shallow-equal": "^1.1.0"
   },
-  "name": "@solid-js/signal",
-  "description": "Object based event system. Can replace classic event implementation, with strong typing. Inspired from Robert Penner's as3 Signals.",
   "version": "0.5.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/solid-js/solid.git libraries/core/signal"
+    "url": "git+https://github.com/solid-js/solid.git libraries/core-signal"
   },
   "keywords": [
     "signal",

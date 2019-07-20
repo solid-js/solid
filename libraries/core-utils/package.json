@@ -1,0 +1,27 @@
+{
+  "name": "@solid-js/utils",
+  "description": "Isomorphic set of utility for NodeJS and Browsers environments.",
+  "main": "index.js",
+  "module": "index.js",
+  "types": "index.d.ts",
+  "version": "0.5.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/solid-js/solid.git libraries/core-utils"
+  },
+  "keywords": [
+    "solid",
+    "isomorphic",
+    "utils",
+    "nodejs",
+    "browser",
+    "typing",
+    "typescript"
+  ],
+  "author": "Alexis Bouhet",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/solid-js/solid/issues"
+  },
+  "homepage": "https://github.com/solid-js/solid#readme"
+}

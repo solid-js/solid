@@ -2,13 +2,14 @@
   "name": "root",
   "private": true,
   "devDependencies": {
+    "@types/node": "^12.6.8",
     "lerna": "^3.14.1",
     "typescript": "^3.5.3"
   },
-  "scripts" : {
-    "build" : "npm run build-core && npm run build-node && npm run build-web",
-    "build-core" : "tsc -p tsconfig.core.json",
-    "build-node" : "tsc -p tsconfig.node.json",
-    "build-web" : "tsc -p tsconfig.web.json"
+  "scripts": {
+    "build": "npm run build-core && npm run build-node && npm run build-web",
+    "build-core": "tsc -p tsconfig.core.json",
+    "build-node": "tsc -p tsconfig.node.json",
+    "build-web": "tsc -p tsconfig.web.json"
   }
 }

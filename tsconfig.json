@@ -9,7 +9,7 @@
 
     // Typings roots. Use node_modules types
     // and also types folder to be able to create new types
-    "typeRoots": ["./node_modules/@types", "./src/types"],
+    "typeRoots": ["./node_modules/@types"],
 
     // --------------------------------------------------------------------- OUTPUT
 
