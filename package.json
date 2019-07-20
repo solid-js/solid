@@ -6,6 +6,7 @@
     "chalk": "^2.4.2",
     "glob": "^7.1.4",
     "lerna": "^3.14.1",
+    "rimraf": "^2.6.3",
     "typescript": "^3.5.3"
   },
   "scripts": {

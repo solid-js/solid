@@ -15,7 +15,7 @@ let totalBuiltLibraries = 0;
 let totalFoundLibraries = 0;
 
 // Browse all libraries
-GlobSync( path.join(config.paths.libraries + '*') ).map( libraryPath =>
+GlobSync( path.join(config.paths.libraries, '*') ).map( libraryPath =>
 {
     // Get current library name from path
     const libraryName = path.basename( libraryPath );
