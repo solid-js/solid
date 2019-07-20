@@ -3,4 +3,5 @@
 node_modules
 
 libraries/**/*.js
+libraries/**/*.mjs
 libraries/**/*.d.ts
