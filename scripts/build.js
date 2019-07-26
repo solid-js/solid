@@ -6,6 +6,9 @@ const GlobSync = require('glob').sync;
 const path = require('path');
 const fs = require('fs');
 
+const tsconfigTemplatePath = path.join( config.paths.libraries, 'tsconfig.template.json' );
+const npmignoreTemplatePath = path.join( config.paths.libraries, 'template.npmignore' );
+
 // Get library to build from command arguments
 // We'll build all (true) if we have no library name as second argument
 const argumentLibrary = process.argv[2] || true;
@@ -31,8 +34,12 @@ GlobSync( path.join(config.paths.libraries, '*') ).map( libraryPath =>
     // Compute library typescript config path
     const libraryConfigPath = path.join( libraryPath, 'tsconfig.json' );
 
-    // Skip if no typescript config file found
-    if ( !fs.existsSync(libraryConfigPath) ) return;
+    // Do not continue if there is no package.json
+    if (!fs.existsSync(path.join( libraryPath, 'package.json' ))) return;
+
+    // Copy npmignore and tsconfig from templates
+    fs.copyFileSync(tsconfigTemplatePath, libraryConfigPath);
+    fs.copyFileSync(npmignoreTemplatePath, path.join( libraryPath, '.npmignore' ));
 
     // Count this library as found
     const buildTask = task( `Building ${libraryName}` );
