@@ -1,3 +1,5 @@
+import {ScalarObject} from "./Global";
+
 export module StringUtils
 {
     // ------------------------------------------------------------------------- FORMATTING
@@ -10,30 +12,28 @@ export module StringUtils
      *
      * Useful to target sprites or some renamed files.
      *
-     * @param {number} pTotalChars Total chars of output string (with added zeros)
-     * @param {number} pNumber Base number
-     * @param {number} pPlaceHolder zero char or something else ?
-     * @returns {string} Zero formatted number.
+     * @param totalChars Total chars of output string (with added zeros)
+     * @param number Base number
+     * @param placeholder Default is a 0 char but can be changed
+     * @returns Zero formatted number.
      */
-    export function zeroFormat (pTotalChars:number, pNumber:number, pPlaceHolder = '0'):string
+    export function zeroFill (totalChars:number, number:number, placeholder = '0'):string
     {
-        // Convert number to string
-        let currentNumberAsString = pNumber.toString();
-
-        // Count chars
-        let totalCharsInCurrentNumber = currentNumberAsString.length;
+        // Convert number to string and count chars
+        const currentNumberAsString = number.toString();
+        const totalCharsInCurrentNumber = currentNumberAsString.length;
 
         // Formatted output
         let output = '';
 
         // If we miss some zeros
-        if (totalCharsInCurrentNumber < pTotalChars)
+        if (totalCharsInCurrentNumber < totalChars)
         {
             // Add corresponding number of zeros
-            const missingZeros = ( pTotalChars - totalCharsInCurrentNumber );
+            const missingZeros = ( totalChars - totalCharsInCurrentNumber );
             for (let i = 0; i < missingZeros; i ++)
             {
-                output += pPlaceHolder;
+                output += placeholder;
             }
         }
 
@@ -42,155 +42,160 @@ export module StringUtils
     }
 
     /**
-     * Add or remove the trailing slash at the end of a path.
+     * Add or remove the trailing char at the end of a path.
      *
      * For ex:
-     * - "/lib/test" becomes "/lib/test/" if pAdd is true
-     * - "/lib/test/" becomes "/lib/test" if pAdd is false
+     * - "/lib/test" becomes "/lib/test/" if add is true
+     * - "/lib/test/" becomes "/lib/test" if add is false
      *
-     * @param pPath String path with or without trailing slash
-     * @param pAdd Will add slash or remove slash.
-     * @returns patched path with or without trailing slash
+     * @param source String path with or without trailing char
+     * @param add Will add char or remove slash.
+     * @param char Default is a slash ( / ) but can be changed
+     * @returns patched source with or without trailing char
      */
-    export function trailingSlash (pPath:string, pAdd = true):string
+    export function trailing (source:string, add = true, char = '/'):string
     {
-        // If we currently have a trailing slash
-        const hasTrailingSlash = ( pPath.lastIndexOf('/') == pPath.length - 1 );
+        // If we currently have a trailing char
+        const hasTrailingSlash = ( source.lastIndexOf( char ) == source.length - 1 );
 
-        // If we have to add trailing slash
-        if (pAdd && !hasTrailingSlash)
+        // If we have to add trailing char
+        if (add && !hasTrailingSlash)
         {
-            return pPath + '/';
+            return source + char;
         }
 
-        // If we have to remove trailing slash
-        else if (!pAdd && hasTrailingSlash)
+        // If we have to remove trailing char
+        else if (!add && hasTrailingSlash)
         {
-            return pPath.substr(0, pPath.length - 1);
+            return source.substr(0, source.length - 1);
         }
 
         // Do nothing
-        else return pPath;
+        else return source;
     }
 
     /**
-     * Add or remove the leading slash at the start of a path.
+     * Add or remove the leading char at the start of a path.
      *
      * For ex:
-     * - "lib/test/" becomes "/lib/test/" if pAdd is true
-     * - "/lib/test/" becomes "lib/test/" if pAdd is false
+     * - "lib/test/" becomes "/lib/test/" if add is true
+     * - "/lib/test/" becomes "lib/test/" if add is false
      *
-     * @param pPath String path with or without leading slash
-     * @param pAdd Will add slash or remove slash.
-     * @returns patched path with or without leading slash
+     * @param source String path with or without leading char
+     * @param add Will add char or remove char.
+     * @param char Default is a slash ( / ) but can be changed
+     * @returns patched source with or without leading char
      */
-    export function leadingSlash (pPath:string, pAdd = true):string
+    export function leading (source:string, add = true, char = '/'):string
     {
-        // If we currently have a leading slash
-        const hasLeadingSlash = ( pPath.indexOf('/') == 0 );
+        // If we currently have a leading char
+        const hasLeadingSlash = ( source.indexOf( char ) == 0 );
 
-        // If we have to add leading slash
-        if (pAdd && !hasLeadingSlash)
+        // If we have to add leading char
+        if (add && !hasLeadingSlash)
         {
-            return '/' + pPath;
+            return char + source;
         }
 
-        // If we have to remove leading slash
-        else if (!pAdd && hasLeadingSlash)
+        // If we have to remove leading char
+        else if (!add && hasLeadingSlash)
         {
-            return pPath.substr(1, pPath.length);
+            return source.substr(1, source.length);
         }
 
         // Do nothing
-        else return pPath;
+        else return source;
     }
 
     /**
      * First letter capital on given string.
-     *
      * For ex: "courgette? Oui!" become "Courgette, Oui!"
      */
-    export function upperCaseFirstChar (pSource:string):string
+    export function upperCaseFirstChar (source:string):string
     {
-        return pSource.substr(0, 1).toUpperCase() + pSource.substr(1, pSource.length);
+        return source.substr(0, 1).toUpperCase() + source.substr(1, source.length);
     }
 
     /**
      * First letter in low case on given string.
-     *
      * For ex: "Fromage? Oui!" become "fromage? Oui!"
      */
-    export function lowerCaseFirstChar (pSource:string):string
+    export function lowerCaseFirstChar (source:string):string
     {
-        return pSource.substr(0, 1).toLowerCase() + pSource.substr(1, pSource.length);
+        return source.substr(0, 1).toLowerCase() + source.substr(1, source.length);
     }
 
     /**
-     * Convert a dash case formated string to a camel case format.
+     * Convert a dash case formatted string to a camel case format.
      *
      * Ex: "my-string" will be converted to "myString"
      */
-    export function dashToCamelCase (pSource:string, pSeparator:string = '-'):string
+    export function dashToCamelCase (source:string, separator = '-'):string
     {
         // Seperate dashs
-        let splitted = pSource.toLowerCase().split(pSeparator);
-        let total = splitted.length;
+        const split = source.toLowerCase().split(separator);
+        const total = split.length;
 
         // Return raw if it's not a dash
-        if (total < 2) return pSource.toLowerCase();
+        if (total < 2) return source.toLowerCase();
 
         // The first is not uppercase
-        let out = splitted[0];
+        let out = split[0];
 
         // Others are upper cased first
         for (let i = 1; i < total; i ++)
         {
-            out += (i == 0 ? splitted[i] : StringUtils.upperCaseFirstChar(splitted[i]));
+            out += (i == 0 ? split[i] : StringUtils.upperCaseFirstChar(split[i]));
         }
 
         return out;
     }
 
     /**
-     * Convert camelCase to dash_case or dash-case or DASH_CASE and event DASH-CASE
-     * @param pSource camelCase string
-     * @param pSeparator Used separator between words. Default is dash -
-     * @param pUpperCase If we have to uppercase every words. Default is no thanks.
+     * Convert camelCase to dash_case or dash-case or DASH_CASE and even DASH-CASE
+     * @param source camelCase string
+     * @param separator Used separator between words. Default is dash -
+     * @param upperCase If we have to uppercase every words. Default is no thanks.
      * @returns {string} dash-case-string or dash_case_string
      */
-    export function camelToDashCase (pSource:string, pSeparator = '-', pUpperCase = false):string
+    export function camelToDashCase (source:string, separator = '-', upperCase = false):string
     {
-        return pSource.replace(
+        return source.replace(
             /([A-Z])/g,
             ( part:string ) => (
-                pSeparator
-                + (
-                    pUpperCase
-                        ? part.toUpperCase()
-                        : part.toLowerCase()
-                )
+                separator + ( upperCase ? part.toUpperCase() : part.toLowerCase() )
             )
         );
     }
 
     /**
-     * Convertir un enum en string, camelCase ou dash-case.
-     * Va convertir un EMonEnum.MA_VALEUR en "maValeur" ou "ma-valeur"
-     * @param pEnumValue La valeur de l'enum ( EMonEnum.MA_VALEUR )
-     * @param pEnumClass La classe de l'enum ( EMonEnum )
-     * @param pCamelCase si true on ressort "maValeur" si false on ressort "ma-valeur"
-     * @returns {string} Le nom en camelCase ou dash-case
+     * Convert an enum value from an enum object to a dash-case string
+     * @param enumObject ex : EMyEnum
+     * @param enumValue ex : EMyEnum.MY_VALUE -> my-value
      */
-    export function enumToString (pEnumValue:number, pEnumClass:Object, pCamelCase = true):string
+    export function enumToDash (enumObject:Object, enumValue:number)
     {
-        // On récupère le string en underscore depuis notre enum
-        let enumStringValue = pEnumClass[pEnumValue] as string;
-
         // On converti en dashCase
-        let enumDashValue = enumStringValue.toLowerCase().split('_').join('-');
+        return enumObject[ enumValue ].toLowerCase().split('_').join('-');
+    }
 
-        // On retourne en camel ou en dash
-        return pCamelCase ? StringUtils.dashToCamelCase(enumDashValue) : enumDashValue;
+    /**
+     * Convert an enum value from an enum object to a camelCase string
+     * @param enumObject ex : EMyEnum
+     * @param enumValue ex : EMyEnum.MY_VALUE -> myValue
+     * @param capitalizeFirst to set first letter to uppercase
+     */
+    export function enumToCamel (enumObject:Object, enumValue:number, capitalizeFirst = false)
+    {
+        const camel = StringUtils.dashToCamelCase(
+            StringUtils.enumToDash( enumObject, enumValue )
+        );
+
+        return (
+            capitalizeFirst
+            ? StringUtils.upperCaseFirstChar( camel )
+            : camel
+        );
     }
 
     /**
@@ -232,16 +237,16 @@ export module StringUtils
      * Will return full string if no slash found.
      * ex : 'usr/bin/TestFile' will return 'TestFile'
      */
-    export function getFileFromPath (pPath:string):string
+    export function getFileFromPath (path:string):string
     {
-        let lastIndex = pPath.lastIndexOf('/');
+        let lastIndex = path.lastIndexOf('/');
 
         if (lastIndex == -1)
         {
             lastIndex = 0;
         }
 
-        return pPath.substring(lastIndex + 1, pPath.length);
+        return path.substring(lastIndex + 1, path.length);
     }
 
     /**
@@ -250,50 +255,50 @@ export module StringUtils
      * Will return full string if no slash found.
      * ex: 'usr/bin/TestFile' will return 'usr/bin/'
      */
-    export function getBaseFromPath (pPath:string):string
+    export function getBaseFromPath (path:string):string
     {
-        let lastIndex = pPath.lastIndexOf('/');
+        let lastIndex = path.lastIndexOf('/');
 
         if (lastIndex == -1)
         {
-            lastIndex = pPath.length;
+            lastIndex = path.length;
         }
 
-        return pPath.substring(0, lastIndex);
+        return path.substring(0, lastIndex);
     }
 
     /**
      * Get the local path from a full path and a base.
      * For ex : will extract /dir/file.html from /my/base/dir/file.html with base /my/base
-     * To work, pBase have to be the exact beginning of pPath. This is to avoid issues with bases like '/'
-     * If base is invalid, pPath will be returned.
+     * To work, base have to be the exact beginning of path. This is to avoid issues with bases like '/'
+     * If base is invalid, path will be returned.
      * No error thrown.
-     * If you want starting slash or not, please use StringUtils.trailingSlash method on pPath and / or pBase
+     * If you want starting slash or not, please use StringUtils.trailingSlash method on path and / or pBase
      */
-    export function extractPathFromBase (pPath:string, pBase:string):string
+    export function extractPathFromBase (path:string, base:string):string
     {
         // Get the index of base within the path
-        let baseStartIndex = pPath.indexOf( pBase );
+        let baseStartIndex = path.indexOf( base );
 
         return (
             // Base is starting path so its ok
             baseStartIndex == 0
-                ? pPath.substr( pBase.length, pPath.length )
-                // Invalid base for this path, do nothing
-                : pPath
+            ? path.substr( base.length, path.length )
+            // Invalid base for this path, do nothing
+            : path
         );
     }
 
     /**
      * Micro template engine using regex and mustache like notation
-     * @param pTemplate Base mustache like template (ex: "Hey {{userName}} !")
-     * @param pValues List of replaces values (ex : {userName: "You"})
+     * @param template Base mustache like template (ex: "Hey {{userName}} !")
+     * @param values List of replaces values (ex : {userName: "You"})
      * @returns the computed template with values (ex : "Hey You !")
      */
-    export function quickMustache (pTemplate:string, pValues:{}):string
+    export function quickMustache (template:string, values:{}):string
     {
-        return pTemplate.replace(/\{\{(.*?)\}\}/g, function(i, pMatch) {
-            return pValues[pMatch];
+        return template.replace(/\{\{(.*?)\}\}/g, function(i, match) {
+            return values[ match ];
         });
     }
 
@@ -347,18 +352,17 @@ export module StringUtils
      * Converting a string for URL's.
      * For ex : "I'm a robot" will be converted to "im-a-robot"
      */
-    export function slugify (pInput:string):string
+    export function slugify (input:string):string
     {
         // Replace all non URL compatible chars
         const total = this.SLUG_REGEX.length;
         for (let i = 0; i < total; i ++)
         {
-            pInput = pInput.replace(this.SLUG_REGEX[i].regex, this.SLUG_REGEX[i].char);
+            input = input.replace(this.SLUG_REGEX[i].regex, this.SLUG_REGEX[i].char);
         }
 
-        // Patch quircks
         return (
-            pInput.toLowerCase()
+            input.toLowerCase()
                 .replace(/\s+/g, '-')           // Replacing spaces by dashes
                 .replace(/[^a-z0-9-]/g, '')     // Deleting non alphanumeric chars
                 .replace(/\-{2,}/g, '-')        // Deleting multiple dashes
@@ -374,18 +378,18 @@ export module StringUtils
      * {test: 'myValue', varName: 'otherValue'}
      * No double declaration checking, no nesting, no number parsing.
      * Will start after first ? or first # if found.
-     * @param pQueryString The query string to parse
+     * @param queryString The query string to parse
      * @returns Associative object with parsed values
      */
-    export function parseQueryString (pQueryString:string):{[key:string]:string|number|boolean}
+    export function parseQueryString (queryString:string):ScalarObject
     {
         // Start parsing after first ? or first # if detected
         ['?', '#'].map( q =>
         {
             // Detect position of starter and split from it if detected
-            const pos = pQueryString.indexOf( q );
+            const pos = queryString.indexOf( q );
             if ( pos !== -1 )
-                pQueryString = pQueryString.substr( pos + 1, pQueryString.length );
+                queryString = queryString.substr( pos + 1, queryString.length );
         });
 
         // Convert number in strings to number
@@ -399,7 +403,7 @@ export module StringUtils
 
         // Split every & and browse
         const outputVarBag = {};
-        pQueryString.split('&').map( couples =>
+        queryString.split('&').map( couples =>
         {
             // Split on all =
             const splitted = couples.split('=', 2);
@@ -407,10 +411,10 @@ export module StringUtils
             // If there is an =, this is a key/value
             outputVarBag[ decodeURIComponent( splitted[0] ) ] = (
                 ( splitted.length === 2 )
-                    // Try to parse number from strings
-                    ? parseNumberValue( decodeURIComponent( splitted[1] ) )
-                    // Otherwise, this is just a flag, we put it to true
-                    : true
+                // Try to parse number from strings
+                ? parseNumberValue( decodeURIComponent( splitted[1] ) )
+                // Otherwise, this is just a flag, we put it to true
+                : true
             );
         });
         return outputVarBag;
@@ -419,24 +423,24 @@ export module StringUtils
     /**
      * Check if a string represent a number, and a number only.
      * NaN and Infinity will be false.
-     * @param pNumberAsString The string representing the number
+     * @param number The string representing the number
      * @returns True if the string is representing a number.
      */
-    export function isNumber (pNumberAsString:string):boolean
+    export function isNumber (number:string):boolean
     {
-        const f = parseFloat( pNumberAsString );
+        const f = parseFloat( number );
         return !isNaN( f ) && isFinite( f );
     }
 
     /**
      * Good old nl2br from PHP...
      * http://stackoverflow.com/questions/7467840/nl2br-equivalent-in-javascript
-     * @param str String in which we replace line breaks by <br> tags
+     * @param value String in which we replace line breaks by <br> tags
      * @param breakTag <br> tag can be changed
      * @returns {string}
      */
-    export function nl2br (str:string, breakTag = '<br>')
+    export function nl2br (value:string, breakTag = '<br>')
     {
-        return (str + '').replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1' + breakTag + '$2');
+        return (value + '').replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1' + breakTag + '$2');
     }
 }

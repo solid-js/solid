@@ -1,7 +1,7 @@
 node_modules/
 
 # Do not send typescripts sources to NPM, we convert them to JS and d.ts files
-**/*.ts
+src/
 
 # Do not send docs to NPM, they are on gh-pages branch and auto-generated
 doc/
