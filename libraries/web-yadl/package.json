@@ -1,0 +1,17 @@
+{
+  "name": "@solid-js/yadl",
+  "version": "0.2.0",
+  "description": "Yet Another (solid) DOM Library",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "solid",
+    "typescript",
+    "dom",
+    "light"
+  ],
+  "author": "Alexis Bouhet",
+  "license": "MIT"
+}

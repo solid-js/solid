@@ -39,7 +39,6 @@ namespace DOMUtils
      */
     export function getScrollBarSize ():number
     {
-
         // Create temp scrollable div
         let $scrollableDiv = $('<div></div>').addClass('verticalScroll').css({
             position: 'absolute',
