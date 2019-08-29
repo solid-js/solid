@@ -4,13 +4,15 @@
   "devDependencies": {
     "@types/node": "^12.6.8",
     "chalk": "^2.4.2",
+    "esm": "^3.2.25",
     "glob": "^7.1.4",
     "lerna": "^3.14.1",
     "rimraf": "^2.6.3",
     "typescript": "^3.5.3"
   },
   "scripts": {
-    "clean": "node scripts/clean.js",
-    "build": "node scripts/build.js"
+    "clean": "node -r esm scripts/clean",
+    "build": "node -r esm scripts/build",
+    "dev": "node -r esm scripts/dev"
   }
 }

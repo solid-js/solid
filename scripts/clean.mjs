@@ -1,5 +1,5 @@
-const { task } = require('./cli');
-const config = require('./config');
+const { task } = require('./lib/cli');
+const config = require('./lib/config');
 const rimraf = require('rimraf');
 
 const GlobSync = require('glob').sync;

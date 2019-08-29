@@ -1,4 +1,8 @@
-module.exports = {
+
+
+
+
+export default {
     paths: {
         libraries: './libraries/'
     }

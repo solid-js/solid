@@ -1,0 +1,35 @@
+{
+  "name": "@solid-js/files",
+  "description": "File (or F$) is a NodeJS file management helper with a super simple API to make build scripts lite and readable. Powered by Glob and Fs-extra.",
+  "main": "index.js",
+  "module": "index.js",
+  "types": "index.d.ts",
+  "version": "0.1.5",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/solid-js/files.git"
+  },
+  "dependencies": {
+    "glob": "^7.1.3"
+  },
+  "scripts" : {
+    "dev" : "node dev"
+  },
+  "keywords": [
+    "solid",
+    "files",
+    "simple",
+    "directory",
+    "directories",
+    "json",
+    "yaml",
+    "management",
+    "easy"
+  ],
+  "author": "Alexis Bouhet",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/solid-js/files/issues"
+  },
+  "homepage": "https://github.com/solid-js/files#readme"
+}

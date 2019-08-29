@@ -46,11 +46,11 @@
  *
 ```typescript
 
-YADL.find( $container, '.Grid_element' ).first( e => {
-	YADL.width( e );
-	YADL.height( e );
-	e.parent;
-	YADL.findParent( e, '.FirstParent' ).first( parent => {
+YADL.find( $container, '.Grid_element' ).first( el => {
+	YADL.width( el );
+	YADL.height( el );
+	el.parent;
+	YADL.parents( e, '.FirstParent' ).first( parent => {
 
 	});
 
@@ -113,8 +113,9 @@ export module YADL
 		};
 	}
 
+
 	// TODO : Trouver les parents qui correspondent à ce selector
-	export function findParents ( element:Element, selector:string ) {} //:FindReturnType { }
+	export function parents ( element:Element, selector:string ) {} //:FindReturnType { }
 	// TODO
 	export function width ( element:Element ) { }
 	export function height ( element:Element ) { }
