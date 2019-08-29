@@ -33,21 +33,6 @@ export function F$ ( pattern:string, cwd?:string, filter?:IFilter ):Match
 	return new Match( pattern, cwd, filter );
 }
 
-/**
- * Target files and folders from a glob synchronously.
- * In sync mode, glob updates are synchronous. It can hurt main thread, like running servers
- * but is preferable for static node routines and can avoid top level awaits.
- * @param pattern Glob pattern @see https://www.npmjs.com/package/glob
- * @param cwd Root directory to search from. Default is process.cwd()
- * @param filter Filter function to filter some files at each updates. Useful to simplify glob pattern.
- */
-/*
-export function F$ync ( pattern:string, cwd?:string, filter?:IFilter )
-{
-	return new Match( pattern, cwd, filter, true )
-}
-*/
-
 
 
 export class Match
@@ -95,7 +80,7 @@ export class Match
 	 * a new Match.paths property is written after this call.
 	 * Match.filter is used to filter files paths.
 	 */
-	update ():Promise<string[]>
+	updatePaths ():Promise<string[]>
 	{
 		return new Promise( (resolve, reject) =>
 		{
@@ -106,11 +91,8 @@ export class Match
 				return
 			}
 
-			delete this._fileEntities;
 			delete this._paths;
-
 			this._isUpdating = true;
-
 
 			// Get all file paths from glob
 			glob( this.pattern, { cwd: this.cwd }, async ( error, paths ) =>
@@ -130,20 +112,37 @@ export class Match
 					this.filter ? paths.filter( this.filter ) : paths
 				);
 
-				// Create file entities and cache them
-				this._fileEntities = [];
-				await this.createFileEntities();
-
 				// Filter and store all paths
 				resolve( this._paths );
 			})
 		})
 	}
 
-	protected async createFileEntities ()
+	/**
+	 * Convert all paths to File and Folders.
+	 * Call it to update state from file system.
+	 * Will get paths from glob if needed.
+	 */
+	updateFileEntities ():Promise<FileEntity[]>
 	{
-		return new Promise( resolve =>
+		return new Promise( async (resolve, reject) =>
 		{
+			// Reject if any update is already running on this match
+			if ( this._isUpdating )
+			{
+				reject( new Error( 'Match already updating.' ) );
+				return
+			}
+
+
+			// Get paths from glob if needed
+			await this.checkPaths();
+
+			this._isUpdating = true;
+
+			// New file entities map
+			this._fileEntities = [];
+
 			let remaining = this._paths.length;
 			this._paths.map( localPath =>
 			{
@@ -174,32 +173,80 @@ export class Match
 					}
 
 					// Count and resolve when every paths are resolved
-					if (--remaining == 0) resolve();
+					if ( --remaining == 0 )
+					{
+						this._isUpdating = false;
+						resolve( this._fileEntities );
+					}
 				});
 			});
 		});
 	}
 
 	/**
-	 * @throws Will throw an error if paths are not updated yet.
+	 * Check if paths are available.
+	 * If not, will call updatePaths to browse file list from glob.
 	 */
 	protected async checkPaths ()
 	{
-		if (!this._paths)
-			await this.update();
-		// throw new Error(`Match paths not initialized yet. Please call await update() before trying to access file list with all() files() and folders().`)
+		if (!this._paths) await this.updatePaths();
+	}
+
+	/**
+	 * Check if file entities are available.
+	 * If not, will call updateFileEntities to convert all paths to File and Folder objects.
+	 */
+	protected async checkFileEntities ()
+	{
+		if (!this._fileEntities) await this.updateFileEntities();
+	}
+
+	/**
+	 * Get list of file entities.
+	 * Will get paths if needed
+	 * Will create file entities if needed
+	 */
+	protected async getFileEntities ()
+	{
+		// Wait file entities
+		await this.checkFileEntities();
+
+		// Browse paths, remove untrackable file entities and return file entities
+		return this._paths
+			.filter( path => path in this._fileEntities )
+			.map( path => this._fileEntities[ path ])
+	}
+
+	/**
+	 * Await for async handler and map to promised result, or return sync results directly.
+	 * @param resultsFromHandler List of promises or list of anything else
+	 */
+	protected async patchReturnedPromises ( resultsFromHandler )
+	{
+		return (
+			// If we have a promise on first result, wait for all promises
+			( resultsFromHandler.length > 0 && resultsFromHandler[0] instanceof Promise )
+			? await Promise.all(resultsFromHandler)
+			// Otherwise return results directly
+			: resultsFromHandler
+		);
 	}
 
 	// ------------------------------------------------------------------------- BROWSE
 
 	/**
-	 * TODO
-	 * @param handler
+	 * Get all paths from glob. No File or Folder object returned, only strings.
 	 */
 	async paths ( handler : PathHandler )
 	{
+		// Wait for paths
 		await this.checkPaths();
-		return this._paths.map( handler );
+
+		// Call handler on every path
+		const resultsFromHandler = this._paths.map( handler );
+
+		// Wait if handler is async
+		return await this.patchReturnedPromises( resultsFromHandler );
 	}
 
 	/**
@@ -209,11 +256,14 @@ export class Match
 	 */
 	async all ( handler : EntityHandler )
 	{
-		await this.checkPaths();
-		return this._paths
-			.filter( path => path in this._fileEntities )
-			.map( path => this._fileEntities[ path ])
-			.map( handler );
+		// Wait file entities
+		const entities = await this.getFileEntities();
+
+		// Call handler on files and folders
+		const resultsFromHandler = entities.map( handler );
+
+		// Wait if handler is async
+		return await this.patchReturnedPromises( resultsFromHandler );
 	}
 
 	/**
@@ -223,10 +273,16 @@ export class Match
 	 */
 	async files ( handler : FileHandler )
 	{
-		await this.checkPaths();
-		return this._fileEntities
+		// Wait file entities
+		const entities = await this.getFileEntities();
+
+		// Filter for files and call handler
+		const resultsFromHandler = entities
 			.filter( file => file instanceof File )
-			.map( handler )
+			.map( handler );
+
+		// Wait if handler is async
+		return await this.patchReturnedPromises( resultsFromHandler );
 	}
 
 	/**
@@ -236,10 +292,16 @@ export class Match
 	 */
 	async folders ( handler : FolderHandler )
 	{
-		await this.checkPaths();
-		return this._fileEntities
+		// Wait file entities
+		const entities = await this.getFileEntities();
+
+		// Filter for folder and call handler
+		const resultsFromHandler = entities
 			.filter( file => file instanceof Folder )
-			.map( handler )
+			.map( handler );
+
+		// Wait if handler is async
+		return await this.patchReturnedPromises( resultsFromHandler );
 	}
 
 
@@ -247,42 +309,37 @@ export class Match
 
 	/**
 	 * Generate hash from current files list.
-	 * Will generate another hash if there is other files.
+	 * Will generate another hash if total files or file names changes.
 	 * Can generate also a different hash from file last modified or file size.
 	 * File list modified is often enough to detect changes in file system.
 	 * @param lastModified Add file last modified date for each file into hash signature. Hash will change if any file last modified date changes.
 	 * @param size Add file size for each file into hash signature. Hash will change if any file size changes.
+	 * @param hashIt Set to false to return file descriptors without hashing it
 	 * @throws Will throw an error if paths are not updated yet.
 	 * @return {string} Hex Sga256 Hash from file list and stats.
 	 */
-	async generateFileListHash ( lastModified = false, size = false )
+	async generateFileListHash ( lastModified = false, size = false, hashIt = true )
 	{
-		this.files( file =>
-		{
-			console.log(file);
-		});
+		const fileDescriptors = (
+			// Describe state only with paths to avoid useless stats
+			( !lastModified && !size )
+			? await this.paths( r => r )
+			// Get files with stats to add last modified and size info to the hash
+			: await this.files( async file => {
+				let fileDescriptor = file.path;
+				if (lastModified)	fileDescriptor += '#' + await file.lastModified();
+				if (size)			fileDescriptor += '#' + await file.size();
+				return fileDescriptor;
+			})
+		);
 
-		/*
-		// Browse all files
-		// and create a hash for this file and add it to the global hash
-		this.checkPaths();
-		const allFilesHashSignature = this.files( file => (
-			// Add file path so if a file is added and all options are set to false
-			// global hash still changes.
-			file.path
-			+ '#'
-			// Add last modified timestamp to hash if asked
-			+ (lastModified ? file.lastModified() : '')
-			+ '#'
-			// Add file size to hash if asked
-			+ (size ? file.size() : '')
-		));
+		// Return without hashing it
+		if (!hashIt) return fileDescriptors.join('_');
 
 		// Convert all file hashs signature to a big hash
 		const crypto = require('crypto');
 		const hash = crypto.createHash('sha256');
-		hash.update( allFilesHashSignature.join('_') );
-		return hash.digest('hex')
-	 */
+		hash.update( fileDescriptors.join('_') );
+		return hash.digest('hex');
 	}
 }

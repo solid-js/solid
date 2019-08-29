@@ -20,7 +20,7 @@ export class File extends FileEntity
 	{
 	}
 
-	async updateStats ():Promise<Stats>
+	async update ()
 	{
 		return new Promise( (resolve, reject) =>
 		{
@@ -28,14 +28,20 @@ export class File extends FileEntity
 			{
 				if ( error )
 				{
-					reject( error )
+					reject( error );
 					return
 				}
 
-				this._stats = stats
-				resolve()
+				this._stats = stats;
+				resolve();
 			})
 		})
+	}
+
+	protected async checkStats ()
+	{
+		if (!this._stats)
+			await this.update();
 	}
 
 	/*
@@ -45,12 +51,24 @@ export class File extends FileEntity
 	}
 	*/
 
-	lastModified (relativeToNow?)
+	async lastModified ()
+	{
+		await this.checkStats();
+		return this._stats.mtimeMs;
+	}
+
+	lastModifiedHuman ()
 	{
 
 	}
 
-	size (humanReadable?)
+	async size ()
+	{
+		await this.checkStats();
+		return this._stats.size;
+	}
+
+	sizeHuman ()
 	{
 
 	}
