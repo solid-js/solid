@@ -1,4 +1,4 @@
-import {ScalarObject} from "./Global";
+import {ScalarObject} from "../../core-types/Global";
 
 export module StringUtils
 {

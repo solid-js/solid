@@ -6,7 +6,8 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths" : {
-      "@solid-js/signal": ["./libraries/core-signal/dist/index"]
+      "@solid-js/signal/*": ["../core-signal/dist/*"],
+      "@solid-js/core-utils/*": ["../core-utils/dist/*"]
     }
   }
 }

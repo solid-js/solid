@@ -1,25 +1,25 @@
-import * as FileUtils from './FileUtils'
 import {Stats} from "fs";
 
 
 
 export class FileEntity
 {
-	// Path pointing to the file or folder
-	readonly path:string;
+	// Path pointing to the file or directory
+	protected _path:string;
+	get path ():string { return this._path; }
 
 	protected _stats:Stats;
 
 	constructor ( filePath:string, stats?:Stats )
 	{
-		this.path = filePath;
+		this._path = filePath;
 		this._stats = stats;
 	}
 
 	// ------------------------------------------------------------------------- FILE SYSTEM STATES
 
 	/**
-	 * If this file or folder exists in the file system.
+	 * If this file or directory exists in the file system.
 	 * Can be false when creating a new file for example.
 	 */
 	isReal () { return this.exists() }
@@ -34,11 +34,11 @@ export class FileEntity
 	}
 
 	/**
-	 * If this is a folder.
+	 * If this is a directory.
 	 */
-	isDir () { return this.isFolder() }
-	isDirectory () { return this.isFolder() }
-	isFolder ()
+	isDir () { return this.isDirectory() }
+	isFolder () { return this.isDirectory() }
+	isDirectory ()
 	{
 
 	}

@@ -1,4 +1,4 @@
-import {execSync} from "child_process";
+import { execSync } from "child_process";
 import chalk from "chalk";
 
 /**
@@ -100,13 +100,23 @@ export function halt ( str = null, code = 1 )
 
 /**
  * Exec a command and return stdout as string.
+ * By default stdout is hidden.
+ * @param command Command to execute.
+ * @param options See execSync options. Ignore to call and hide command's stdout.
+ * @returns Stringified result of command's stdout
  */
 export function exec ( command, options )
 {
-    const result = execSync(command, (
-        options === true
-        ? { stdio: [1, 2] }
-        : options
-    ));
+    // Disable stdout if there are no options
+    options = options || { stdio: [0, null, 2] };
+
+    // Call command with default options
+    const result = execSync(command, {
+        stdio: [0, 1, 2],
+        env: process.env,
+        ... options
+    });
+
+    // Stringify stdout and return it
     return result ? result.toString() : null;
 }

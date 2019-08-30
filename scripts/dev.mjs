@@ -2,7 +2,6 @@ import {buildLibrary, listLibraries} from "./lib/libraries";
 import path from "path";
 import config from "./lib/config";
 import {exec, halt, log, task} from "./lib/cli";
-import * as child_process from "child_process";
 
 
 if (!(2 in process.argv))
@@ -28,11 +27,9 @@ const foundLibraries = listLibraries( argumentLibrary, ( libraryName ) =>
 
     const libraryPath = path.join( config.paths.libraries, libraryName );
 
-    child_process.spawnSync('node', ['dev'], {
+    exec('node dev', {
         cwd: libraryPath,
-        env: process.env,
-        stdio: [process.stdin, process.stdout, process.stderr],
-        encoding: 'utf-8'
+        stdio: [0, 1, 2]
     });
 });
 

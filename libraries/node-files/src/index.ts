@@ -1,16 +1,8 @@
 
 export * from './Match';
 export * from './File';
-export * from './Folder';
+export * from './Directory';
 
-// TODO
-
-export let defaultTemplateMarkers = ['{{', '}}'];
-
-export function setDefaultTemplateMarkers (open:string, close:string)
-{
-	defaultTemplateMarkers = [open, close];
-}
 
 
 // https://github.com/solid-js/files/issues/1

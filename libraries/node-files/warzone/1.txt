@@ -1,1 +1,5 @@
-Poid
+Lorem ipsum dolor sit amet.
+Aenean fermentum {{super}} ante.
+Integer pellentesque purus sit amet lectus ultrices malesuada.
+Proin viverra at {{cool}} a rutrum.
+Mauris volutpat maximus enim sit amet scelerisque.

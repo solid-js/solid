@@ -3,7 +3,7 @@ import { FileEntity } from './FileEntity'
 
 
 
-export class Folder extends FileEntity
+export class Directory extends FileEntity
 {
 	create ()
 	{

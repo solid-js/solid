@@ -2,33 +2,32 @@ import * as fs from "fs";
 import * as path from 'path'
 import { FileEntity } from './FileEntity'
 import { File } from './File'
-import { Folder } from './Folder'
+import { Directory } from './Directory'
 import glob from "glob";
 
 // ----------------------------------------------------------------------------- STRUCTURE
 
 // Defining what is a basic file filter
-
 interface IFilter
 {
 	(filePath:string) : boolean
 }
 
 // Handlers types
-type PathHandler 	= (path:string)		 	=> any
-type EntityHandler 	= (entity:FileEntity) 	=> any
-type FileHandler 	= (entity:File) 		=> any
-type FolderHandler 	= (entity:Folder) 		=> any
+type TPathHandler 		= (path:string)		 	=> any
+type TEntityHandler 	= (entity:FileEntity) 	=> any
+type TFileHandler 		= (entity:File) 		=> any
+type TDirectoryHandler 	= (entity:Directory) 	=> any
 
 // ----------------------------------------------------------------------------- GLOBAL HELPERS / MAIN CLASS
 
 /**
- * Target files and folders from a glob.
+ * Target files and directories from a glob.
  * @param pattern Glob pattern @see https://www.npmjs.com/package/glob
  * @param cwd Root directory to search from. Default is process.cwd()
  * @param filter Filter function to filter some files at each updates. Useful to simplify glob pattern.
  */
-export function F$ ( pattern:string, cwd?:string, filter?:IFilter ):Match
+export function M$ ( pattern:string, cwd?:string, filter?:IFilter ):Match
 {
 	return new Match( pattern, cwd, filter );
 }
@@ -40,28 +39,29 @@ export class Match
 	// ------------------------------------------------------------------------- LOCALS
 
 	// Glob pattern @see https://www.npmjs.com/package/glob
-	readonly pattern		:string;
+	readonly pattern			:string;
 
 	// Root directory to search from.
-	readonly cwd			:string;
+	readonly cwd				:string;
 
 	// Filter function to filter some files at each updates. Useful to simplify glob pattern.
-	readonly filter			:IFilter;
+	readonly filter				:IFilter;
 
-	// List of all file and folders paths found after update() from glob and filter.
-	protected _paths		:string[];
+	// List of all file and directories paths found after update() from glob and filter.
+	protected _paths			:string[];
 
-	protected _fileEntities :FileEntity[];
+	// File and Directory objects from paths
+	protected _fileEntities 	:FileEntity[];
 
 	// If an update is running asynchronously
-	protected _isUpdating		:boolean = false;
+	protected _isUpdating		= false;
 	get isUpdating () { return this._isUpdating }
 
 
 	// ------------------------------------------------------------------------- INIT & UPDATE
 
 	/**
-	 * Target files and folders from a glob.
+	 * Target files and directories from a glob.
 	 * @param pattern Glob pattern @see https://www.npmjs.com/package/glob
 	 * @param cwd Root directory to search from. Default is process.cwd()
 	 * @param filter Filter function to filter some files at each updates. Useful to simplify glob pattern.
@@ -119,11 +119,11 @@ export class Match
 	}
 
 	/**
-	 * Convert all paths to File and Folders.
+	 * Convert all paths to File and Directory objects.
 	 * Call it to update state from file system.
 	 * Will get paths from glob if needed.
 	 */
-	updateFileEntities ():Promise<FileEntity[]>
+	async updateFileEntities ():Promise<FileEntity[]>
 	{
 		return new Promise( async (resolve, reject) =>
 		{
@@ -133,7 +133,6 @@ export class Match
 				reject( new Error( 'Match already updating.' ) );
 				return
 			}
-
 
 			// Get paths from glob if needed
 			await this.checkPaths();
@@ -160,7 +159,7 @@ export class Match
 						if ( stats.isFile() )
 							fileEntity = new File( completePath, stats );
 						else if ( stats.isDirectory() )
-							fileEntity = new Folder( completePath, stats );
+							fileEntity = new Directory( completePath, stats );
 
 						// Add it to file entities cache with localPath as key
 						this._fileEntities[ localPath ] = fileEntity;
@@ -194,7 +193,7 @@ export class Match
 
 	/**
 	 * Check if file entities are available.
-	 * If not, will call updateFileEntities to convert all paths to File and Folder objects.
+	 * If not, will call updateFileEntities to convert all paths to File and Directory objects.
 	 */
 	protected async checkFileEntities ()
 	{
@@ -235,9 +234,9 @@ export class Match
 	// ------------------------------------------------------------------------- BROWSE
 
 	/**
-	 * Get all paths from glob. No File or Folder object returned, only strings.
+	 * Get all paths from glob. No File or Directory object returned, only strings.
 	 */
-	async paths ( handler : PathHandler )
+	async paths ( handler : TPathHandler )
 	{
 		// Wait for paths
 		await this.checkPaths();
@@ -250,16 +249,16 @@ export class Match
 	}
 
 	/**
-	 * Browse through all targeted files and folders from glob.
-	 * @param handler First argument will be a FileEntity object (File or Folder)
+	 * Browse through all targeted files and directories from glob.
+	 * @param handler First argument will be a FileEntity object (File or Directory)
 	 * @throws Will throw an error if paths are not updated yet.
 	 */
-	async all ( handler : EntityHandler )
+	async all ( handler : TEntityHandler )
 	{
 		// Wait file entities
 		const entities = await this.getFileEntities();
 
-		// Call handler on files and folders
+		// Call handler on files and directories
 		const resultsFromHandler = entities.map( handler );
 
 		// Wait if handler is async
@@ -267,11 +266,11 @@ export class Match
 	}
 
 	/**
-	 * Browse through all targeted files (without folders) from glob.
+	 * Browse through all targeted files (without directories) from glob.
 	 * @param handler First argument will be a File object
 	 * @throws Will throw an error if paths are not updated yet.
 	 */
-	async files ( handler : FileHandler )
+	async files ( handler : TFileHandler )
 	{
 		// Wait file entities
 		const entities = await this.getFileEntities();
@@ -286,18 +285,19 @@ export class Match
 	}
 
 	/**
-	 * Browse through all targeted folder (without files) from glob.
-	 * @param handler First argument will be a Folder object
+	 * Browse through all targeted directories (without files) from glob.
+	 * @param handler First argument will be a Directory object
 	 * @throws Will throw an error if paths are not updated yet.
 	 */
-	async folders ( handler : FolderHandler )
+	async folders ( handler: TDirectoryHandler ) { return this.directories( handler ) }
+	async directories ( handler : TDirectoryHandler )
 	{
 		// Wait file entities
 		const entities = await this.getFileEntities();
 
-		// Filter for folder and call handler
+		// Filter for directories and call handler
 		const resultsFromHandler = entities
-			.filter( file => file instanceof Folder )
+			.filter( file => file instanceof Directory )
 			.map( handler );
 
 		// Wait if handler is async
