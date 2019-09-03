@@ -46,9 +46,9 @@ export module FunctionalUtils
 				return (
 					// Map value with second function if it exists
 					( 1 in currentMap )
-						? valuesMap[i][1]( value )
-						// Otherwise returns first test function value
-						: test
+					? valuesMap[i][1]( value )
+					// Otherwise returns first test function value
+					: test
 				);
 			}
 

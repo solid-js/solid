@@ -1,4 +1,3 @@
-import {ScalarObject} from "../../core-types/Global";
 
 export module StringUtils
 {
@@ -287,19 +286,6 @@ export module StringUtils
             // Invalid base for this path, do nothing
             : path
         );
-    }
-
-    /**
-     * Micro template engine using regex and mustache like notation
-     * @param template Base mustache like template (ex: "Hey {{userName}} !")
-     * @param values List of replaces values (ex : {userName: "You"})
-     * @returns the computed template with values (ex : "Hey You !")
-     */
-    export function quickMustache (template:string, values:{}):string
-    {
-        return template.replace(/\{\{(.*?)\}\}/g, function(i, match) {
-            return values[ match ];
-        });
     }
 
     /**

@@ -28,3 +28,15 @@ export type ScalarValue = (string | number | boolean);
 export type ScalarObject = {
 	[key:string] : ScalarValue
 };
+
+/**
+ * Any object containing only one level of depth of data.
+ * Can contain Scalar values or Functional handlers.
+ * - String bases key (associative)
+ * - Scalar values allowed (no nesting)
+ * - Functions as value allowed
+ */
+export type OneLevelScalarFunctionalObject =
+{
+	[key:string] : ScalarValue | AnyHandler
+}

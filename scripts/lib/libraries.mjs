@@ -9,7 +9,6 @@ import fs from "fs";
 // Paths to templates
 const tsconfigTemplatePath = path.join( config.paths.libraries, 'tsconfig.template.json' );
 const npmignoreTemplatePath = path.join( config.paths.libraries, 'template.npmignore' );
-const globalTemplatePath = path.join( config.paths.libraries, '_global.template.ts' );
 
 /**
  *
@@ -26,7 +25,6 @@ export function buildLibrary ( libraryName, quickBuild = false )
     // Copy npmignore and tsconfig from templates
     fs.copyFileSync(tsconfigTemplatePath,   libraryConfigPath);
     fs.copyFileSync(npmignoreTemplatePath,  path.join( libraryPath, '.npmignore' ));
-    fs.copyFileSync(globalTemplatePath,     path.join( libraryPath, 'src', '_global.ts' ));
 
     // Clean files
     rimraf.sync( distPath );

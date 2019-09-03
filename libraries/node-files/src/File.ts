@@ -1,7 +1,7 @@
 import { FileEntity } from './FileEntity'
 import * as fs from "fs";
 import * as path from "path";
-import {TFunctionalTransformer, ScalarObject, ScalarValue} from "./_global";
+import {TFunctionalTransformer, ScalarObject, ScalarValue} from "@solid-js/core-global";
 import {start} from "repl";
 import {Stats} from "fs";
 import {type} from "os";
@@ -337,12 +337,11 @@ export class File extends FileEntity
 	 * @param values
 	 * @param delimiters
 	 */
-	template ( values:ScalarObject, delimiters = ["\\{\\{", "\\}\\}"] )
+	template ( values:ScalarObject, delimiters = ["{{", "}}"] )
 	{
-		console.log(new RegExp(`${delimiters[0]}(.*?)${delimiters[1]}`, 'g'));
-		console.log(/\{\{(.*?)\}\}/g);
+		// Replace all detected mustache fields
 		this._data = this._data.replace(
-			new RegExp(`/${delimiters[0]}(.*?)${delimiters[1]}/`, 'g'),
+			new RegExp(`${delimiters[0]}(.*?)${delimiters[1]}`, 'gm'),
 			(i, match) => values[ match ] + ''
 		);
 		return this;

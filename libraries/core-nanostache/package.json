@@ -1,21 +1,21 @@
 {
-  "name": "@solid-js/utils",
-  "description": "Isomorphic set of utility for NodeJS and Browsers environments.",
-  "version": "0.5.0",
+  "name": "@solid-js/nanostache",
+  "description": "Ultra lightweight template processor.",
+  "version": "0.1.0",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/solid-js/solid.git libraries/core-utils"
+    "url": "git+https://github.com/solid-js/solid.git libraries/core-nanostache"
   },
   "keywords": [
     "solid",
-    "isomorphic",
-    "utils",
-    "nodejs",
-    "browser",
-    "typing",
+    "mustache",
+    "nanostache",
+    "template",
+    "processor",
+    "lightweight",
     "typescript"
   ],
   "author": "Alexis Bouhet",
