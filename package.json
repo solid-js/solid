@@ -4,7 +4,6 @@
   "devDependencies": {
     "@types/node": "^12.6.8",
     "chalk": "^2.4.2",
-    "esm": "^3.2.25",
     "filesize": "^4.1.2",
     "glob": "^7.1.4",
     "lerna": "^3.14.1",

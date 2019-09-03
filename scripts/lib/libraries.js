@@ -1,11 +1,12 @@
 const { recursiveChangeExtension } = require("./utils");
+const { config } = require("./config");
+const { exec } = require("../../libraries/node-cli/cli");
+
 const glob = require("glob");
 const rimraf = require("rimraf");
-const {config} = require("./config");
 const path = require("path");
 const fs = require("fs");
 const filesize = require("filesize");
-const {exec} = require("../../libraries/node-cli/cli");
 
 // Paths to templates
 const tsconfigTemplatePath = path.join( config.paths.libraries, 'tsconfig.template.json' );
