@@ -1,10 +1,10 @@
-import path from "path";
-import fs from "fs";
+const fs = require('fs');
+const path = require('path');
 
 /**
  * Utility to recursively change files extensions into a folder
  */
-export function recursiveChangeExtension ( dir, from, to )
+exports.recursiveChangeExtension = function ( dir, from, to )
 {
     // Browse this folder
     fs.readdirSync( dir ).forEach( f =>

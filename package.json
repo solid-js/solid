@@ -13,11 +13,8 @@
     "typescript": "^3.5.3"
   },
   "scripts": {
-    "clean": "node -r esm scripts/clean",
-    "build": "node -r esm scripts/build",
-    "dev": "node -r esm scripts/dev"
-  },
-  "dependencies": {
-    "@solid-js/global": "latest"
+    "clean": "node scripts/clean",
+    "build": "node scripts/build",
+    "dev": "node scripts/dev"
   }
 }

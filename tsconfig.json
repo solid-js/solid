@@ -64,15 +64,6 @@
 
     //"importHelpers" : true,
     //"noEmitHelpers" : true,
-
-    // ------------------------------------------------------------------------- DEPENDENCIES
-
-    "baseUrl": ".",
-    "paths" : {
-      "@solid-js/global/*": ["libraries/core-utils/global/*"],
-      "@solid-js/signal/*": ["../core-signal/dist/*"],
-      "@solid-js/utils/*": ["../core-utils/dist/*"]
-    }
   },
 
   // Files to includes and exclude from typescript builds

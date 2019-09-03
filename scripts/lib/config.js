@@ -2,7 +2,7 @@
 
 
 
-export default {
+exports.config = {
     paths: {
         libraries: './libraries/'
     }

@@ -1,4 +1,4 @@
-const { task } = require('./lib/cli');
+const { task } = require('../libraries/node-cli/cli');
 const config = require('./lib/config');
 const rimraf = require('rimraf');
 

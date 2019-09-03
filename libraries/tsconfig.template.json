@@ -4,6 +4,11 @@
   "compilerOptions" : {
     "rootDir": "./src",
     "outDir": "./dist",
-    "baseUrl": "./"
+    "baseUrl": "./",
+    "paths" : {
+      "@solid-js/global/*": ["../core-utils/global/*"],
+      "@solid-js/signal/*": ["../core-signal/dist/*"],
+      "@solid-js/utils/*": ["../core-utils/dist/*"]
+    }
   }
 }

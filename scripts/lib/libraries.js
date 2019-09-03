@@ -1,11 +1,11 @@
-import { recursiveChangeExtension } from "./utils";
-import { exec, halt, task } from "./cli";
-import * as glob from "glob";
-import * as rimraf from "rimraf";
-import config from "./config";
-import path from "path";
-import fs from "fs";
-import filesize from "filesize";
+const { recursiveChangeExtension } = require("./utils");
+const glob = require("glob");
+const rimraf = require("rimraf");
+const {config} = require("./config");
+const path = require("path");
+const fs = require("fs");
+const filesize = require("filesize");
+const {exec} = require("../../libraries/node-cli/cli");
 
 // Paths to templates
 const tsconfigTemplatePath = path.join( config.paths.libraries, 'tsconfig.template.json' );
@@ -28,12 +28,12 @@ const terserOptions = [
 ];
 
 /**
- *
+ * TODO DOC
  * @param libraryName
  * @param buildLevel
  * @param progress
  */
-export function buildLibrary ( libraryName, buildLevel = 1, progress )
+exports.buildLibrary = function ( libraryName, buildLevel = 1, progress )
 {
     // Update percentage (0%)
     progress && progress( 0, 1 );
@@ -44,8 +44,8 @@ export function buildLibrary ( libraryName, buildLevel = 1, progress )
     const distPath = path.join(libraryPath, 'dist');
 
     // Copy npmignore and tsconfig from templates
-    fs.copyFileSync(tsconfigTemplatePath,   libraryConfigPath);
-    fs.copyFileSync(npmignoreTemplatePath,  path.join( libraryPath, '.npmignore' ));
+    fs.copyFileSync(tsconfigTemplatePath, libraryConfigPath);
+    fs.copyFileSync(npmignoreTemplatePath, path.join( libraryPath, '.npmignore' ));
 
     // Clean files
     rimraf.sync( distPath );
@@ -104,14 +104,14 @@ export function buildLibrary ( libraryName, buildLevel = 1, progress )
         });
         return output;
     }
-}
+};
 
 /**
  * Browse all libraries having a package.json file.
  * @param filterLibrary Pass a name as string to filter to only this library
  * @param handler Called for each found lib
  */
-export function listLibraries ( filterLibrary = null, handler )
+exports.listLibraries = function ( filterLibrary = null, handler )
 {
     let found = 0;
     glob.sync( path.join(config.paths.libraries, '*') ).map( libraryPath =>
@@ -137,4 +137,4 @@ export function listLibraries ( filterLibrary = null, handler )
 
     // Return total found libraries
     return found;
-}
+};

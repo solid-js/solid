@@ -1,7 +1,7 @@
 import {buildLibrary, listLibraries} from "./lib/libraries";
 import path from "path";
 import config from "./lib/config";
-import {exec, halt, task} from "./lib/cli";
+import {exec, halt, task} from "../libraries/node-cli/cli";
 
 
 if (!(2 in process.argv))
