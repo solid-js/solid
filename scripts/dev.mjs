@@ -1,7 +1,7 @@
 import {buildLibrary, listLibraries} from "./lib/libraries";
 import path from "path";
 import config from "./lib/config";
-import {exec, halt, log, task} from "./lib/cli";
+import {exec, halt, task} from "./lib/cli";
 
 
 if (!(2 in process.argv))
@@ -17,7 +17,8 @@ const foundLibraries = listLibraries( argumentLibrary, ( libraryName ) =>
 
     try
     {
-        buildLibrary( libraryName, true );
+        // Build library quickly (no commonjs / no minify)
+        buildLibrary( libraryName, 0 );
         buildTask.success();
     }
     catch ( e )

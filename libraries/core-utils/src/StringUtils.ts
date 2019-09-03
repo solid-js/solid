@@ -1,3 +1,5 @@
+import { ScalarObject } from "@solid-js/global";
+
 
 export module StringUtils
 {

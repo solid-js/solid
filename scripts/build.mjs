@@ -1,5 +1,5 @@
 import { listLibraries, buildLibrary } from "./lib/libraries";
-import { halt, task } from "./lib/cli";
+import { halt, task, table } from "./lib/cli";
 
 // Get library to build from command arguments
 // We'll build all (true) if we have no library name as second argument
@@ -16,9 +16,14 @@ const foundLibraries = listLibraries( argumentLibrary, ( libraryName ) =>
 
     try
     {
-        buildLibrary( libraryName );
+        let minifyResults = buildLibrary( libraryName, 2, buildTask.progress );
         totalBuiltLibraries ++;
         buildTask.success();
+
+        if ( Array.isArray(minifyResults) )
+        {
+            table( minifyResults, '-> ', '  - ', '', [30] );
+        }
     }
     catch ( e )
     {

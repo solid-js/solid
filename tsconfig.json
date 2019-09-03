@@ -1,7 +1,7 @@
 {
   // https://www.typescriptlang.org/docs/handbook/compiler-options.html
   "compilerOptions": {
-    // --------------------------------------------------------------------- INPUT
+    // ------------------------------------------------------------------------- INPUT
 
     // Included libraries for NPM
     // You can add libs for Dom, Node, etc ...
@@ -11,7 +11,7 @@
     // and also types folder to be able to create new types
     "typeRoots": ["./node_modules/@types"],
 
-    // --------------------------------------------------------------------- OUTPUT
+    // ------------------------------------------------------------------------- OUTPUT
 
     // Compile typescript files to ready-to-use es next files
     // build.js will build es next modules (.mjs) and commonjs (.js) files
@@ -25,7 +25,7 @@
     "removeComments": false,
     "preserveConstEnums": true,
 
-    // --------------------------------------------------------------------- ERRORS
+    // ------------------------------------------------------------------------- ERRORS
 
     // Report error on unused locals and parameters
     //"noUnusedLocals": true,
@@ -41,7 +41,7 @@
     // Disallow file generation if there was a typescript error
     "noEmitOnError": true,
 
-    // --------------------------------------------------------------------- BEHAVIOR
+    // ------------------------------------------------------------------------- BEHAVIOR
 
     // Do not allow unreachable code because we are creating a lib
     "allowUnreachableCode" : false,
@@ -53,17 +53,26 @@
     "allowSyntheticDefaultImports" : true,
     "esModuleInterop" : true,
 
-    // --------------------------------------------------------------------- LOGGING
+    // ------------------------------------------------------------------------- LOGGING
 
     // Tweak this to log stuff if needed
     "listEmittedFiles" : false,
     "traceResolution": false,
-    "pretty": true
+    "pretty": true,
 
-    // --------------------------------------------------------------------- HELPERS
+    // ------------------------------------------------------------------------- HELPERS
 
     //"importHelpers" : true,
     //"noEmitHelpers" : true,
+
+    // ------------------------------------------------------------------------- DEPENDENCIES
+
+    "baseUrl": ".",
+    "paths" : {
+      "@solid-js/global/*": ["libraries/core-utils/global/*"],
+      "@solid-js/signal/*": ["../core-signal/dist/*"],
+      "@solid-js/utils/*": ["../core-utils/dist/*"]
+    }
   },
 
   // Files to includes and exclude from typescript builds
