@@ -1,14 +1,13 @@
-Nanostache - hyper-lightweight javascript template engine
 
 # Why Nanostache ?
 
 Why do you need Nanostache since literal template strings are available in ES6+ ?
 Nanostache can be useful when any templating is needed when the template source is not coming from javascript itself.
 For example, if you need to process a template from a file, or any other kind of input.
-Nanostache is a hyper-lightweight template engine in Node or Browsers environments.
+Nanostache is a ultra-lightweight template engine in Node or Browsers environments.
 Minified version is **500b** for CommonJS and a little smaller for ES-Module version.
 It uses Javascript's Regex based String.replace function to be super effective.
-
+Typescript definitions are included. Enjoy !
 
 ### Scope
 
@@ -20,23 +19,27 @@ If you need all of this, check others template engines like [Mustache](https://m
 ### Installation
 
 To install Nanostache in your project :
-`npm install @solid-js/nanostache`
-or
-`yarn add @solid-js/nanostache`
+- `npm install @solid-js/nanostache`
+- or
+- `yarn add @solid-js/nanostache`
 
 ### Usage
 
 If you are using CommonJS syntax :
 
-`const { Nanostache } = require('@solid-js/nanostache')`
+```javascript
+const { Nanostache } = require('@solid-js/nanostache')
+```
 
 Better, if ES-Modules syntax is available :
 
-`import { Nanostache } from '@solid-js/nanostache'`
+```javascript
+import { Nanostache } from '@solid-js/nanostache'
+```
 
 ##### Simple variable replacement
 
-```
+```javascript
 Nanostache('Hello {{username}}', {
     username: 'James Bond'
 });
@@ -45,7 +48,7 @@ Nanostache('Hello {{username}}', {
 
 ##### Values can be functions 
 
-```
+```javascript
 const user = { balance : 12 };
 Nanostache('Your current balance is {{balance}}€', {
     balance: () => user.balance
@@ -55,7 +58,7 @@ Nanostache('Your current balance is {{balance}}€', {
 
 ##### Ternary conditions can be used :
 
-```
+```javascript
 Nanostache('Condition is {{test ? truthy : falsy}}', {
     test: 0
 });
@@ -63,7 +66,7 @@ Nanostache('Condition is {{test ? truthy : falsy}}', {
 ```
 
 ##### Or, with the help of functions :
-```
+```javascript
 Nanostache('{{name}} is {{age}} {{isAgePlural ? years : year}} old', {
     name: 'Brad Pitt',
     age: 55,
@@ -76,7 +79,7 @@ Nanostache('{{name}} is {{age}} {{isAgePlural ? years : year}} old', {
 
 ##### Complex example mixing functions and ternaries
  
-``` 
+```javascript
 const user = {
     name: 'James Bond',
     gender: 'male',

@@ -1,29 +1,8 @@
-
 /**
- * Cache of all regexed, stored by delimiters
+ * Delimiters regex.
+ * Override it to change templating delimiters.
  */
-const regexCache:{[key:string] : RegExp} = {};
-
-/**
- * Create a template detector regex from delimiters.
- * @param delimiters Needs by an array of two strings (opening and closing delimiters)
- */
-function getRegex ( delimiters:string[] ):RegExp
-{
-    // Create regex as string
-    const regexAsString = `${delimiters[0]}(.*?)${delimiters[1]}`;
-
-    // Create regex if needed and add it to regexes cache
-    if ( !(regexAsString in regexCache) )
-    {
-        // Create regex from delimiters
-        // We need to add a lazy ? to get closer delimiters
-        regexCache[ regexAsString ] = new RegExp( regexAsString, 'gm' );
-    }
-
-    // Return created regex
-    return regexCache[ regexAsString ];
-}
+export let delimitersRegex = new RegExp('{{(.*?)}}', 'gm');
 
 /**
  * Get processed value from values bag.
@@ -133,18 +112,10 @@ function matcher ( match, values )
  * });
  * -> 'Hello mr Bond. Your balance is 15€.'
  *
- * Delimiters can be changed if needed :
- * Nanostache('Hello #name#', { name: 'John Malkovich' }, ['#', '#']
- * -> 'Hello John Malkovich'
- *
  * @param template Template to process with delimiters and values.
  * @param values One level deep value bag containing properties and values as scalar or functions
- * @param delimiters Needs by an array of two strings (opening and closing delimiters)
  */
-export function Nanostache ( template, values, delimiters = ['{{', '}}'] )
+export function Nanostache ( template, values )
 {
-	return template.replace(
-	    getRegex( delimiters ),
-        (i, m) => matcher( m, values )
-    );
+	return template.replace( delimitersRegex, (i, m) => matcher( m, values ) );
 }
