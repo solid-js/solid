@@ -14,6 +14,7 @@
   "scripts": {
     "clean": "node scripts/clean",
     "build": "node scripts/build",
-    "dev": "node scripts/dev"
+    "dev": "node scripts/dev",
+    "bootstrap" : "lerna bootstrap"
   }
 }

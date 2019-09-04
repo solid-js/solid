@@ -1,7 +1,7 @@
 {
   "name": "@solid-js/nanostache",
   "description": "Ultra-lightweight Javascript template processor.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -23,5 +23,8 @@
   "bugs": {
     "url": "https://github.com/solid-js/solid/issues"
   },
-  "homepage": "https://github.com/solid-js/solid#readme"
+  "homepage": "https://github.com/solid-js/solid#readme",
+  "devDependencies": {
+    "@solid-js/cli" : "latest"
+  }
 }

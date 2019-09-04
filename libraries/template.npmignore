@@ -7,7 +7,9 @@ src/
 doc/
 
 # Do not send unit tests to NPM, devs just want to use the lib
-tests/
+tests.js
+dev.js
+tsconfig.json
 
 # Do not send first level files
 LICENSE
