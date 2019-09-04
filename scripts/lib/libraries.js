@@ -77,10 +77,8 @@ exports.buildLibrary = function ( libraryName, buildLevel = 1, progress )
     if ( libraryName.indexOf('node-') !== 0 && buildLevel >= 2 )
     {
         // Browse all .js and .mjs files in dirst folder
-        //const allJsFiles = glob.sync( path.join(distPath, '**/*.?(m)js') );
-
-        // TEMP -> Only js files for now ...
-        const allJsFiles = glob.sync( path.join(distPath, '**/*.js') );
+        const allJsFiles = glob.sync( path.join(distPath, '**/*.?(m)js') );
+        //const allJsFiles = glob.sync( path.join(distPath, '**/*.js') );
 
         // Browse all those files and compress every of them adding a .min in file name
         let output = [];

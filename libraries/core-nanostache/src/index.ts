@@ -57,7 +57,7 @@ function matcher ( match, values )
     // Try to detect ternaries
     const ternaryDelimiter0 = trimmed.indexOf('?');
     const ternaryDelimiter1 = trimmed.indexOf(':');
-    if ( ternaryDelimiter0 > 0 && ternaryDelimiter1 > 0 )
+    if ( ternaryDelimiter0 > 0 )
     {
         // Get value name from ternary ( valueName ? truePart : falsePart ) and then get processed value
         const ternaryValueName = trimmed.substring( 0, ternaryDelimiter0 ).trim();
@@ -65,9 +65,17 @@ function matcher ( match, values )
 
         // Execute condition and return trimmed truePart or trimmed falsePart
         return (
+            // Truthy
             ternaryCondition
             ? trimmed.substring( ternaryDelimiter0 + 1, ternaryDelimiter1 ).trim()
-            : trimmed.substring( ternaryDelimiter1 + 1, trimmed.length ).trim()
+            // Falsy
+            : (
+                // Show second par after semicolon if falsy
+                // Or show empty string if there is no semicolon
+                ternaryDelimiter1 > 0
+                ? trimmed.substring( ternaryDelimiter1 + 1, trimmed.length ).trim()
+                : ''
+            )
         );
     }
 
@@ -79,7 +87,7 @@ function matcher ( match, values )
  * Process a template as string with values.
  * Values needs to be a one level deep associative object ( key : value ).
  * Why do you need Nanostache since literal template strings are available in ES6+ ?
- * Nanostache can be useful when any templating is needed when the template is not coming
+ * Nanostache can be useful when any templating is needed when the template source is not coming
  * from javascript itself. For example, if you need to process a template from a file, or
  * any other kind of input.
  *
@@ -106,11 +114,13 @@ function matcher ( match, values )
  * Nanostache('{{name}} is {{age}} {{isAgePlural ? years : year}} old', {
  *    name: 'Brad Pitt',
  *    age: 55,
+ *    // Note that v here is the current value object
+ *    // So we can access dynamically to the age property
  *    isAgePlural: v => v.age > 1
  * });
  * -> 'Brad Pitt is 55 years old'
  *
- * Complex example mixing functions and ternary :
+ * Complex example mixing functions and ternaries :
  * const user = {
  *     name: 'James Bond',
  *     gender: 'male',
@@ -118,8 +128,8 @@ function matcher ( match, values )
  * }
  * Nanostache('Hello {{ isMale ? mr : mrs }} {{ getLastName }}. Your balance is {{ balance }}€.', {
  *   ...user,
- *   isMale: () => user.gender == 'male',
- *   getLastName: () => user.name.split(' ')[1]
+ *   isMale: v => v.gender == 'male',
+ *   getLastName: v => v.name.split(' ')[1]
  * });
  * -> 'Hello mr Bond. Your balance is 15€.'
  *

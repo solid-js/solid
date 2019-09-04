@@ -25,7 +25,13 @@ const foundLibraries = listLibraries( argumentLibrary, ( libraryName ) =>
 
         // Show minified results if not a node lib
         if ( Array.isArray(minifyResults) )
+        {
+            // Remove .min.js files from report
+            minifyResults = minifyResults.filter( line => line[0].indexOf('.min.mjs') > -1 );
+
+            // Show results as table
             table( minifyResults, ' ⟶   ', '    - ', '', [30] );
+        }
 
         // New line for next task
         newLine();
