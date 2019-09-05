@@ -4,7 +4,7 @@
 Only dependency is [Chalk](https://www.npmjs.com/package/chalk) for text transforms and colors.
 This lib does not handle user input, so we advice to use [Inquirer](https://www.npmjs.com/package/inquirer) to manage them.
 
-![Task error](doc/solid-cli-demo.gif)
+![Solid CLI Demo](https://github.com/solid-js/solid/raw/master/libraries/node-cli/doc/solid-cli-demo.gif)
 
 This gif is recorded from [demo.js](https://github.com/solid-js/solid/tree/master/libraries/node-cli/demo.js). 
 
