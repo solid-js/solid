@@ -236,7 +236,7 @@ export class Match
 	/**
 	 * Get all paths from glob. No File or Directory object returned, only strings.
 	 */
-	async paths ( handler : TPathHandler )
+	async paths ( handler : TPathHandler = r => r )
 	{
 		// Wait for paths
 		await this.checkPaths();

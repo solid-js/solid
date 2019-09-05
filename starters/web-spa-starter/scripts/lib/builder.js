@@ -1,28 +1,28 @@
 const Bundler = require('parcel-bundler');
 const Logger = require('@parcel/logger');
 const { typecheck } = require("./typechecker");
+const { M } = require('@solid-js/files');
 
 function checkTypescript ()
 {
     return new Promise( resolve =>
     {
-        Logger.progress(' Checking typescript ...');
+        Logger.clear();
+        Logger.progress('  Checking typescript ...');
 
         typecheck()
             .then(() =>
             {
                 Logger.stopSpinner();
-                Logger.clear();
-                // TODO : Better line cleaning cause sometime we see old errors
                 Logger.log(`👌  ${ Logger.chalk.green.bold('Typescript validated.') }` );
                 resolve();
             })
             .catch( error =>
             {
                 Logger.stopSpinner();
-                Logger.clear();
-                error.stdout && console.error( error.stdout );
-                error.stderr && console.error( error.stderr );
+                Logger.write(`❌  Typescript error :\n\r`)
+                error.stdout && Logger.write(error.stdout);
+                error.stderr && Logger.write(error.stderr);
                 resolve();
             });
     })
@@ -33,14 +33,14 @@ exports.run = async function ( production, noCheck )
     const { config } = require('../../config');
 
     const options = {
-        outDir : config.outDir,
-        outFile : config.outFile,
+        outDir : './dist',
+        //outFile : 'index.html',
         publicUrl : config.publicUrl,
         logLevel : config.logLevel,
         watch : !production,
         cache : true,
         cacheDir : '.cache',
-        contentHash : false,
+        //contentHash : false,
         minify : production,
         scopeHoist : production, // FIXME - Test it in dev with a certain flag ?
         target : 'browser',
@@ -49,8 +49,12 @@ exports.run = async function ( production, noCheck )
         detailedReport : production,
     };
 
+    const entries = await M( 'src/*.html' ).paths();
+
     // Create Parcel bundler
-    const bundler = new Bundler( config.entries, options );
+    const bundler = new Bundler( entries, options );
+
+    require('./bundler-manifest-plugin')( bundler );
 
     // Check before build on production
     if ( production && !noCheck )

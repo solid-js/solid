@@ -14,7 +14,9 @@
   },
   "dependencies": {
     "@solid-js/nanostache": "^0.2.1",
-    "@solid-js/signal": "^0.4.2",
+    "@solid-js/signal": "^0.4.2"
+  },
+  "WAITINGDEP": {
     "@solid-js/utils": "latest",
     "@solid-js/yadl": "latest",
     "@solid-js/web-utils": "latest",

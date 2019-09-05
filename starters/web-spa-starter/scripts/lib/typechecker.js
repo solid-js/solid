@@ -31,8 +31,8 @@ exports.typecheck = async () => new Promise( (resolve, reject) =>
         else
             reject({
                 code,
-                stdout: (process.stdout.read() || '').toString(),
-                stderr: (process.stderr.read() || '').toString()
+                stdout: (currentTscProcess.stdout.read() || '').toString(),
+                stderr: (currentTscProcess.stderr.read() || '').toString()
             });
     });
 });
