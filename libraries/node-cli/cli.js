@@ -62,9 +62,9 @@ exports.print = function ( content, bold = false, newLine = true )
 };
 
 /**
- *
- * @param spaces
- * @param content
+ * Offset a string by adding leading spaces
+ * @param spaces Total spaces to add
+ * @param content Content to offset
  * @returns {string}
  */
 exports.offset = function ( spaces, content )
@@ -83,10 +83,10 @@ exports.newLine = function ()
 /**
  * Halt with an error message.
  */
-exports.halt = function ( str = null, code = 1, redAndBold = false )
+exports.halt = function ( content = null, code = 1, redAndBold = false )
 {
-    str && consoleError( redAndBold ? chalk.red.bold( str ) : str );
-    str && consoleError('');
+    content && consoleError( redAndBold ? chalk.red.bold( content ) : content );
+    content && consoleError('');
     stds.exit( code );
 };
 

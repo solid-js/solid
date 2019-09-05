@@ -1,12 +1,19 @@
 {
   "name": "@solid-js/cli",
-  "version": "0.1.0",
-  "description": "Node CLI, shell and task runner utilities",
+  "version": "0.2.0",
+  "description": "Node CLI, shell, tests and task runner utilities",
   "main": "cli.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/solid-js/solid.git libraries/node-cli"
+  },
   "keywords": [
     "node",
     "cli",
     "print",
+    "test",
+    "unit",
+    "table",
     "log",
     "task",
     "runner",
@@ -14,6 +21,10 @@
   ],
   "author": "Alexis Bouhet",
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/solid-js/solid/issues"
+  },
+  "homepage": "https://github.com/solid-js/solid#readme",
   "dependencies": {
     "chalk": "^2.4.2"
   }
