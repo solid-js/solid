@@ -6,7 +6,20 @@ This lib does not handle user input, so we advice to use [Inquirer](https://www.
 
 ![Task error](doc/solid-cli-demo.gif)
 
-This gif is recorded from [demo.js](https://github.com/solid-js/solid/tree/master/libraries/node-cli/demo.js).
+This gif is recorded from [demo.js](https://github.com/solid-js/solid/tree/master/libraries/node-cli/demo.js). 
+
+
+### Installation
+
+To install Nanostache in your Node project :<br>
+```shell
+npm install @solid-js/cli
+```
+or
+```shell
+yarn add @solid-js/cli
+```
+
 
 ### Import
 
