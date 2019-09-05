@@ -126,8 +126,12 @@ exports.listLibraries = function ( filterLibrary = null, handler )
         )
             return;
 
-        // Do not continue if there is no package.json
-        if ( !fs.existsSync(path.join( libraryPath, 'package.json' )) ) return;
+        // Do not continue if there is no package.json or no src
+        if (
+            !fs.existsSync(path.join( libraryPath, 'package.json' ))
+            ||
+            !fs.existsSync(path.join( libraryPath, 'src' ))
+        ) return;
 
         // Count and call handler
         found ++;

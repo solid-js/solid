@@ -1,11 +1,8 @@
 import { FileEntity } from './FileEntity'
 import * as fs from "fs";
 import * as path from "path";
-import {TFunctionalTransformer, ScalarObject, ScalarValue} from "@solid-js/core-global";
-import {start} from "repl";
+import {TFunctionalTransformer, ScalarObject, ScalarValue} from "./Global";
 import {Stats} from "fs";
-import {type} from "os";
-import {log} from "util";
 
 
 // Default writable content are Scalar values ( everything that do not hold structure )
