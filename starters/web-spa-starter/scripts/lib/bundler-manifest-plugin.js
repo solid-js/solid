@@ -7,7 +7,7 @@
 const path = require('path');
 const fs = require('fs');
 
-module.exports = function (bundler) {
+exports.connect = function (bundler) {
 
     /**
      * Read the paths already registered within the manifest.json

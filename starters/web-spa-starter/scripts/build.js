@@ -1,9 +1,6 @@
-// Install node modules
 require('./lib/installer');
 const builder = require("./lib/builder");
-
-const { print, task, commands } = require('@solid-js/cli');
-//const { M, F, D } = require('@solid-js/files');
+const { print, commands } = require('@solid-js/cli');
 
 
 commands.add('dev', { noCheck:false }, async options =>

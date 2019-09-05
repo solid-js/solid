@@ -1,32 +1,7 @@
 const Bundler = require('parcel-bundler');
 const Logger = require('@parcel/logger');
-const { typecheck } = require("./typechecker");
 const { M } = require('@solid-js/files');
 
-function checkTypescript ()
-{
-    return new Promise( resolve =>
-    {
-        Logger.clear();
-        Logger.progress('  Checking typescript ...');
-
-        typecheck()
-            .then(() =>
-            {
-                Logger.stopSpinner();
-                Logger.log(`👌  ${ Logger.chalk.green.bold('Typescript validated.') }` );
-                resolve();
-            })
-            .catch( error =>
-            {
-                Logger.stopSpinner();
-                Logger.write(`❌  Typescript error :\n\r`)
-                error.stdout && Logger.write(error.stdout);
-                error.stderr && Logger.write(error.stderr);
-                resolve();
-            });
-    })
-}
 
 exports.run = async function ( production, noCheck )
 {
@@ -54,19 +29,11 @@ exports.run = async function ( production, noCheck )
     // Create Parcel bundler
     const bundler = new Bundler( entries, options );
 
-    require('./bundler-manifest-plugin')( bundler );
+    require('./bundler-manifest-plugin').connect( bundler );
+    require('./bundler-renamer-plugin').connect( bundler );
 
-    // Check before build on production
-    if ( production && !noCheck )
-        await checkTypescript();
-
-    // When a bundle is created
-    bundler.on('bundled', async ( bundle ) =>
-    {
-        // Check after build, only on dev mode
-        if ( !production && !noCheck )
-            await checkTypescript();
-    });
+    if (!noCheck)
+        await require('./bundler-typescript-checker-plugin').connect( bundler, production );
 
     // Start bundler
     const bundle = await bundler.bundle();
