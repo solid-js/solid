@@ -9,8 +9,8 @@ doc/
 # Do not send unit tests to NPM, devs just want to use the lib
 tests.js
 dev.js
+demo.js
 tsconfig.json
 
 # Do not send first level files
 LICENSE
-README.md

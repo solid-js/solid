@@ -1,5 +1,6 @@
 # Solid Node CLI utilities
 
+![Task error](doc/solid-cli-task-error.gif)
 
 Only dependency is [Chalk](https://www.npmjs.com/package/chalk) for text transforms and colors in CLI.
 This lib does not handle user input, so we advice to use [Inquirer](https://www.npmjs.com/package/inquirer) to manage them.
@@ -101,7 +102,7 @@ exec('command', {
 
 ### Task
 
-![Task success]('doc/solid-cli-task-success.gif')
+![Task success](./doc/solid-cli-task-success.gif)
 
 ```javascript
 // Create and show a new task on CLI
@@ -124,7 +125,7 @@ spriteTask.success(`Built ${ total } sprites`);
 
 ##### Task error
 
-![Task error]('doc/solid-cli-task-error.gif')
+![Task error](doc/solid-cli-task-error.gif)
 
 ```javascript
 task.error( errorObject, code = 0 );
@@ -157,17 +158,17 @@ Show a progress bar next to the current task. Width can be set, default
 width is 30px.
 
 ```javascript
-spriteTask.progress( 3 / 12 )
+spriteTask.progress( 3, 12 ) // 3 per 12 is 3 / 12
 // ✔ Building ██░░░░░░░░░░░░
 ```
 
 ```javascript
-spriteTask.progress( 3 / 3 )
+spriteTask.progress( 3, 3 ) // 3 per 3 is 1
 // ✔ Building ██████████████
 ```
 
 ```javascript
-spriteTask.progress( 0.1, 50 )
+spriteTask.progress( 1, 100, 50 ) // 1 per 100
 // ✔ Building █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 ```
 
@@ -178,18 +179,18 @@ Will show a nice table to the CLI
 
 ```javascript
 const data = [
-    ['File', 'Size', 'Is a module']
+    ['File', 'Size', 'Is a module'],
     ['test.js', 534, true],
     ['other-file.js', 1535, false],
     ['data.js', 42, false],
     ['test.js', 534, true]
 ];
-table( data );
+table( data, true ); // first line are labels
 ```
 
 ```javascript
 // With some display options
-table( data,  sep = ' | ', lineStart = ' ', lineEnd = '', minColumnWidths = [40, 20, 20]);
+table( data, firstLineAreLabels = false, sep = ' | ', lineStart = ' ', lineEnd = '', minColumnWidths = [40, 20, 20]);
 ```
 
 
