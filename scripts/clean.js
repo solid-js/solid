@@ -1,5 +1,4 @@
 const { task } = require('../libraries/node-cli/cli');
-const config = require('./lib/config');
 const rimraf = require('rimraf');
 
 const GlobSync = require('glob').sync;
@@ -8,7 +7,7 @@ const path = require('path');
 const librariesTask = task('Clean libraries');
 
 // Browse all dist folder from libraries
-GlobSync( path.join(config.paths.libraries, '*', 'dist') ).map(
+GlobSync( path.join('libraries', '*', 'dist') ).map(
     distPath => rimraf.sync(distPath)
 );
 

@@ -132,11 +132,17 @@ const result = execSync('command', 2);
 
 ```javascript
 // Setting custom options
-execSync('command', {
+execSync('command', 2, {
     cwd: 'otherDirectory/'
 });
 ```
 
+```javascript
+// Options argument can be collapsed onto stdlevel argument.
+execSync('command', {
+    stdio: 'my super specific stdio'
+});
+```
 
 ### Task
 

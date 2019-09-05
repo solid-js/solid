@@ -1,7 +1,6 @@
-import {buildLibrary, listLibraries} from "./lib/libraries";
-import path from "path";
-import config from "./lib/config";
-import {exec, halt, task} from "../libraries/node-cli/cli";
+const {buildLibrary, listLibraries} = require("./lib/libraries");
+const path = require("path");
+const {execSync, halt, task} = require("../libraries/node-cli/cli");
 
 
 if (!(2 in process.argv))
@@ -26,11 +25,10 @@ const foundLibraries = listLibraries( argumentLibrary, ( libraryName ) =>
         buildTask.error( e, 1 );
     }
 
-    const libraryPath = path.join( config.paths.libraries, libraryName );
+    const libraryPath = path.join( 'libraries', libraryName );
 
-    exec('node dev', {
-        cwd: libraryPath,
-        stdio: [0, 1, 2]
+    execSync('node dev', 3, {
+        cwd: libraryPath
     });
 });
 

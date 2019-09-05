@@ -1,5 +1,4 @@
 const { recursiveChangeExtension } = require("./utils");
-const { config } = require("./config");
 const { execSync } = require("../../libraries/node-cli/cli");
 
 const glob = require("glob");
@@ -9,8 +8,8 @@ const fs = require("fs");
 const filesize = require("filesize");
 
 // Paths to templates
-const tsconfigTemplatePath = path.join( config.paths.libraries, 'tsconfig.template.json' );
-const npmignoreTemplatePath = path.join( config.paths.libraries, 'template.npmignore' );
+const tsconfigTemplatePath = path.join( 'libraries', 'tsconfig.template.json' );
+const npmignoreTemplatePath = path.join( 'libraries', 'template.npmignore' );
 
 // All terser options @see https://github.com/terser/terser
 const terserOptions = [
@@ -40,7 +39,7 @@ exports.buildLibrary = function ( libraryName, buildLevel = 1, progress )
     progress && progress( 0, 1 );
 
     // Compute library typescript config path
-    const libraryPath = path.join( config.paths.libraries, libraryName );
+    const libraryPath = path.join( 'libraries', libraryName );
     const libraryConfigPath = path.join( libraryPath, 'tsconfig.json' );
     const distPath = path.join(libraryPath, 'dist');
 
@@ -113,7 +112,7 @@ exports.buildLibrary = function ( libraryName, buildLevel = 1, progress )
 exports.listLibraries = function ( filterLibrary = null, handler )
 {
     let found = 0;
-    glob.sync( path.join(config.paths.libraries, '*') ).map( libraryPath =>
+    glob.sync( path.join('libraries', '*') ).map( libraryPath =>
     {
         // Get current library name from path
         const libraryName = path.basename( libraryPath );
