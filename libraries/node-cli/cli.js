@@ -496,3 +496,102 @@ exports.test = async function ( name, testHandler )
 
     else await runTest( name, testHandler );
 };
+
+
+// ----------------------------------------------------------------------------- UNIT TESTING
+
+// All parsed args and list of commands
+let parsedArgs;
+let commandsList = {};
+
+// Custom CommandError to be able to detect commands not found
+class CommandError extends Error { }
+
+exports.commands = {
+
+    /**
+     * Register a command
+     * @param name Name of the command, lowercase
+     * @param optionsOrHandler Default options of the command. Can be ignored.
+     * @param handler Handler called with options as first argument.
+     */
+    add ( name, optionsOrHandler, handler = optionsOrHandler )
+    {
+        commandsList[name.toLowerCase()] = {
+            options: optionsOrHandler,
+            handler
+        };
+    },
+
+    /**
+     * Get registered commands list
+     */
+    list ()
+    {
+        return commandsList;
+    },
+
+    /**
+     * Start parsing arguments and run command with options
+     * @param defaultHandler Called when command has not been found.
+     * @returns {Promise<void>}
+     */
+    async start ( defaultHandler )
+    {
+        // Get arguments parsed thanks to mri
+        const mri = require('mri');
+        const argv = process.argv.slice(2);
+        parsedArgs = mri( argv );
+
+        // If we have a command to start
+        if ( parsedArgs._.length > 0 )
+        {
+            // Get command name
+            const commandName = parsedArgs._[0].toLowerCase();
+
+            // Remove command name from _ args
+            parsedArgs._.shift();
+            if (parsedArgs._.length ===  0)
+                delete parsedArgs._;
+
+            // Try to run
+            try
+            {
+                await this.run( commandName, parsedArgs);
+            }
+            catch ( e )
+            {
+                // Start default handler if command has not been found
+                if (e instanceof CommandError && defaultHandler)
+                    await defaultHandler( commandName );
+            }
+        }
+
+        // No command found, call default handler with empty command as argument
+        else if ( defaultHandler )
+            await defaultHandler( '' );
+    },
+
+    /**
+     * Run any registered command
+     * @param commandName Lowercase command name.
+     * @param options Options to override from command's default options
+     * @returns {Promise<*>}
+     */
+    async run ( commandName, options )
+    {
+        // Throw if command does not exists
+        if ( !(commandName in commandsList) )
+            throw new CommandError('Command not found');
+
+        // Get command
+        const command = commandsList[ commandName ];
+
+        // Execute command with options on top of default options
+        return await command.handler({
+            ...command.options,
+            ...options
+        });
+    }
+
+};

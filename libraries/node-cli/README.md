@@ -1,7 +1,7 @@
 # Solid Node CLI utilities
 
 `@solid-js/cli` is a very simple node library to show small running tasks and messages in any terminal. 
-Only dependency is [Chalk](https://www.npmjs.com/package/chalk) for text transforms and colors.
+Only dependencies are [Chalk](https://www.npmjs.com/package/chalk) for text transforms and [mri](https://www.npmjs.com/package/mri) for argument parsing.
 This lib does not handle user input, so we advice to use [Inquirer](https://www.npmjs.com/package/inquirer) to manage them.
 
 ![Solid CLI Demo](https://github.com/solid-js/solid/raw/master/libraries/node-cli/doc/solid-cli-demo.gif)
@@ -260,4 +260,46 @@ test("Another test", it =>
 {
     // ...
 })
+```
+
+
+### Commands from argv
+
+```javascript
+const { commands } = require('./cli');
+
+// Use commands.add to register a command for CLI
+
+// $ script dev -> { port: 4000, noCheck: false }
+// $ script dev --port 2000 -> { port: 2000, noCheck: false }
+// $ script dev --noCheck -> { port: 4000, noCheck: true }
+commands.add('dev', { port: 4000, noCheck: false }, (options) =>
+{
+    // Do dev stuff ...
+});
+
+// $ script production
+commands.add('production', () =>
+{
+    // Do production stuff ...
+});
+
+// $ script help
+commands.add('help', () =>
+{
+    // Show help to user ...
+});
+
+// Start parsing and run matching command
+commands.start( command =>
+{
+    // $ script
+    // command === '' if no command is given
+    
+    // $ script badcommandname
+    // command === 'badcommandname' if command has been given but not found
+    
+    // Show help to lost users
+    commands.run('help');
+});
 ```

@@ -1,6 +1,6 @@
 {
   "name": "@solid-js/cli",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Node CLI, shell, tests and task runner utilities",
   "main": "cli.js",
   "repository": {
@@ -25,8 +25,9 @@
   "bugs": {
     "url": "https://github.com/solid-js/solid/issues"
   },
-  "homepage": "https://github.com/solid-js/solid#readme",
+  "homepage": "https://github.com/solid-js/solid/tree/master/libraries/node-cli",
   "dependencies": {
-    "chalk": "^2.4.2"
+    "chalk": "^2.4.2",
+    "mri": "^1.1.4"
   }
 }

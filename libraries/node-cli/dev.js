@@ -1,4 +1,22 @@
-const {banner} = require('./cli');
+const { commands } = require('./cli');
 
 
-banner('This is a big title');
+commands.add('dev', { port: 4000, noCheck: false }, (options) =>
+{
+    console.log('DEV', options);
+});
+
+commands.add('production', () =>
+{
+    console.log('PRODUCTION');
+});
+
+commands.add('help', () =>
+{
+    console.log('HELP');
+});
+
+commands.start( command =>
+{
+    commands.run('help')
+});
