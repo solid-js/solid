@@ -1,11 +1,11 @@
 {
   "name": "@solid-js/cli",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Node CLI, shell, tests and task runner utilities",
   "main": "cli.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/solid-js/solid.git",
+    "url": "git+https://github.com/solid-js/solid.git",
     "directory": "libraries/node-cli"
   },
   "keywords": [

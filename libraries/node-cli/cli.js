@@ -40,13 +40,13 @@ exports.hookStandards = function ( stdout = process.stdout, stderr = process.std
 // ----------------------------------------------------------------------------- SMALL UTILITIES
 
 /**
- * Create a specified number of space in a string
+ * Create a specified number of char in a string. Default are spaces.
  */
-exports.createSpaces = function ( totalSpaces )
+exports.repeat = function (total, char = ' ' )
 {
-    let spaces = '';
-    for (let i = 0; i < totalSpaces; i ++) spaces += ' ';
-    return spaces
+    let buffer = '';
+    for (let i = 0; i < total; i ++) buffer += char;
+    return buffer
 };
 
 /**
@@ -69,7 +69,7 @@ exports.print = function ( content, bold = false, newLine = true )
  */
 exports.offset = function ( spaces, content )
 {
-    return exports.createSpaces( spaces ) + content;
+    return exports.repeat( spaces ) + content;
 };
 
 /**
@@ -126,6 +126,22 @@ exports.exec = function ( command, stdLevel = 0, options )
 // ----------------------------------------------------------------------------- CLI UTILITIES
 
 /**
+ * Show a big old banner
+ * @param title
+ * @param width
+ * @param margin
+ * @param padding
+ */
+exports.banner = function ( title, width = 78, margin = 1, padding = 2 )
+{
+    const marginBuffer = exports.repeat( margin );
+    const line = marginBuffer + chalk.bgWhite( exports.repeat( width ) );
+    consoleLog( line );
+    consoleLog( marginBuffer + chalk.bgWhite.black( exports.repeat( padding ) + title + exports.repeat( width - padding - title.length )) );
+    consoleLog( line );
+};
+
+/**
  * Create a new task line into the standard output.
  * Returned object will allow to change current task status.
  *
@@ -159,16 +175,17 @@ exports.exec = function ( command, stdLevel = 0, options )
  * buildTask.percentage( 10, 100, 50 ) to set bar width
  *
  * @param message Task's message. Mandatory.
+ * @param icon Specify custom icon, default is ➤
  * @param dots Change trailing dots if needed.
  * @returns An object to allow changes of task's state. See function commentaries.
  */
-exports.task = function ( message, dots = ' ...' )
+exports.task = function ( message, icon = '➤', dots = ' ...' )
 {
     // Function to build a state message
     const buildState = ( state, bold, c = message ) => ` ${state}  ${bold ? chalk.bold(c) : c}`;
 
     // Build and store working to know where to print after
-    const workingMessage = buildState(`➤`, true);
+    const workingMessage = buildState(icon, true);
 
     // Show task line starting with an arrow and with trailing dots
     stds.out.write( workingMessage + dots );
@@ -186,7 +203,7 @@ exports.task = function ( message, dots = ' ...' )
             {
                 // Clear all line
                 stds.out.cursorTo( 0 );
-                stds.out.write( exports.createSpaces(workingMessage.length + overflowToClear) );
+                stds.out.write( exports.repeat(workingMessage.length + overflowToClear) );
             }
 
             // Build new state
@@ -336,7 +353,7 @@ exports.table = function ( lines, firstLineAreLabels = false, sep = " | ", lineS
             );
 
             // Print column + spaces
-            stds.out.write( columnToPrint + exports.createSpaces( columnWidth - stringColumn.length ) );
+            stds.out.write( columnToPrint + exports.repeat( columnWidth - stringColumn.length ) );
 
             // Write separator if not last column
             isLastColumn || stds.out.write( sep );

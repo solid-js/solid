@@ -25,7 +25,7 @@ export declare interface Task
 }
 
 
-export declare function task ( name:string, dots?:string ):Task
+export declare function task ( name:string, icon?:string, dots?:string ):Task
 
 
 export declare function table ( lines:any[][], firstLineAreLabels?:false, sep?:string, lineStart?:string, lineEnd?:string, minColumnWidths?:number[] ):never

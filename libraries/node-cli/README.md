@@ -27,6 +27,14 @@ yarn add @solid-js/cli
 const { createSpaces, print, offset, ... } = require('@solid-js/cli');
 ```
 
+### Banner
+
+Show a big old ASCII banner
+
+```javascript
+banner(title, width = 78, margin = 1, padding = 2);
+```
+
 
 ### Print
 
