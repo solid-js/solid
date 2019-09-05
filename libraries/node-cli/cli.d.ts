@@ -12,7 +12,9 @@ export declare function newLine ():never
 export declare function halt ( content:string, code?:number, redAndBold?:boolean ):never
 
 // TODO : Options type ?
-export declare function exec ( command:string, options?:{} ):string|null
+
+export declare async function exec ( command:string, stdLevel?:number, options?:{} ):Promise<string,string>
+export declare function execSync ( command:string, stdLevel?:number, options?:{} ):string|null
 
 
 export declare interface Task
@@ -38,3 +40,16 @@ export declare type ItHandler = ( assert : AssertHandler ) => void;
 export declare type TestHandler = ( it : ItHandler ) => void;
 
 export declare async function test ( name:string, testHandler:TestHandler )
+
+// TODO -> From Globals !
+export declare type AnyHandler = (...rest) => any|void;
+
+export declare interface ICommands
+{
+    add ( name:string, optionsOrHandler:{}|AnyHandler, handler?:AnyHandler )
+    list ()
+    start (defaultHandler?: AnyHandler):Promise
+    run (name:string, options:{}):Promise
+}
+
+export declare const commands:ICommands;

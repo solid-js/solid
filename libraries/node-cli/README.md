@@ -77,7 +77,8 @@ halt('This is a pretty big error')
 Run any shell command synchronously.
 
 ```javascript
-const result = exec('ls -la');
+// Sync version
+const result = execSync('ls -la');
 ```
 
 Wrap in try catch to get errors.
@@ -86,7 +87,7 @@ Wrap in try catch to get errors.
 let result;
 try
 {
-    result = exec('./custom-command.sh');
+    result = execSync('./custom-command.sh');
 }
 catch ( e )
 {
@@ -94,6 +95,19 @@ catch ( e )
 }
 print( result );
 ```
+
+```javascript
+// Async version
+try
+{
+    const stdout = await exec('ls -la');
+}
+catch ( e )
+{
+    // e === stderr
+}
+```
+
 
 By default, `stdout` and `stderr` are hidden. To change this behavior,
 Set stdLevel to :
@@ -107,18 +121,18 @@ Know more about options :
 - see [NodeJS stdio doc](https://nodejs.org/api/child_process.html#child_process_options_stdio)
 
 ```javascript
-exec('command');
+execSync('command');
 // No stdout and stderr shown, use return and try / catch to get them
 ```
 
 ```javascript
-const result = exec('command', 2);
+const result = execSync('command', 2);
 // Only stderr are shown. Stdin is in result
 ```
 
 ```javascript
 // Setting custom options
-exec('command', {
+execSync('command', {
     cwd: 'otherDirectory/'
 });
 ```

@@ -20,7 +20,7 @@ type TJSONContentArgument = TJSONWritableContent | TFunctionalTransformer <TJSON
  * @param cwd
  * @constructor
  */
-export function F$ ( filePath:string, cwd?:string ):File
+export function F ( filePath:string, cwd?:string ):File
 {
 	cwd = cwd || process.cwd();
 	const fullPath = path.join( cwd, filePath );

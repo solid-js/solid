@@ -1,6 +1,6 @@
 const { recursiveChangeExtension } = require("./utils");
 const { config } = require("./config");
-const { exec } = require("../../libraries/node-cli/cli");
+const { execSync } = require("../../libraries/node-cli/cli");
 
 const glob = require("glob");
 const rimraf = require("rimraf");
@@ -56,7 +56,7 @@ exports.buildLibrary = function ( libraryName, buildLevel = 1, progress )
     {
         // Execute typescript to compile modules as esnext (with import statements)
         // Do not add declaration files (.d.ts)
-        exec(`tsc -p ${libraryConfigPath} --declaration false --module esnext`);
+        execSync(`tsc -p ${libraryConfigPath} --declaration false --module esnext`);
 
         // Rename every js file to mjs file
         recursiveChangeExtension( distPath, '.js', '.mjs' );
@@ -67,7 +67,7 @@ exports.buildLibrary = function ( libraryName, buildLevel = 1, progress )
 
     // Execute typescript to compile modules as commonjs (with require statements)
     // Do add declaration files (.d.ts) this time
-    exec(`tsc -p ${libraryConfigPath} --declaration true --module commonjs`);
+    execSync(`tsc -p ${libraryConfigPath} --declaration true --module commonjs`);
 
     // Update percentage
     progress && progress( buildLevel >= 1 ? 2 : 1, buildLevel + 1);
@@ -90,7 +90,7 @@ exports.buildLibrary = function ( libraryName, buildLevel = 1, progress )
                 .replace('.js', '.min.js');
 
             // Compress this file with terser and options
-            exec(`node_modules/.bin/terser ${terserOptions.join(' ')} -o ${destinationFileName} -- ${fileName}`);
+            execSync(`node_modules/.bin/terser ${terserOptions.join(' ')} -o ${destinationFileName} -- ${fileName}`);
 
             // Update percentage for each file
             progress && progress( 2 + ((i+1) / allJsFiles.length), buildLevel + 1 );

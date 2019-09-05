@@ -27,7 +27,7 @@ type TDirectoryHandler 	= (entity:Directory) 	=> any
  * @param cwd Root directory to search from. Default is process.cwd()
  * @param filter Filter function to filter some files at each updates. Useful to simplify glob pattern.
  */
-export function M$ ( pattern:string, cwd?:string, filter?:IFilter ):Match
+export function M ( pattern:string, cwd?:string, filter?:IFilter ):Match
 {
 	return new Match( pattern, cwd, filter );
 }

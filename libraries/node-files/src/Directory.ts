@@ -1,5 +1,19 @@
 import { FileEntity } from './FileEntity'
+import * as path from "path";
 
+
+/**
+ * TODO DOC
+ * @param directoryPath
+ * @param cwd
+ * @constructor
+ */
+export function D ( directoryPath:string, cwd?:string ):Directory
+{
+	cwd = cwd || process.cwd();
+	const fullPath = path.join( cwd, directoryPath );
+	return new Directory( fullPath );
+}
 
 
 

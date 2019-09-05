@@ -1,0 +1,23 @@
+{
+  "compilerOptions" : {
+    "jsx": "react",
+    "jsxFactory" : "h",
+    "lib": ["dom", "esnext"],
+
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "paths" : {
+      //"@solid-js/global/*": ["../core-utils/global/*"],
+      //"@solid-js/signal/*": ["../core-signal/dist/*"],
+      //"@solid-js/utils/*": ["../core-utils/dist/*"]
+    }
+  },
+  "compileOnSave": false,
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
