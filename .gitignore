@@ -5,9 +5,7 @@
 
 node_modules
 
-libraries/**/*.js
-libraries/**/*.mjs
-libraries/**/*.d.ts
+libraries/*/dist/
 
 # Deplyed tsconfig and npmignore files from templates
 libraries/*/tsconfig.json

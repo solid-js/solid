@@ -1,9 +1,12 @@
 # Solid Node CLI utilities
 
-![Task error](doc/solid-cli-task-error.gif)
-
+`@solid-js/cli` is a very simple node library to show small running tasks and messages in CLI. 
 Only dependency is [Chalk](https://www.npmjs.com/package/chalk) for text transforms and colors in CLI.
 This lib does not handle user input, so we advice to use [Inquirer](https://www.npmjs.com/package/inquirer) to manage them.
+
+![Task error](doc/solid-cli-demo.gif)
+
+This gif is recorded from [demo.js](https://github.com/solid-js/solid/tree/master/libraries/node-cli/demo.js).
 
 ### Import
 
@@ -102,8 +105,6 @@ exec('command', {
 
 ### Task
 
-![Task success](./doc/solid-cli-task-success.gif)
-
 ```javascript
 // Create and show a new task on CLI
 const spriteTask = task('Building sprites');
@@ -124,8 +125,6 @@ spriteTask.success(`Built ${ total } sprites`);
 
 
 ##### Task error
-
-![Task error](doc/solid-cli-task-error.gif)
 
 ```javascript
 task.error( errorObject, code = 0 );
