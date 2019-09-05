@@ -1,7 +1,7 @@
 # Solid Node CLI utilities
 
-`@solid-js/cli` is a very simple node library to show small running tasks and messages in CLI. 
-Only dependency is [Chalk](https://www.npmjs.com/package/chalk) for text transforms and colors in CLI.
+`@solid-js/cli` is a very simple node library to show small running tasks and messages in any terminal. 
+Only dependency is [Chalk](https://www.npmjs.com/package/chalk) for text transforms and colors.
 This lib does not handle user input, so we advice to use [Inquirer](https://www.npmjs.com/package/inquirer) to manage them.
 
 ![Task error](doc/solid-cli-demo.gif)
