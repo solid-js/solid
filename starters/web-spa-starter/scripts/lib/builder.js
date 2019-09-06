@@ -1,10 +1,13 @@
 const Bundler = require('parcel-bundler');
 const Logger = require('@parcel/logger');
 const { M } = require('@solid-js/files');
+const Structurize = require('parcel-plugin-structurize');
 
+// https://github.com/parcel-bundler/awesome-parcel#plugins
 
-exports.run = async function ( production, noCheck )
+exports.run = async function ( noCheck )
 {
+    const isProduction = process.env.NODE_ENV === 'production';
     const { config } = require('../../config');
 
     const options = {
@@ -12,28 +15,29 @@ exports.run = async function ( production, noCheck )
         //outFile : 'index.html',
         publicUrl : config.publicUrl,
         logLevel : config.logLevel,
-        watch : !production,
         cache : true,
         cacheDir : '.cache',
-        //contentHash : false,
-        minify : production,
-        scopeHoist : production, // FIXME - Test it in dev with a certain flag ?
+        contentHash : isProduction,
+        minify : isProduction,
+        scopeHoist : isProduction, // FIXME - Test it in dev with a certain flag ?
         target : 'browser',
-        hmr : !production,
-        sourceMaps : !production,
-        detailedReport : production,
+        watch : !isProduction,
+        hmr : !isProduction,
+        sourceMaps : !isProduction,
+        detailedReport : isProduction,
     };
 
+    // Get html entries
     const entries = await M( 'src/*.html' ).paths();
 
     // Create Parcel bundler
     const bundler = new Bundler( entries, options );
 
+    // Create manifest file
     require('./bundler-manifest-plugin').connect( bundler );
-    require('./bundler-renamer-plugin').connect( bundler );
 
-    if (!noCheck)
-        await require('./bundler-typescript-checker-plugin').connect( bundler, production );
+    // Check typescript if not disabled
+    if (!noCheck) await require('./bundler-typescript-checker-plugin').connect( bundler );
 
     // Start bundler
     const bundle = await bundler.bundle();

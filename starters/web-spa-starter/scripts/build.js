@@ -6,14 +6,16 @@ const { print, commands } = require('@solid-js/cli');
 commands.add('dev', { noCheck:false }, async options =>
 {
     print('🤖  Development mode');
-    await builder.run( false, options.noCheck );
+    process.env.NODE_ENV = 'development';
+    await builder.run( options.noCheck );
 });
 
 
 commands.add('production', { noCheck:false }, async options =>
 {
     print('🚀  Building for production');
-    await builder.run( true, options.noCheck );
+    process.env.NODE_ENV = 'production';
+    await builder.run( options.noCheck );
 });
 
 

@@ -1,5 +1,5 @@
 import {Stats} from "fs";
-
+import * as rimraf from "rimraf/rimraf";
 
 
 export class FileEntity
@@ -22,10 +22,14 @@ export class FileEntity
 	 * If this file or directory exists in the file system.
 	 * Can be false when creating a new file for example.
 	 */
-	isReal () { return this.exists() }
 	exists ()
 	{
 
+	}
+
+	isReal ()
+	{
+		// TODO : exists and not a symlink
 	}
 
 	isSymLink ()
@@ -36,8 +40,6 @@ export class FileEntity
 	/**
 	 * If this is a directory.
 	 */
-	isDir () { return this.isDirectory() }
-	isFolder () { return this.isDirectory() }
 	isDirectory ()
 	{
 
@@ -54,19 +56,32 @@ export class FileEntity
 
 	// ------------------------------------------------------------------------- FILE SYSTEM ACTIONS
 
-	copy ()
+	async copy ( to:string )
 	{
 
 	}
 
-	move ()
+	async move ( to:string )
 	{
 
 	}
 
+	async link ( to:string )
+	{
+
+	}
+
+	/**
+	 * Delete this file or folder.
+	 */
+	async delete ()
+	{
+		return new Promise( resolve => rimraf( this._path, null, resolve ) );
+	}
+
+	/**
+	 * Delete Alias
+	 * @see delete()
+	 */
 	remove () { this.delete() }
-	delete ()
-	{
-
-	}
 }

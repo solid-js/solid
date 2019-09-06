@@ -201,7 +201,7 @@ export class File extends FileEntity
 
 		// Read data from file and return it, no chaining here
 		if ( type === 'undefined' )
-			return JSON.parse( this._data )
+			return JSON.parse( this._data );
 
 		else if ( type === 'function' )
 		{
@@ -336,6 +336,8 @@ export class File extends FileEntity
 	 */
 	template ( values:ScalarObject, delimiters = ["{{", "}}"] )
 	{
+		// TODO : Use Nanostache
+
 		// Replace all detected mustache fields
 		this._data = this._data.replace(
 			new RegExp(`${delimiters[0]}(.*?)${delimiters[1]}`, 'gm'),
@@ -343,6 +345,8 @@ export class File extends FileEntity
 		);
 		return this;
 	}
+
+	// TODO : YAML
 
 	// ------------------------------------------------------------------------- DESTRUCT
 

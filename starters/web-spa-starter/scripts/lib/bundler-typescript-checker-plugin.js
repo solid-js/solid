@@ -34,12 +34,11 @@ async function checkTypescript ()
             // Errors detected
             else
             {
-                const stdout = (currentTscProcess.stdout.read() || '').toString();
-                const stderr = (currentTscProcess.stderr.read() || '').toString();
-
                 Logger.stopSpinner();
                 Logger.write(`❌  Typescript error :\n\r`);
 
+                const stdout = (currentTscProcess.stdout.read() || '').toString();
+                const stderr = (currentTscProcess.stderr.read() || '').toString();
                 stdout && Logger.write(stdout);
                 stderr && Logger.write(stderr);
             }
@@ -50,17 +49,24 @@ async function checkTypescript ()
 }
 
 
-exports.connect = async function ( bundler, production )
+exports.connect = async function ( bundler )
 {
+    const isProduction = process.env.NODE_ENV === 'production';
+
     // Check before build on production
-    if ( production )
+    if ( isProduction )
+    {
         await checkTypescript();
+        console.log('');
+    }
 
     // When a bundle is created
     bundler.on('bundled', async ( bundle ) =>
     {
         // Check after build, only on dev mode
-        if ( !production )
+        if ( !isProduction )
             await checkTypescript();
+        else
+            console.log('');
     });
 };

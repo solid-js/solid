@@ -235,11 +235,15 @@ export class Match
 
 	/**
 	 * Get all paths from glob. No File or Directory object returned, only strings.
+	 * Will return all paths as promise if no handler is given.
 	 */
-	async paths ( handler : TPathHandler = r => r )
+	async paths ( handler : TPathHandler )
 	{
 		// Wait for paths
 		await this.checkPaths();
+
+		// Return paths as promise if no handler is given
+		if (!handler) return this._paths;
 
 		// Call handler on every path
 		const resultsFromHandler = this._paths.map( handler );
@@ -289,7 +293,6 @@ export class Match
 	 * @param handler First argument will be a Directory object
 	 * @throws Will throw an error if paths are not updated yet.
 	 */
-	async folders ( handler: TDirectoryHandler ) { return this.directories( handler ) }
 	async directories ( handler : TDirectoryHandler )
 	{
 		// Wait file entities
@@ -304,6 +307,11 @@ export class Match
 		return await this.patchReturnedPromises( resultsFromHandler );
 	}
 
+	/**
+	 * Directories alias
+	 * @see directories();
+	 */
+	async folders ( handler: TDirectoryHandler ) { return this.directories( handler ) }
 
 	// ------------------------------------------------------------------------- HASH
 
@@ -341,5 +349,15 @@ export class Match
 		const hash = crypto.createHash('sha256');
 		hash.update( fileDescriptors.join('_') );
 		return hash.digest('hex');
+	}
+
+	// ------------------------------------------------------------------------- ZIP
+
+	/**
+	 * TODO
+	 */
+	async zip ()
+	{
+
 	}
 }

@@ -5,12 +5,27 @@
   "main": "index.js",
   "author": "Alexis Bouhet",
   "license": "MIT",
+  "parcel-plugin-structurize" : {
+    "scripts": {
+      "match": "*.{js,js.map}",
+      "folder": "js"
+    },
+    "styles": {
+      "match": "*.{css,css.map}",
+      "folder": "css"
+    },
+    "assets": {
+      "match": "*.{png,svg,jpg,jpg2,jpeg,gif,bmp,webm}",
+      "folder": "assets"
+    }
+  },
   "devDependencies": {
     "@solid-js/cli": "^0.4.0",
     "@solid-js/files": "^0.1.4",
     "parcel-bundler": "^1.12.3",
     "typescript": "^3.6.2",
-    "yargs": "^14.0.0"
+    "yargs": "^14.0.0",
+    "parcel-plugin-structurize": "^1.1.5"
   },
   "dependencies": {
     "@solid-js/nanostache": "^0.2.1",
