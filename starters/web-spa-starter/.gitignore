@@ -2,13 +2,3 @@ node_modules
 .cache
 
 dist/
-#dist/*.png
-#dist/*.jpg
-#dist/*.gif
-#dist/*.woff
-#dist/*.woff2
-#dist/*.eot
-#dist/*.ttf
-#dist/*.otf
-#dist/*.js
-#dist/*.json

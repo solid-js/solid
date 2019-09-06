@@ -53,23 +53,8 @@ export class File extends FileEntity
 	 */
 	encoding:string;
 
+
 	// ------------------------------------------------------------------------- UPDATES
-
-	/**
-	 * Update file stats ( size, last modified date, stuff like that ).
-	 * Stats will be available in File.stats or through specific methods ( like lastModified() )
-	 */
-	async updateStats ():Promise<Stats>
-	{
-		try
-		{
-			this._stats = await fs.promises.stat( this.path );
-		}
-		// Fail silently here
-		catch (e) {  }
-
-		return this._stats;
-	}
 
 	/**
 	 * Update file data. Will read data on drive and put them as string in File.data
@@ -85,16 +70,6 @@ export class File extends FileEntity
 		catch (e) {  }
 
 		return this._data;
-	}
-
-	// ------------------------------------------------------------------------- CHECKS
-
-	/**
-	 * Check stats availability and request file stats from disk if needed.
-	 */
-	protected async checkStats ()
-	{
-		if (!this._stats) await this.updateStats();
 	}
 
 	/**

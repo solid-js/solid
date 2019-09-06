@@ -356,7 +356,7 @@ export class Match
 	/**
 	 * TODO
 	 */
-	async zip ()
+	async zip ( to:string )
 	{
 
 	}
