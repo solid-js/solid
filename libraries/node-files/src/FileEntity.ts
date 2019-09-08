@@ -1,16 +1,20 @@
-import * as rimraf from "rimraf";
+import {default as rimraf} from "rimraf";
 import * as ncp from "ncp";
 import * as fs from "fs";
 import * as nodePath from "path";
 
 export class FileEntity
 {
-	// Stats of current file entity
-	protected _stats:fs.Stats;
-
 	// If this file entity exists
 	// Got from stats
 	protected _exists = false;
+
+	/**
+	 * File stats ( size, last modified date, stuff like that ).
+	 * Call await File.updateStats() to update stats from disk.
+	 */
+	protected _stats			:fs.Stats;
+	get stats ():fs.Stats { return this._stats; }
 
 	/**
 	 * Path pointing to the file or directory
@@ -52,11 +56,6 @@ export class FileEntity
 
 	// ------------------------------------------------------------------------- CONSTRUCT
 
-	/**
-	 *
-	 * @param path
-	 * @param stats
-	 */
 	constructor ( path:string, stats?:fs.Stats )
 	{
 		this._path = path;
@@ -110,7 +109,7 @@ export class FileEntity
 		if (!this._stats) await this.updateStats();
 	}
 
-	// ------------------------------------------------------------------------- FILE SYSTEM STATES
+	// ------------------------------------------------------------------------- STATS
 
 	/**
 	 * If this file or directory exists in the file system.
@@ -158,7 +157,7 @@ export class FileEntity
 		return this._stats.isFile()
 	}
 
-	// ------------------------------------------------------------------------- FILE SYSTEM ACTIONS
+	// ------------------------------------------------------------------------- FS ACTIONS
 
 	/**
 	 * Copy this FileEntity recursively
@@ -199,7 +198,7 @@ export class FileEntity
 	 */
 	async delete ()
 	{
-		return new Promise( resolve => rimraf( this._path, null, resolve ) );
+		return new Promise( resolve => rimraf( this._path, resolve ) );
 	}
 
 	/**

@@ -2,7 +2,6 @@ import { FileEntity } from './FileEntity'
 import * as fs from "fs";
 import * as path from "path";
 import {TFunctionalTransformer, ScalarObject, ScalarValue} from "./Global";
-import {Stats} from "fs";
 
 
 // Default writable content are Scalar values ( everything that do not hold structure )
@@ -10,9 +9,16 @@ import {Stats} from "fs";
 type TRawWritableContent = ScalarValue | null
 type TRawContentArgument = TRawWritableContent | TFunctionalTransformer <TRawWritableContent>
 
-// JSON writable are Scalar values but also objects or arrays
-type TJSONWritableContent = ScalarValue | object | any[]
-type TJSONContentArgument = TJSONWritableContent | TFunctionalTransformer <TJSONWritableContent>
+// Structural contents are Scalar values but also objects or arrays
+type TStructuralWritableContent = ScalarValue | object | any[]
+type TStructuralContentArgument = TStructuralWritableContent | TFunctionalTransformer <TStructuralWritableContent>
+
+// Quick helper to create YAML parser which keep comments and structure
+const YAML = (raw) =>
+{
+	const YAWN = require('yawn-yaml/cjs');
+	return new YAWN( raw );
+};
 
 /**
  * TODO DOC
@@ -30,13 +36,6 @@ export function F ( filePath:string, cwd?:string ):File
 
 export class File extends FileEntity
 {
-	/**
-	 * File stats ( size, last modified date, stuff like that ).
-	 * Call await File.updateStats() to update stats from disk.
-	 */
-	protected _stats			:fs.Stats;
-	get stats ():Stats { return this._stats; }
-
 	/**
 	 * File content as string.
 	 * Call await File.updateData() to update content from disk.
@@ -57,27 +56,71 @@ export class File extends FileEntity
 	// ------------------------------------------------------------------------- UPDATES
 
 	/**
-	 * Update file data. Will read data on drive and put them as string in File.data
+	 * Update file data. Will read data on drive and put them as string in File.data.
+     * Will fail silently and get empty string if file can't be accessed.
 	 */
 	async updateData ():Promise<TRawWritableContent>
 	{
-		try
-		{
-			const buffer = await fs.promises.readFile(  this.path, { encoding: this.encoding } );
-			this._data = buffer.toString();
+		try {
+			this._data = await fs.promises.readFile( this._path, { encoding: this.encoding } ).toString();
 		}
-		// Fail silently here
-		catch (e) {  }
+		catch (e) {
+		    this._data = '';
+        }
 
 		return this._data;
 	}
 
-	/**
-	 * Check data availability and request file data from disk if needed.
-	 */
-	protected async checkData ()
+    /**
+     * Update file data synchronously. Prefer usage of await updateData().
+     * Will fail silently and get empty string if file can't be accessed.
+     */
+	updateDataSync ():string
 	{
-		if (!this._data) await this.updateData();
+	    try {
+		    this._data = fs.readFileSync( this._path, { encoding: this.encoding }).toString();
+        }
+        catch (e) {
+            this._data = '';
+        }
+
+		return this._data;
+	}
+
+    /**
+     * Check if file has been loaded and load synchronously if needed.
+     */
+	protected checkDataSync ()
+	{
+		if (this._data == null) this.updateDataSync();
+	}
+
+
+	// ------------------------------------------------------------------------- FS ACTIONS
+
+	/**
+	 * Create empty file if not existing and parents directories if needed.
+	 */
+	async create ()
+	{
+		return new Promise( resolve =>
+		{
+			// Create parent directories if needed
+			require('mkdirp')( path.basename( this._path ), async ( error ) =>
+			{
+				// Do not continue if there was an error creating folders
+				if (error) return resolve();
+
+				// Do not create empty file if file already exists
+				await this.checkStats();
+				if ( this.exists() ) return resolve();
+
+				// Create empty file and mark data as loaded
+				this._data = "";
+				await this.write();
+				resolve();
+			});
+		})
 	}
 
 	// ------------------------------------------------------------------------- STATS
@@ -92,7 +135,7 @@ export class File extends FileEntity
 	}
 
 	/**
-	 * Get last modified file size ( as bytes )
+	 * Get file size ( as bytes )
 	 */
 	async size ()
 	{
@@ -100,18 +143,32 @@ export class File extends FileEntity
 		return this._stats.size;
 	}
 
-	// TODO : Human readable stats
+    // ------------------------------------------------------------------------- READ / WRITE
 
-	/*
-	lastModifiedHuman ()
-	{
+    /**
+     * Read file content from disk.
+     * @param handler Will be called with file as first argument.
+     */
+    async read ( handler ?: (file:File) => any|void ):Promise<string>
+    {
+        await this.updateData();
+        handler && await handler( this );
+        return this._data;
+    }
 
-	}
-	sizeHuman ()
-	{
+    /**
+     * Save content to file. A new path can be given to keep original file.
+     * @param newPath Change path to keep original file.
+     */
+    async write ( newPath?:string )
+    {
+        // Do not save file that were never loaded.
+        if (this._data == null) return;
 
-	}
-	*/
+        // Save this content to a new file
+        if (newPath) this._path = newPath;
+        await fs.promises.writeFile( this._path, this._data, { encoding: this.encoding } );
+    }
 
 	// ------------------------------------------------------------------------- RAW & JSON CONTENT
 
@@ -121,6 +178,8 @@ export class File extends FileEntity
 	 */
 	content ( content ?: TRawContentArgument ) : File|TRawWritableContent
 	{
+		this.checkDataSync();
+
 		const type = typeof content;
 
 		let rawDataToSave:TRawWritableContent;
@@ -159,6 +218,7 @@ export class File extends FileEntity
 	 */
 	append ( content ?: TRawWritableContent, newLine = '\n' )
 	{
+		this.checkDataSync();
 		this._data += newLine + content;
 	}
 
@@ -168,11 +228,12 @@ export class File extends FileEntity
 	 * @param spaces
 	 * @param replacers
 	 */
-	json ( content ?: TJSONContentArgument, spaces = 2, replacers = null ) : File|TJSONWritableContent
+	json (content ?: TStructuralContentArgument, spaces = 2, replacers = null ) : File|TStructuralWritableContent
 	{
+		this.checkDataSync();
 		const type = typeof content;
 
-		let jsonDataToSave:TJSONWritableContent;
+		let jsonDataToSave:TStructuralWritableContent;
 
 		// Read data from file and return it, no chaining here
 		if ( type === 'undefined' )
@@ -185,7 +246,7 @@ export class File extends FileEntity
 			let jsonData = JSON.parse( this._data );
 
 			// Call handler, pass it current file data, get back file data
-			jsonDataToSave = (content as TFunctionalTransformer <TJSONWritableContent>)( jsonData );
+			jsonDataToSave = (content as TFunctionalTransformer <TStructuralWritableContent>)( jsonData );
 		}
 
 		// Save anything else ( object / string / number ... )
@@ -203,39 +264,46 @@ export class File extends FileEntity
 		return this;
 	}
 
-	// ------------------------------------------------------------------------- READ / WRITE
-
 	/**
-	 * Read file content from disk.
-	 * @param handler Will be called with file as first argument.
+	 * TODO
 	 */
-	async read ( handler ?: (file:File) => any|void ):Promise<string>
+	yaml ( content ?: TStructuralContentArgument ) : File|TStructuralWritableContent
 	{
-		await this.updateData();
-		handler && await handler( this );
-		return this._data;
-	}
+		this.checkDataSync();
 
-	/**
-	 * Save content to file. A new path can be given to keep original file.
-	 * @param newPath Change path to keep original file.
-	 */
-	async write ( newPath?:string )
-	{
-		// Save this content to a new file
-		if (newPath) this._path = newPath;
-		await fs.promises.writeFile( this._path, this._data, { encoding: this.encoding } );
+		const type = typeof content;
+
+		let yamlDataToSave;
+
+		// Read data from file, parse YAML, and return it, no chaining here
+		if ( type === 'undefined' )
+		{
+			return YAML( this._data ).json;
+		}
+		else if ( type === 'function' )
+		{
+			// Parse loaded YAML data
+			// TODO : Handle parse errors ?
+			yamlDataToSave = YAML( this._data );
+
+			// Call handler, pass it current file data, get back file data
+			yamlDataToSave.json = (content as TFunctionalTransformer <TStructuralWritableContent>)( yamlDataToSave.json );
+		}
+		else
+		{
+			// Save anything else ( object / string / number ... )
+			yamlDataToSave = YAML('');
+			yamlDataToSave.json = content;
+		}
+
+		// Write back yaml data to raw data
+		this._data = yamlDataToSave.yaml;
+
+		// Return this object to allow chaining
+		return this;
 	}
 
 	// ------------------------------------------------------------------------- ALTER
-
-	/*
-	TODO : IMPL
-	search ( search: (string|number|((r) => any)) )
-	{
-
-	}
-	*/
 
 	/**
 	 * TODO DOC
@@ -245,6 +313,8 @@ export class File extends FileEntity
 	 */
 	line ( startOrNumber: string | number, replaceBy ?: string )
 	{
+		this.checkDataSync();
+
 		// Split content in lines
 		const lines = this._data.split("\n");
 
@@ -300,6 +370,7 @@ export class File extends FileEntity
 	 */
 	replace ( search:string|RegExp, replace:ScalarValue )
 	{
+		this.checkDataSync();
 		this._data = this._data.replace( search, replace + '' );
 	}
 
@@ -307,21 +378,13 @@ export class File extends FileEntity
 	 * TODO DOC
 	 * TODO TEST
 	 * @param values
-	 * @param delimiters
 	 */
-	template ( values:ScalarObject, delimiters = ["{{", "}}"] )
+	template ( values:ScalarObject )
 	{
-		// TODO : Use Nanostache
-
-		// Replace all detected mustache fields
-		this._data = this._data.replace(
-			new RegExp(`${delimiters[0]}(.*?)${delimiters[1]}`, 'gm'),
-			(i, match) => values[ match ] + ''
-		);
-		return this;
+	    this.checkDataSync();
+        this._data = require('@solid-js/nanostache')( this._data, values );
+        return this;
 	}
-
-	// TODO : YAML
 
 	// ------------------------------------------------------------------------- DESTRUCT
 

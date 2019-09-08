@@ -10,7 +10,7 @@ async function checkTypescript ()
     return new Promise( resolve =>
     {
         Logger.clear();
-        Logger.progress('  Checking typescript ...');
+        Logger.progress(' Checking typescript ...');
 
         // Kill current running typescript checker
         currentTscProcess && currentTscProcess.kill();
@@ -28,14 +28,14 @@ async function checkTypescript ()
             if ( code === 0 )
             {
                 Logger.stopSpinner();
-                Logger.log(`👌  ${ Logger.chalk.green.bold('Typescript validated.') }` );
+                Logger.log(`👌 ${ Logger.chalk.green.bold('Typescript validated.') }` );
             }
 
             // Errors detected
             else
             {
                 Logger.stopSpinner();
-                Logger.write(`❌  Typescript error :\n\r`);
+                Logger.write(`❌ Typescript error :\n\r`);
 
                 const stdout = (currentTscProcess.stdout.read() || '').toString();
                 const stderr = (currentTscProcess.stderr.read() || '').toString();

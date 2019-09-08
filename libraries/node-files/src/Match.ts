@@ -8,7 +8,7 @@ import glob from "glob";
 // ----------------------------------------------------------------------------- STRUCTURE
 
 // Defining what is a basic file filter
-interface IFilter
+export interface IFilter
 {
 	(filePath:string) : boolean
 }
@@ -47,6 +47,9 @@ export class Match
 	// Filter function to filter some files at each updates. Useful to simplify glob pattern.
 	readonly filter				:IFilter;
 
+	// Glob options
+	readonly globOptions			:any;
+
 	// List of all file and directories paths found after update() from glob and filter.
 	protected _paths			:string[];
 
@@ -65,13 +68,15 @@ export class Match
 	 * @param pattern Glob pattern @see https://www.npmjs.com/package/glob
 	 * @param cwd Root directory to search from. Default is process.cwd()
 	 * @param filter Filter function to filter some files at each updates. Useful to simplify glob pattern.
+	 * @param globOptions Options passed to glob @see https://www.npmjs.com/package/glob
 	 */
-	constructor ( pattern:string, cwd?:string, filter?:IFilter )
+	constructor ( pattern:string, cwd?:string, filter?:IFilter, globOptions? )
 	{
 		// Save match parameters and search for the first time
-		this.pattern 	= pattern;
-		this.cwd 		= cwd || process.cwd();
-		this.filter 	= filter;
+		this.pattern 		= pattern;
+		this.cwd 			= cwd || process.cwd();
+		this.filter 		= filter;
+		this.globOptions 	= globOptions;
 	}
 
 	/**
@@ -95,7 +100,8 @@ export class Match
 			this._isUpdating = true;
 
 			// Get all file paths from glob
-			glob( this.pattern, { cwd: this.cwd }, async ( error, paths ) =>
+			const options = { cwd: this.cwd, ...this.globOptions };
+			glob( this.pattern, options, async (error, paths ) =>
 			{
 				this._isUpdating = false;
 

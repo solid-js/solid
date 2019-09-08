@@ -1,5 +1,6 @@
 import { FileEntity } from './FileEntity'
 import * as path from "path";
+import {IFilter, Match} from "./Match";
 
 
 /**
@@ -19,13 +20,46 @@ export function D ( directoryPath:string, cwd?:string ):Directory
 
 export class Directory extends FileEntity
 {
-	create ()
+	/**
+	 * Create directory and parents directories if needed.
+	 */
+	async create ()
 	{
-		
+		return new Promise( resolve => require('mkdirp')( this._path, resolve) );
 	}
 
-	// V1 : last modified of any folder (FileEntity ?)
+	/**
+	 * Get last modified timestamp ( as ms )
+	 */
+	async lastModified ()
+	{
+		await this.checkStats();
+		return this._stats.mtimeMs;
+	}
 
-	// V2 : Size of a whole folder
-	// V2 : Zip/tar.gz a folder with native linux zip
+	/**
+	 * Get directory size recursively ( as bytes )
+	 */
+	async size ()
+	{
+		return new Promise( resolve =>
+		{
+			require('get-folder-size')(
+				( error, size ) => resolve( error ? 0 : size )
+			);
+		});
+	}
+
+	/**
+	 * Match list of direct children file and directories.
+	 * @param pattern Pattern to match, default is *
+	 * @param showDotFiles If will match dot files. Default is true.
+	 * @param filter Filter function to filter some files. Useful to simplify glob pattern.
+	 * @param globOptions Options passed to glob @see https://www.npmjs.com/package/glob
+	 */
+	async children ( pattern = '*', showDotFiles = true, filter?:IFilter, globOptions? )
+	{
+		const options = { dot: showDotFiles, ...globOptions };
+		return new Match( pattern, this._path, filter, options );
+	}
 }
