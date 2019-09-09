@@ -49,7 +49,7 @@ export declare interface ICommands
     add ( name:string, optionsOrHandler:{}|AnyHandler, handler?:AnyHandler )
     list ()
     start (defaultHandler?: AnyHandler):Promise
-    run (name:string, options:{}):Promise
+    run (name:string, options?:{}):Promise
 }
 
 export declare const commands:ICommands;

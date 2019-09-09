@@ -14,6 +14,7 @@
     "clean": "node scripts/clean",
     "build": "node scripts/build",
     "dev": "node scripts/dev",
-    "bootstrap": "lerna bootstrap"
+    "bootstrap": "lerna bootstrap",
+    "publish": "lerna publish"
   }
 }

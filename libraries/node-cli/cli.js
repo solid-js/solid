@@ -532,7 +532,7 @@ exports.test = async function ( name, testHandler )
 };
 
 
-// ----------------------------------------------------------------------------- UNIT TESTING
+// ----------------------------------------------------------------------------- CLI COMMANDS
 
 // All parsed args and list of commands
 let parsedArgs;
