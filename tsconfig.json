@@ -46,7 +46,7 @@
     // Do not allow unreachable code because we are creating a lib
     "allowUnreachableCode" : false,
 
-    // Do not allow inconsistancy in file names and imports
+    // Do not allow inconsistencies in file names and imports
     "forceConsistentCasingInFileNames" : true,
 
     // Allow import as default without default export declared
@@ -58,7 +58,7 @@
     // Tweak this to log stuff if needed
     "listEmittedFiles" : false,
     "traceResolution": false,
-    "pretty": true,
+    "pretty": true
 
     // ------------------------------------------------------------------------- HELPERS
 
@@ -67,7 +67,7 @@
   },
 
   // Files to includes and exclude from typescript builds
-  "exclude": ["./node_modules/**"],
+  "exclude": ["./node_modules/**", "./_/**"],
 
   // Configure IDE to not compile typescript
   "compileOnSave": true,

@@ -1,5 +1,7 @@
-const {halt, table, task, newLine} = require("../libraries/node-cli/cli");
+const {halt, table, task, newLine, offset, print} = require("../libraries/node-cli/cli");
 const {listLibraries, buildLibrary} = require("./lib/libraries");
+const filesize = require("filesize");
+const chalk = require("chalk");
 
 // Get library to build from command arguments
 // We'll build all (true) if we have no library name as second argument
@@ -31,11 +33,20 @@ const foundLibraries = listLibraries( argumentLibrary, ( libraryName ) =>
     // Show minified results if not a node lib
     if ( Array.isArray(minifyResults) )
     {
-        // Remove .min.js files from report
-        minifyResults = minifyResults.filter( line => line[0].indexOf('.min.mjs') > -1 );
+        // Style table
+        let globalSize = 0;
+        minifyResults = minifyResults.map( line => {
+            globalSize += line[3];
+            return line
+                .map( (column, i) => i >= 1 ? filesize( column ) : column )
+                .map( (column, i) => i === 3 ? chalk.cyan( column ) : column )
+        });
 
         // Show results as table
-        table( minifyResults, false, ' ⟶   ', '    - ', '', [30] );
+        newLine();
+        minifyResults.unshift(['File', 'Size', 'Minified', 'Gzip']);
+        const positions = table( minifyResults, true, [20], '      ');
+        print( offset(positions[3], chalk.cyan.bold( filesize(globalSize) )) );
     }
 
     // New line for next task

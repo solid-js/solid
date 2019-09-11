@@ -5,7 +5,7 @@ const glob = require("glob");
 const rimraf = require("rimraf");
 const path = require("path");
 const fs = require("fs");
-const filesize = require("filesize");
+const zlib = require("zlib");
 
 // Paths to templates
 const tsconfigTemplatePath = path.join( 'libraries', 'tsconfig.template.json' );
@@ -94,10 +94,18 @@ exports.buildLibrary = function ( libraryName, buildLevel = 1, progress )
             // Update percentage for each file
             progress && progress( 2 + ((i+1) / allJsFiles.length), buildLevel + 1 );
 
+            // Filter out non module files
+            if (fileName.indexOf('.mjs') === -1) return;
+
+            // Compress file as gzip to know its size
+            const zipped = zlib.gzipSync(fs.readFileSync(destinationFileName));
+
             // Add terser stats to output
             output.push([
-                path.basename( destinationFileName ),
-                filesize( fs.statSync( destinationFileName ).size )
+                path.basename( fileName ),
+                fs.statSync( fileName ).size,
+                fs.statSync( destinationFileName ).size,
+                zipped.length
             ])
         });
         return output;

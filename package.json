@@ -8,7 +8,7 @@
     "glob": "^7.1.4",
     "lerna": "^3.14.1",
     "terser": "^4.2.1",
-    "typescript": "^3.5.3"
+    "typescript": "^3.6.1-rc"
   },
   "scripts": {
     "clean": "node scripts/clean",

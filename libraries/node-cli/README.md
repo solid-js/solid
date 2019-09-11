@@ -212,6 +212,18 @@ spriteTask.progress( 1, 100, 50 ) // 1 per 100
 // ✔ Building █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 ```
 
+##### Asynchronous task chaining
+
+```javascript
+await task('My task').run( async t => {
+    // t is task instance so you can t.success or t.error if needed
+    await stuff1();
+    await stuff2();
+    // If any error occurs, task will stop and show error
+    // If everything is good, task will show success and promise will be resolved
+});
+```
+
 
 ### Table
 
@@ -230,7 +242,7 @@ table( data, true ); // first line are labels
 
 ```javascript
 // With some display options
-table( data, firstLineAreLabels = false, sep = ' | ', lineStart = ' ', lineEnd = '', minColumnWidths = [40, 20, 20]);
+table( data, firstLineAreLabels = false, minColumnWidths = [40, 20, 20], lineStart = ' ', lineEnd = '', separator = chalk.grey(' │ ');
 ```
 
 

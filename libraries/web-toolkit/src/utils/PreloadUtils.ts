@@ -106,6 +106,9 @@ export class LoadUtils
     }
 
     /**
+     * TODO : Promise
+     * TODO : Add timeout option
+     * TODO : Add frequency option
      * WARNING, HAZARDOUS NUCLEAR NOT SO TESTED WEAPON.
      * USE WITH CAUTION.
      * Dirty hack from http://stackoverflow.com/questions/5680013/how-to-be-notified-once-a-web-font-has-loaded

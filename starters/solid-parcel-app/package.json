@@ -1,11 +1,12 @@
 {
-  "name": "create-solid-web-spa",
+  "name": "create-solid-parcel-app",
   "version": "0.1.0",
   "description": "",
   "main": "index.js",
   "author": "Alexis Bouhet",
   "license": "MIT",
-  "parcel-plugin-structurize": {
+  "parcel-plugin-structurize": false,
+  "__parcel-plugin-structurize": {
     "scripts": {
       "match": "*.{js,js.map}",
       "folder": "js"

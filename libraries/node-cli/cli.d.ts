@@ -30,7 +30,7 @@ export declare interface Task
 export declare function task ( name:string, icon?:string, dots?:string ):Task
 
 
-export declare function table ( lines:any[][], firstLineAreLabels?:false, sep?:string, lineStart?:string, lineEnd?:string, minColumnWidths?:number[] ):never
+export declare function table ( lines:any[][], firstLineAreLabels?:false, minColumnWidths?:number[], lineStart?:string, lineEnd?:string, separator?:string ):never
 
 
 export declare type AssertHandler = ( value, expected?:any ) => void;

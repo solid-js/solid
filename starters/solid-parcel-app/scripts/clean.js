@@ -5,18 +5,16 @@ const { M, D } = require('@solid-js/files');
 
 
 
-commands.add('cache', async () =>
-{
-    const cleanTask = task('Cleaning cache');
-    await D('.cache').remove();
-    cleanTask.success();
-});
-commands.add('dist', async () =>
-{
-    const cleanTask = task('Cleaning dist');
-    await D('dist').remove();
-    cleanTask.success();
-});
+commands.add('cache',
+    () => task('Cleaning cache').run(
+        () => D('.cache').remove()
+    )
+);
+commands.add('dist',
+    () => task('Cleaning dist').run(
+        () => D('dist').clean()
+    )
+);
 
 
 

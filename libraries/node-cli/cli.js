@@ -1,5 +1,6 @@
 const {exec, execSync} = require('child_process');
 const chalk = require('chalk');
+const stripAnsi = require('strip-ansi');
 
 // Hooked standard output / error and exit function
 // Overridable with hookStandards function
@@ -327,7 +328,23 @@ exports.task = function ( message, icon = '➤', dots = ' ...' )
         // Inject error controller
         error       : updateErrorState,
         // Percentage indicator
-        progress    : updateProgress
+        progress    : updateProgress,
+
+        // Run handler
+        async run ( handler )
+        {
+            try
+            {
+                await handler( this );
+            }
+            catch (e)
+            {
+                this.error( e );
+                return;
+            }
+
+            this.success();
+        }
     }
 };
 
@@ -335,16 +352,19 @@ exports.task = function ( message, icon = '➤', dots = ' ...' )
  * Print a nice table in stdout
  * @param lines Two dimensions array to show as table. First dimension are lines, second dimensions are columns.
  * @param firstLineAreLabels Show first line in bold
- * @param sep Separator to show between each column.
+ * @param minColumnWidths Default min widths for every columns ( for example : [ 10, 20 ] )
  * @param lineStart String to print before each line
  * @param lineEnd String to print after each line
- * @param minColumnWidths Default min widths for every columns ( for example : [ 10, 20 ] )
+ * @param separator Separator to show between each column.
  */
-exports.table = function ( lines, firstLineAreLabels = false, sep = " | ", lineStart = ' ', lineEnd = '', minColumnWidths = [] )
+exports.table = function ( lines, firstLineAreLabels = false, minColumnWidths = [], lineStart = ' ', lineEnd = '', separator = chalk.grey(' │ ') )
 {
     // Init column widths and total number of columns from arguments
     let columnWidths = minColumnWidths;
     let totalColumns = minColumnWidths.length;
+
+    let prevColumnPosition = stripAnsi(lineStart.length);
+    const columnPositions = [prevColumnPosition];
 
     // Measure columns widths
     lines.map(
@@ -354,7 +374,8 @@ exports.table = function ( lines, firstLineAreLabels = false, sep = " | ", lineS
             totalColumns = Math.max(totalColumns, columnIndex);
 
             // Convert column value to string to avoid length to fail
-            const stringColumn = column + '';
+            // Strip ansi chars to count only visible chars
+            const stringColumn = stripAnsi( column + '' );
 
             // Measure column width and keep the largest
             columnWidths[ columnIndex ] = (
@@ -371,6 +392,7 @@ exports.table = function ( lines, firstLineAreLabels = false, sep = " | ", lineS
         // Print line start if needed
         lineStart && stds.out.write( lineStart );
 
+
         // Browse line's columns
         line.map( (column, columnIndex) =>
         {
@@ -386,17 +408,28 @@ exports.table = function ( lines, firstLineAreLabels = false, sep = " | ", lineS
                 : stringColumn
             );
 
-            // Print column + spaces
-            stds.out.write( columnToPrint + exports.repeat( columnWidth - stringColumn.length ) );
+            // Print column + spaces + separator
+            const content = [
+                columnToPrint,
+                exports.repeat( columnWidth - stripAnsi(stringColumn).length ),
+                isLastColumn ? lineEnd : separator
+            ].join('');
 
-            // Write separator if not last column
-            isLastColumn || stds.out.write( sep );
+            stds.out.write( content );
+
+            if ( lineIndex === lines.length - 1)
+            {
+                prevColumnPosition += stripAnsi( content ).length;
+                columnPositions[ columnIndex + 1 ] = prevColumnPosition;
+            }
         });
 
-        // Print line end if needed and go to next line
-        lineEnd && stds.out.write( lineEnd );
+
+        // Go to next line
         exports.newLine();
     });
+
+    return columnPositions;
 };
 
 // ----------------------------------------------------------------------------- UNIT TESTING

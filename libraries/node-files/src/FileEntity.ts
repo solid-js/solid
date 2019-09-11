@@ -205,5 +205,5 @@ export class FileEntity
 	 * Delete Alias
 	 * @see delete()
 	 */
-	async remove () { await this.delete() }
+	async remove () { return await this.delete() }
 }
