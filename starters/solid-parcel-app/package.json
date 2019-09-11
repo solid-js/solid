@@ -43,6 +43,7 @@
   "scripts": {
     "dev": "node scripts/build dev",
     "production": "node scripts/build production",
-    "clean": "node scripts/clean"
+    "clean": "node scripts/clean",
+    "scaff": "node scripts/scaff"
   }
 }

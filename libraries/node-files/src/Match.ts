@@ -243,7 +243,7 @@ export class Match
 	 * Get all paths from glob. No File or Directory object returned, only strings.
 	 * Will return all paths as promise if no handler is given.
 	 */
-	async paths ( handler : TPathHandler )
+	async paths ( handler ?: TPathHandler )
 	{
 		// Wait for paths
 		await this.checkPaths();
@@ -263,10 +263,13 @@ export class Match
 	 * @param handler First argument will be a FileEntity object (File or Directory)
 	 * @throws Will throw an error if paths are not updated yet.
 	 */
-	async all ( handler : TEntityHandler )
+	async all ( handler ?: TEntityHandler )
 	{
 		// Wait file entities
 		const entities = await this.getFileEntities();
+
+		// Return entities as promise if no handler is given
+		if (!handler) return entities;
 
 		// Call handler on files and directories
 		const resultsFromHandler = entities.map( handler );
@@ -280,18 +283,19 @@ export class Match
 	 * @param handler First argument will be a File object
 	 * @throws Will throw an error if paths are not updated yet.
 	 */
-	async files ( handler : TFileHandler )
+	async files ( handler ?: TFileHandler )
 	{
 		// Wait file entities
 		const entities = await this.getFileEntities();
 
-		// Filter for files and call handler
-		const resultsFromHandler = entities
-			.filter( file => file instanceof File )
-			.map( handler );
+		// Filter for files
+		const resultsFromHandler = entities.filter( file => file instanceof File );
 
-		// Wait if handler is async
-		return await this.patchReturnedPromises( resultsFromHandler );
+		// Return entities as promise if no handler is given
+		if (!handler) return resultsFromHandler;
+
+		// Wait if handler is async and call handler
+		return await this.patchReturnedPromises( resultsFromHandler.map( handler ) );
 	}
 
 	/**
@@ -299,25 +303,26 @@ export class Match
 	 * @param handler First argument will be a Directory object
 	 * @throws Will throw an error if paths are not updated yet.
 	 */
-	async directories ( handler : TDirectoryHandler )
+	async directories ( handler ?: TDirectoryHandler )
 	{
 		// Wait file entities
 		const entities = await this.getFileEntities();
 
 		// Filter for directories and call handler
-		const resultsFromHandler = entities
-			.filter( file => file instanceof Directory )
-			.map( handler );
+		const resultsFromHandler = entities.filter( file => file instanceof Directory );
+
+		// Return entities as promise if no handler is given
+		if (!handler) return resultsFromHandler;
 
 		// Wait if handler is async
-		return await this.patchReturnedPromises( resultsFromHandler );
+		return await this.patchReturnedPromises( resultsFromHandler.map( handler ) );
 	}
 
 	/**
 	 * Directories alias
 	 * @see directories();
 	 */
-	async folders ( handler: TDirectoryHandler ) { return this.directories( handler ) }
+	async folders ( handler ?: TDirectoryHandler ) { return this.directories( handler ) }
 
 	// ------------------------------------------------------------------------- HASH
 
