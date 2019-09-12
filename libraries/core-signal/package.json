@@ -1,6 +1,6 @@
 {
   "name": "@solid-js/signal",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Object based event system. Can replace classic event implementation, with strong typing. Inspired from Robert Penner's as3 Signals.",
   "main": "dist/_index.js",
   "module": "dist/_index.mjs",
@@ -27,5 +27,5 @@
   "bugs": {
     "url": "https://github.com/solid-js/solid/issues"
   },
-  "homepage": "https://github.com/solid-js/solid#readme"
+  "homepage": "https://github.com/solid-js/solid/libraries/core-signal"
 }
