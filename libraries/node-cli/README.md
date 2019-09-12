@@ -1,8 +1,10 @@
 # Solid Node CLI utilities
 
 `@solid-js/cli` is a very simple node library to show small running tasks and messages in any terminal. 
-Only dependencies are [Chalk](https://www.npmjs.com/package/chalk) for text transforms and [mri](https://www.npmjs.com/package/mri) for argument parsing.
-This lib does not handle user input, so we advice to use [Inquirer](https://www.npmjs.com/package/inquirer) to manage them.
+Dependencies are [Chalk](https://www.npmjs.com/package/chalk) for text transforms and [mri](https://www.npmjs.com/package/mri) for argument parsing.
+This lib uses [Inquirer](https://www.npmjs.com/package/inquirer) to manage user inputs.
+We use [strip-ansi](https://www.npmjs.com/package/strip-ansi) to count chars even when stylised for CLI (removes bold or color markers from string).
+
 
 ![Solid CLI Demo](https://github.com/solid-js/solid/raw/master/libraries/node-cli/doc/solid-cli-demo.gif)
 
@@ -327,6 +329,11 @@ commands.add('help', () =>
     // Show help to user ...
 });
 
+// Will execute command with loose check
+// Argument need to start like command to execute it
+// $ script big
+commands.add('bigCommandName', () => {});
+
 // Start parsing and run matching command
 commands.start( command =>
 {
@@ -340,3 +347,8 @@ commands.start( command =>
     commands.run('help');
 });
 ```
+
+### TODO : Doc for askMenu 
+### TODO : Doc for askList 
+### TODO : Doc for askInput
+ 

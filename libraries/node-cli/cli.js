@@ -628,8 +628,11 @@ exports.commands = {
      */
     async start ( defaultHandler )
     {
+        // If we await for a command, askMenu need to catch next argument
+        menuIndex ++;
+
         // Get arguments from CLI
-        args = exports.getArguments();
+        const args = exports.getArguments();
 
         // If we have a command to start
         if ( args._.length > 0 )
@@ -650,7 +653,7 @@ exports.commands = {
             catch ( e )
             {
                 // Start default handler if command has not been found
-                if (e instanceof CommandError && defaultHandler)
+                if ( e instanceof CommandError && defaultHandler )
                     await defaultHandler( commandName );
             }
         }
@@ -661,7 +664,9 @@ exports.commands = {
     },
 
     /**
-     * Run any registered command
+     * Run any registered command.
+     * Will make a loose check if command not found
+     * ( will accepted command starting with commandName )
      * @param commandName Lowercase command name.
      * @param options Options to override from command's default options
      * @returns {Promise<*>}
@@ -669,11 +674,28 @@ exports.commands = {
     async run ( commandName, options )
     {
         // Throw if command does not exists
-        if ( !(commandName in _registeredCommands) )
-            throw new CommandError('Command not found');
+        let selectedCommand;
+        if ( commandName in _registeredCommands )
+            selectedCommand = commandName;
+        else
+        {
+            // Try loose check
+            _registeredCommands.map( command =>
+            {
+                // Do not continue if we found
+                if ( selectedCommand ) return;
+
+                // Check loose (starting like) and with lowercase check
+                if ( command.toLowerCase().indexOf( commandName.toLowerCase() ) === 0 )
+                    selectedCommand = commandName
+            });
+
+            // Not found, even with loose, we throw
+            if (!selectedCommand) throw new CommandError('Command not found');
+        }
 
         // Get command
-        const command = _registeredCommands[ commandName ];
+        const command = _registeredCommands[ selectedCommand ];
 
         // Execute command with options on top of default options
         return await command.handler({
@@ -706,7 +728,8 @@ let menuIndex = -1;
  *   { title: "With shortcut", shortcuts: ["callAction", "a"]}
  * ]
  *
- * Show a menu to CLI.
+ * Multiple askMenu can be aligned. Arguments will be gathered in order.
+ *
  * @param message Question asked to CLI.
  * @param entries @see function signature to know more.
  * @returns {Promise<string|number>}

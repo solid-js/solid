@@ -1,5 +1,6 @@
 // Import CLI utilities
-const {task, table, newLine, test} = require('./cli');
+const {task, table, newLine, test } = require('./cli');
+const chalk = require('chalk');
 
 // Some helpers to fake delays and get random integers
 const randomDelay = async (size = 1) => new Promise( resolve => setTimeout(resolve, Math.random() * 1000 * size) );
@@ -17,7 +18,7 @@ async function taskDemo ()
     await randomDelay();
 
     // First line of data for table are labels
-    const data = [
+    let data = [
         ['File name', 'File size', 'Is a module']
     ];
 
@@ -36,9 +37,17 @@ async function taskDemo ()
     // Demo is a success
     demoTask1.success();
 
+    // Colors last column on table
+    data = data.map( (line, lineIndex) => line.map(
+        (column, columnIndex) => {
+            if (lineIndex === 0 || columnIndex !== 2) return column;
+            return column ? chalk.green.bold( column ) : chalk.red.bold( column )
+        })
+    );
+
     // Show table with first line as labels
     newLine();
-    table( data, true, '   |   ', '    ' );
+    table( data, true, [], '    ' );
 }
 
 /**

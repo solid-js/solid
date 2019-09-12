@@ -1,7 +1,12 @@
+export declare type AnyHandler = (...rest) => any|void;
+
+// ----------------------------------------------------------------------------- CONFIGURATION
 
 export declare function hookStandards ( stdout?: NodeJS.WriteStream, stderr?: NodeJS.WriteStream, exit?: (code?: number) => never):never
 
-export declare function createSpaces ( totalSpaces:number ):string
+// ----------------------------------------------------------------------------- SMALL UTILITIES
+
+export declare function repeat ( total:number, char?:string ):string;
 
 export declare function print ( content:string, bold?:boolean, newLine?:boolean ):never
 
@@ -11,11 +16,13 @@ export declare function newLine ():never
 
 export declare function halt ( content:string, code?:number, redAndBold?:boolean ):never
 
-// TODO : Options type ?
+// ----------------------------------------------------------------------------- EXEC UTILITIES
 
+// TODO : Options type ?
 export declare async function exec ( command:string, stdLevel?:number, options?:{} ):Promise<string,string>
 export declare function execSync ( command:string, stdLevel?:number, options?:{} ):string|null
 
+// ----------------------------------------------------------------------------- CLI UTILITIES
 
 export declare interface Task
 {
@@ -26,12 +33,11 @@ export declare interface Task
     progress (current:number, total:number, width?:number)
 }
 
-
 export declare function task ( name:string, icon?:string, dots?:string ):Task
 
+export declare function table ( lines:any[][], firstLineAreLabels?:false, minColumnWidths?:number[], lineStart?:string, lineEnd?:string, separator?:string ):number[]
 
-export declare function table ( lines:any[][], firstLineAreLabels?:false, minColumnWidths?:number[], lineStart?:string, lineEnd?:string, separator?:string ):never
-
+// ----------------------------------------------------------------------------- UNIT TESTING
 
 export declare type AssertHandler = ( value, expected?:any ) => void;
 
@@ -41,8 +47,18 @@ export declare type TestHandler = ( it : ItHandler ) => void;
 
 export declare async function test ( name:string, testHandler:TestHandler )
 
-// TODO -> From Globals !
-export declare type AnyHandler = (...rest) => any|void;
+// ----------------------------------------------------------------------------- ARGV
+
+export declare interface IArguments
+{
+    _?:string[]
+    [key:string] : (string|number|boolean)
+}
+
+export declare function getArguments ():IArguments
+
+// ----------------------------------------------------------------------------- CLI COMMANDS
+
 
 export declare interface ICommands
 {
@@ -53,3 +69,18 @@ export declare interface ICommands
 }
 
 export declare const commands:ICommands;
+
+export declare interface IEntry
+{
+    title       :string|number
+    action      ?:AnyHandler
+    shortcut    ?:(string|number)[]
+}
+
+// ----------------------------------------------------------------------------- CLI COMMANDS
+
+export declare async function askMenu ( message:string, entries:(IEntry|string)[] ):Promise<string|number>
+
+export declare async function askList ( message:string, choices:(string|number)[], shortcuts?:(string|number)[]):Promise<string|number>
+
+export declare async function askInput ( message:string, shortcuts?:(string|number)[], isNumber?:boolean, notEmpty?:boolean, defaultValue?:string):Promise<string|number>
