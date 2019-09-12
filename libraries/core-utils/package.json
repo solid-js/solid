@@ -1,10 +1,10 @@
 {
-  "name": "@solid-js/core-utils",
+  "name": "@solid-js/utils",
   "description": "Isomorphic set of utilities for NodeJS and Browsers environments.",
   "version": "0.1.0",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "main": "dist/_index.js",
+  "module": "dist/_index.mjs",
+  "types": "dist/_index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/solid-js/solid.git libraries/core-utils"

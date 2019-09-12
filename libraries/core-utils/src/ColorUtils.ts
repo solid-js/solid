@@ -11,11 +11,7 @@ export module ColorUtils
         let hex = component.toString(16);
 
         // Prepend with 0 to be always on two digits
-        return (
-            hex.length == 1
-            ? '0' + hex
-            : hex
-        );
+        return ( hex.length == 1 ? '0' + hex : hex );
     }
 
     /**

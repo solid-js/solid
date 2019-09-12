@@ -1,62 +1,5 @@
 export module ArrayUtils
 {
-    // TODO : Altération d'un array via clone + méthode de filtre
-    // TODO : Intérêt vis à vis de filter ?
-    export function alter ()
-    {
-
-    }
-
-
-    /**
-     * TODO : KEEP ?
-     * Delete elements from an array following a condition.
-     * Will return a new Array reference to re-affect.
-     * @param array Array to remove from
-     * @param where Condition to satisfy to remove.
-     * @returns {Array} New array reference to re-affect.
-     */
-    export function deleteWhere (array:any[], where:{}):any[]
-    {
-        const newArray = [];
-
-        // Browse array
-        for ( let i in array )
-        {
-            // Browse conditions
-            for ( let j in where )
-            {
-                // Check if this object is ok with condition
-                if (!(j in array[i]) || where[j] != array[i][j])
-                {
-                    newArray.push(array[i]);
-                    break;
-                }
-            }
-        }
-
-        // Return filtered array
-        return newArray;
-    }
-
-    /**
-     * Remove an element from an array.
-     * Will return a new Array reference to re-affect.
-     * @param array Array to search from
-     * @param element Element to remove
-     * @returns {Array} New array reference to re-affect.
-     */
-    export function removeElement <GType extends any> (array:GType[], element:GType)
-    {
-        const newArray = [];
-        for ( let i in array )
-        {
-            if ( array[i] == element ) continue;
-            newArray.push( array[i] );
-        }
-        return newArray;
-    }
-
     /**
      * Shuffle an indexed array.
      * Source : https://bost.ocks.org/mike/shuffle/
@@ -88,52 +31,49 @@ export module ArrayUtils
     /**
      * Will count from a number to another by adding one at each loop.
      * Makes a 'for' loop with a function call.
-     * Usefull with JSX
-     * @see ArrayUtils.countWith
+     * Useful with JSX
+     * @see ArrayUtils.countStep
      * @param pFrom From which number to start counting
      * @param pTo To which number to end counting
      * @param pHandler Called at each iteration. Index is passed as first argument.
-     * @returns {any[]}
      */
     export function countFrom (pFrom:number = 0, pTo:number, pHandler:(pIndex:number) => any):any[]
     {
-        return this.countWith(pFrom, pTo, 1, pHandler);
+        return this.countStep(pFrom, pTo, 1, pHandler);
     }
 
     /**
      * Will count from 0 to a number.
      * Makes a 'for' loop with a function call.
-     * Usefull with JSX
-     * @see ArrayUtils.countWith
+     * Useful with JSX
+     * @see ArrayUtils.countStep
      * @param pTo To which number to end counting
      * @param pHandler Called at each iteration. Index is passed as first argument.
-     * @returns {any[]}
      */
     export function countTo (pTo:number, pHandler:(pIndex:number) => any):any[]
     {
-        return this.countWith(0, pTo, 1, pHandler);
+        return this.countStep(0, pTo, 1, pHandler);
     }
 
     /**
      * Makes a 'for' loop with a function call.
-     * Usefull with JSX
+     * Useful with JSX
      *
      * This is like doing :
-     * for (let i = pFrom; i < pTo; i += pWith) pHandler( i );
+     * for (let i = pFrom; i < pTo; i += pStep) pHandler( i );
      *
      * Will return an array with all executed handler results.
      *
      * @param pFrom From which number to start counting
      * @param pTo To which number to end counting
-     * @param pWith With which number are we counting ? Increment
+     * @param pStep With which number are we counting ? Increment
      * @param pHandler Called at each iteration. Index is passed as first argument.
-     * @returns {any[]}
      */
-    export function countWith (pFrom:number, pTo:number, pWith:number, pHandler:(pIndex:number) => any):any[]
+    export function countStep (pFrom:number, pTo:number, pStep:number, pHandler:(pIndex:number) => any):any[]
     {
         // Make the loop
         let results:any[] = [];
-        for (let i = pFrom; i < pTo; i += pWith)
+        for (let i = pFrom; i < pTo; i += pStep)
         {
             // Call handler and store result
             results.push( pHandler( i ) );

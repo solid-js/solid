@@ -26,7 +26,7 @@ export type ScalarValue = (string | number | boolean);
  * - Only scalar values allowed (no nesting)
  */
 export type ScalarObject = {
-	[key:string] : ScalarValue
+    [key:string] : ScalarValue
 };
 
 /**
@@ -37,5 +37,5 @@ export type ScalarObject = {
  * - Functions as value allowed
  */
 export type OneLevelScalarFunctionalObject = {
-	[key:string] : ScalarValue | AnyHandler
+    [key:string] : ScalarValue | AnyHandler
 }

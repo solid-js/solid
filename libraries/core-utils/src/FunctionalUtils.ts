@@ -2,7 +2,7 @@ export module FunctionalUtils
 {
 	/**
 	 * Create a function to map values from input to output with ranges.
-	 * TODO : Doc
+	 * TODO : Better Doc
 	 *
 	 * Example :
 	 * const opacityValueMap = [

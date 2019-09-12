@@ -2,9 +2,9 @@
   "name": "@solid-js/nanostache",
   "description": "Ultra-lightweight Javascript template processor.",
   "version": "0.2.1",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "main": "dist/_index.js",
+  "module": "dist/_index.mjs",
+  "types": "dist/_index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/solid-js/solid.git libraries/core-nanostache"

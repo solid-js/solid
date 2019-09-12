@@ -1,4 +1,4 @@
-import { AnyHandler } from "./Global";
+import { AnyHandler } from "./_global";
 
 export module TimeUtils
 {

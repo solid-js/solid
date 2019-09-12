@@ -1,4 +1,5 @@
-import { ScalarObject } from "./Global";
+import { ScalarObject } from "./_global";
+import * as path from "path";
 
 
 export module StringUtils
@@ -242,12 +243,9 @@ export module StringUtils
     {
         let lastIndex = path.lastIndexOf('/');
 
-        if (lastIndex == -1)
-        {
-            lastIndex = 0;
-        }
+        if ( lastIndex == -1 ) lastIndex = 0;
 
-        return path.substring(lastIndex + 1, path.length);
+        return path.substring( lastIndex + 1, path.length );
     }
 
     /**
@@ -260,10 +258,7 @@ export module StringUtils
     {
         let lastIndex = path.lastIndexOf('/');
 
-        if (lastIndex == -1)
-        {
-            lastIndex = path.length;
-        }
+        if ( lastIndex == -1 ) lastIndex = path.length;
 
         return path.substring(0, lastIndex);
     }
@@ -294,46 +289,46 @@ export module StringUtils
      * Converting ASCII special chars to slug regular chars (ex: 'héhé lol' is converted to 'hehe-lol')
      * Handy for URLs
      */
-    export const SLUG_REGEX = [ {
-        regex: /[\xC0-\xC6]/g,
-        char: 'A'
-    }, {
-        regex: /[\xE0-\xE6]/g,
-        char: 'a'
-    }, {
-        regex: /[\xC8-\xCB]/g,
-        char: 'E'
-    }, {
-        regex: /[\xE8-\xEB]/g,
-        char: 'e'
-    }, {
-        regex: /[\xCC-\xCF]/g,
-        char: 'I'
-    }, {
-        regex: /[\xEC-\xEF]/g,
-        char: 'i'
-    }, {
-        regex: /[\xD2-\xD6]/g,
-        char: 'O'
-    }, {
-        regex: /[\xF2-\xF6]/g,
-        char: 'o'
-    }, {
-        regex: /[\xD9-\xDC]/g,
-        char: 'U'
-    }, {
-        regex: /[\xF9-\xFC]/g,
-        char: 'u'
-    }, {
-        regex: /[\xC7-\xE7]/g,
-        char: 'c'
-    }, {
-        regex: /[\xD1]/g,
-        char: 'N'
-    }, {
-        regex: /[\xF1]/g,
-        char: 'n'
-    }
+    export const SLUG_REGEX = [{
+            regex: /[\xC0-\xC6]/g,
+            char: 'A'
+        }, {
+            regex: /[\xE0-\xE6]/g,
+            char: 'a'
+        }, {
+            regex: /[\xC8-\xCB]/g,
+            char: 'E'
+        }, {
+            regex: /[\xE8-\xEB]/g,
+            char: 'e'
+        }, {
+            regex: /[\xCC-\xCF]/g,
+            char: 'I'
+        }, {
+            regex: /[\xEC-\xEF]/g,
+            char: 'i'
+        }, {
+            regex: /[\xD2-\xD6]/g,
+            char: 'O'
+        }, {
+            regex: /[\xF2-\xF6]/g,
+            char: 'o'
+        }, {
+            regex: /[\xD9-\xDC]/g,
+            char: 'U'
+        }, {
+            regex: /[\xF9-\xFC]/g,
+            char: 'u'
+        }, {
+            regex: /[\xC7-\xE7]/g,
+            char: 'c'
+        }, {
+            regex: /[\xD1]/g,
+            char: 'N'
+        }, {
+            regex: /[\xF1]/g,
+            char: 'n'
+        }
     ];
 
     /**
@@ -414,7 +409,7 @@ export module StringUtils
      * @param number The string representing the number
      * @returns True if the string is representing a number.
      */
-    export function isNumber (number:string):boolean
+    export function isNumber ( number:string ):boolean
     {
         const f = parseFloat( number );
         return !isNaN( f ) && isFinite( f );

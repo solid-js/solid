@@ -8,8 +8,9 @@ const fs = require("fs");
 const zlib = require("zlib");
 
 // Paths to templates
-const tsconfigTemplatePath = path.join( 'libraries', 'tsconfig.template.json' );
+const tsconfigTemplatePath  = path.join( 'libraries', 'tsconfig.template.json' );
 const npmignoreTemplatePath = path.join( 'libraries', 'template.npmignore' );
+const globalTemplatePath    = path.join( 'libraries', 'Global.template.d.ts' );
 
 // All terser options @see https://github.com/terser/terser
 const terserOptions = [
@@ -44,8 +45,9 @@ exports.buildLibrary = function ( libraryName, buildLevel = 1, progress )
     const distPath = path.join(libraryPath, 'dist');
 
     // Copy npmignore and tsconfig from templates
-    fs.copyFileSync(tsconfigTemplatePath, libraryConfigPath);
-    fs.copyFileSync(npmignoreTemplatePath, path.join( libraryPath, '.npmignore' ));
+    fs.copyFileSync(tsconfigTemplatePath,   libraryConfigPath);
+    fs.copyFileSync(npmignoreTemplatePath,  path.join( libraryPath, '.npmignore' ));
+    fs.copyFileSync(globalTemplatePath,     path.join( libraryPath, 'src', '_global.d.ts' ));
 
     // Clean files
     rimraf.sync( distPath );
@@ -95,7 +97,10 @@ exports.buildLibrary = function ( libraryName, buildLevel = 1, progress )
             progress && progress( 2 + ((i+1) / allJsFiles.length), buildLevel + 1 );
 
             // Filter out non module files
-            if (fileName.indexOf('.mjs') === -1) return;
+            if ( fileName.indexOf('.mjs') === -1 ) return;
+
+            // Remove _index.mjs
+            if ( fileName.indexOf('_index.mjs') !== -1 ) return;
 
             // Compress file as gzip to know its size
             const zipped = zlib.gzipSync(fs.readFileSync(destinationFileName));

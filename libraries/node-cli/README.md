@@ -245,6 +245,11 @@ table( data, true ); // first line are labels
 table( data, firstLineAreLabels = false, minColumnWidths = [40, 20, 20], lineStart = ' ', lineEnd = '', separator = chalk.grey(' │ ');
 ```
 
+```javascript
+// Get column position to align some info bellow table.
+// columnPositions has one item more than total number of columns (container table start and table end)
+const columnPositions = table( data );
+```
 
 ### Tests
 

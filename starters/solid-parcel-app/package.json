@@ -23,7 +23,9 @@
   "devDependencies": {
     "@solid-js/cli": "^0.4.0",
     "@solid-js/files": "^0.1.4",
+    "inquirer": "^7.0.0",
     "less": "^3.10.3",
+    "mri": "^1.1.4",
     "parcel-bundler": "^1.12.3",
     "parcel-plugin-structurize": "^1.1.5",
     "typescript": "^3.6.2",
@@ -44,6 +46,6 @@
     "dev": "node scripts/build dev",
     "production": "node scripts/build production",
     "clean": "node scripts/clean",
-    "scaff": "node scripts/scaff"
+    "scaff": "node scripts/scaffold"
   }
 }
