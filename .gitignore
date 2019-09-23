@@ -1,11 +1,16 @@
+# IDE configs
 .idea
 
+# Poops
 .DS_Store
 
+# Remove all node_modules folders
 node_modules
 
+# Compiled libraries
 libraries/*/dist/
 
 # Deplyed tsconfig and npmignore files from templates
 libraries/*/tsconfig.json
 libraries/*/.npmignore
+libraries/*/src/_global.d.ts

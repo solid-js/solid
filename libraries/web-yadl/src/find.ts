@@ -2,12 +2,12 @@
 // TODO DOC
 export type ContainerOrElementsOrSelector = string|Element|Element[];
 
-export type ElementHandler = ( handler:(element:Element) => any|void ) => any|void;
+export type ElementHandler<GReturnType> = ( handler?:(element:Element) => GReturnType ) => GReturnType;
 
 export type FindReturnType = {
     [key:number] : Element
-    first	: ElementHandler
-    all		: ElementHandler
+    first	: ElementHandler<Element|any|void>
+    all		: ElementHandler<Element[]|any[]|void>
 }
 
 /**
@@ -15,7 +15,7 @@ export type FindReturnType = {
  * @param containerOrSelector
  * @param selector
  */
-export function find (containerOrSelector: ContainerOrElementsOrSelector, selector: string): FindReturnType
+export function find (containerOrSelector: ContainerOrElementsOrSelector, selector?: string): FindReturnType
 {
     // Check if container is an array of element
     // Throw if we got incompatible arguments (like list of elements and selector)
@@ -45,8 +45,8 @@ export function find (containerOrSelector: ContainerOrElementsOrSelector, select
         // Add all found elements as list
         ...list,
         // Get first element through an handler
-        first: handler => handler(list[0]),
+        first: handler => handler ? handler(list[0]) : list[0],
         // Loop through all elements through an handler
-        all: handler => list.map(el => handler(el))
+        all: handler => handler ? list.map(el => handler(el)) : list
     };
 }

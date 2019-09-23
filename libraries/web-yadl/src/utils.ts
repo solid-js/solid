@@ -9,7 +9,7 @@ import {append, remove} from "./tree";
  */
 export function getScrollBarSize ():number
 {
-    const $scrollableDiv = create('div', {
+    const $scrollableDiv = create('div', null, {
         overflow: 'hidden',
         overflowY: 'visible',
         position: 'absolute',

@@ -9,7 +9,9 @@
   "author": "Alexis Bouhet",
   "license": "MIT",
   "dependencies": {
-    "@solid-js/utils" : "latest",
-    "@solid-js/signal" : "latest"
+    "@solid-js/utils" : "*",
+    "@solid-js/signal" : "*",
+    "@solid-js/yadl" : "*"
   }
 }
+

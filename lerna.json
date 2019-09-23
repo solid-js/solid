@@ -1,6 +1,8 @@
 {
   "packages": [
-    "libraries/*",
+    "libraries/*"
+  ],
+  "TO_ENABLE" : [
     "starters/*"
   ],
   "version": "independent"

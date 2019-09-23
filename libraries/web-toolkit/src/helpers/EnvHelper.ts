@@ -1,16 +1,16 @@
-/**
- * TODO : Rappatrier et patcher EnvUtils ici
- */
-
+import { StringUtils } from "@solid-js/utils";
+import {find, ready} from "@solid-js/yadl";
 
 // TODO : Ajouter le test de l'autoplay : https://github.com/Modernizr/Modernizr/blob/master/feature-detects/video/autoplay.js
 // TODO : A faire optionnel (ajouté avec un import depuis l'extérieur de ce fichier)
 // TODO : Car la mini video embed dans le fichier pèse un minimum
 
-import {StringUtils} from "../../core/utils/StringUtils";
 
-// Si on est sur le vrai IE 11, et non pas la détection user agent qui ne marche plus ...
-export const isRealIE11 = (
+/**
+ * Detect latest IE 11 which can get false results by user agent sniffing.
+ * What a joke.
+ */
+export const isRealIE = (
     !(window['ActiveXObject']) && "ActiveXObject" in window
 );
 
@@ -78,7 +78,7 @@ export interface ICapabilities
     webGL		:boolean;
 }
 
-export class EnvUtils
+export class EnvHelper
 {
     /**
      * If we need a detection
@@ -100,7 +100,7 @@ export class EnvUtils
      */
     private static initDetection ():void
     {
-        if (!EnvUtils.__NEED_DETECTION) return;
+        if (!EnvHelper.__NEED_DETECTION) return;
 
         // Get browser signature
         let browserSignature = navigator.userAgent.toLowerCase();
@@ -109,96 +109,96 @@ export class EnvUtils
         // !window['MSStream'] -> https://www.neowin.net/news/ie11-fakes-user-agent-to-fool-gmail-in-windows-phone-81-gdr1-update
         if (/ipad|iphone|ipod/gi.test(browserSignature) && !window['MSStream'])
         {
-            EnvUtils.__DEVICE_TYPE = EDeviceType.HANDHELD;
-            EnvUtils.__PLATFORM = EPlatform.IOS;
+            EnvHelper.__DEVICE_TYPE = EDeviceType.HANDHELD;
+            EnvHelper.__PLATFORM = EPlatform.IOS;
         }
         else if (/android/gi.test(browserSignature))
         {
-            EnvUtils.__DEVICE_TYPE = EDeviceType.HANDHELD;
-            EnvUtils.__PLATFORM = EPlatform.ANDROID;
+            EnvHelper.__DEVICE_TYPE = EDeviceType.HANDHELD;
+            EnvHelper.__PLATFORM = EPlatform.ANDROID;
         }
         else if (/mac/gi.test(browserSignature))
         {
-            EnvUtils.__DEVICE_TYPE = EDeviceType.DESKTOP;
-            EnvUtils.__PLATFORM = EPlatform.MAC;
+            EnvHelper.__DEVICE_TYPE = EDeviceType.DESKTOP;
+            EnvHelper.__PLATFORM = EPlatform.MAC;
         }
         else if (/windows phone/gi.test(browserSignature))
         {
-            EnvUtils.__DEVICE_TYPE = EDeviceType.HANDHELD;
-            EnvUtils.__PLATFORM = EPlatform.WINDOWS;
+            EnvHelper.__DEVICE_TYPE = EDeviceType.HANDHELD;
+            EnvHelper.__PLATFORM = EPlatform.WINDOWS;
         }
         else if (/windows/gi.test(browserSignature))
         {
-            EnvUtils.__DEVICE_TYPE = EDeviceType.DESKTOP;
-            EnvUtils.__PLATFORM = EPlatform.WINDOWS;
+            EnvHelper.__DEVICE_TYPE = EDeviceType.DESKTOP;
+            EnvHelper.__PLATFORM = EPlatform.WINDOWS;
         }
         else
         {
-            EnvUtils.__DEVICE_TYPE = EDeviceType.DESKTOP;
-            EnvUtils.__PLATFORM = EPlatform.UNKNOWN;
+            EnvHelper.__DEVICE_TYPE = EDeviceType.DESKTOP;
+            EnvHelper.__PLATFORM = EPlatform.UNKNOWN;
         }
 
         // Detect browser
         if (/edge/gi.test(browserSignature))
         {
-            EnvUtils.__BROWSER = EBrowser.EDGE;
+            EnvHelper.__BROWSER = EBrowser.EDGE;
         }
         else if (/chrome/gi.test(browserSignature))
         {
-            EnvUtils.__BROWSER = EBrowser.CHROME;
+            EnvHelper.__BROWSER = EBrowser.CHROME;
         }
         else if (/safari/gi.test(browserSignature))
         {
-            EnvUtils.__BROWSER = EBrowser.SAFARI;
+            EnvHelper.__BROWSER = EBrowser.SAFARI;
         }
         else if (/msie/gi.test(browserSignature) || ("ActiveXObject" in window))
         {
-            EnvUtils.__BROWSER = EBrowser.IE;
+            EnvHelper.__BROWSER = EBrowser.IE;
         }
         else if (/mozilla/gi.test(browserSignature))
         {
-            EnvUtils.__BROWSER = EBrowser.MOZILLA;
+            EnvHelper.__BROWSER = EBrowser.MOZILLA;
         }
         else if (/opera/gi.test(browserSignature))
         {
-            EnvUtils.__BROWSER = EBrowser.OPERA;
+            EnvHelper.__BROWSER = EBrowser.OPERA;
         }
         else
         {
-            EnvUtils.__BROWSER = EBrowser.UNKNOWN;
+            EnvHelper.__BROWSER = EBrowser.UNKNOWN;
         }
 
         // Detect browser engine
         if (/webkit/gi.test(browserSignature))
         {
-            EnvUtils.__BROWSER_ENGINE = EBrowserEngine.WEBKIT;
+            EnvHelper.__BROWSER_ENGINE = EBrowserEngine.WEBKIT;
         }
         else if (/trident/gi.test(browserSignature))
         {
-            EnvUtils.__BROWSER_ENGINE = EBrowserEngine.TRIDENT;
+            EnvHelper.__BROWSER_ENGINE = EBrowserEngine.TRIDENT;
         }
         else if (/gecko/gi.test(browserSignature))
         {
-            EnvUtils.__BROWSER_ENGINE = EBrowserEngine.GECKO;
+            EnvHelper.__BROWSER_ENGINE = EBrowserEngine.GECKO;
         }
         else
         {
-            EnvUtils.__BROWSER_ENGINE = EBrowserEngine.UNKNOWN;
+            EnvHelper.__BROWSER_ENGINE = EBrowserEngine.UNKNOWN;
         }
 
         // Detect client capabilities
-        EnvUtils.__CAPABILITIES = {
+        EnvHelper.__CAPABILITIES = {
             retina		:(("devicePixelRatio" in window) && window.devicePixelRatio >= 1.5),
             touch		:("ontouchstart" in document),
             audio		:("canPlayType" in document.createElement("audio")),
             video		:("canPlayType" in document.createElement("video")),
             pushState	:("history" in window && "pushState" in history),
             geolocation	:("geolocation" in navigator),
-            webGL		:(EnvUtils.isWebglAvailable())
+            webGL		:(EnvHelper.isWebglAvailable())
         };
 
         // Don't need detection anymore
-        EnvUtils.__NEED_DETECTION = false;
+        EnvHelper.__NEED_DETECTION = false;
     }
 
     /**
@@ -208,27 +208,32 @@ export class EnvUtils
     {
         try
         {
-            let canvas = document.createElement("canvas");
+            const canvas = document.createElement("canvas");
             return !!(
                 window["WebGLRenderingContext"] &&
-                (canvas.getContext("webgl") ||
-                    canvas.getContext("experimental-webgl"))
+                (canvas.getContext("webgl") || canvas.getContext("experimental-webgl"))
             );
         }
-        catch(e)
-        {
-            return false;
-        }
+        catch (e) { return false; }
     }
 
+    /**
+     * Check asynchronously if this device can play video with autoplay.
+     * Will load a small empty video to test this.
+     */
+    static async hasVideoAutoPlay ()
+    {
+        const { hasVideoAutoplay } = await import('./EnvHelper_autoplay');
+        return await hasVideoAutoplay();
+    }
 
     /**
      * Get the device type following enum EDeviceType
      */
     static getDeviceType ():EDeviceType
     {
-        EnvUtils.initDetection();
-        return EnvUtils.__DEVICE_TYPE;
+        EnvHelper.initDetection();
+        return EnvHelper.__DEVICE_TYPE;
     }
 
     /**
@@ -237,8 +242,8 @@ export class EnvUtils
      */
     static isDeviceType (pDeviceType:EDeviceType):boolean
     {
-        EnvUtils.initDetection();
-        return EnvUtils.getDeviceType() == pDeviceType;
+        EnvHelper.initDetection();
+        return EnvHelper.getDeviceType() == pDeviceType;
     }
 
 
@@ -247,8 +252,8 @@ export class EnvUtils
      */
     static getPlatform ():EPlatform
     {
-        EnvUtils.initDetection();
-        return EnvUtils.__PLATFORM;
+        EnvHelper.initDetection();
+        return EnvHelper.__PLATFORM;
     }
 
     /**
@@ -257,8 +262,8 @@ export class EnvUtils
      */
     static isPlatform (pPlatform:EPlatform):boolean
     {
-        EnvUtils.initDetection();
-        return EnvUtils.getPlatform() == pPlatform;
+        EnvHelper.initDetection();
+        return EnvHelper.getPlatform() == pPlatform;
     }
 
 
@@ -267,8 +272,8 @@ export class EnvUtils
      */
     static getBrowser ():EBrowser
     {
-        EnvUtils.initDetection();
-        return EnvUtils.__BROWSER;
+        EnvHelper.initDetection();
+        return EnvHelper.__BROWSER;
     }
 
     /**
@@ -287,9 +292,9 @@ export class EnvUtils
      */
     static getIOSVersion ():number[]
     {
-        EnvUtils.initDetection();
+        EnvHelper.initDetection();
 
-        if (EnvUtils.__PLATFORM == EPlatform.IOS)
+        if (EnvHelper.__PLATFORM == EPlatform.IOS)
         {
             // http://stackoverflow.com/questions/8348139/detect-ios-version-less-than-5-with-javascript/11129615#11129615
             let v = (navigator.appVersion).match(/OS (\d+)_(\d+)_?(\d+)?/);
@@ -309,8 +314,8 @@ export class EnvUtils
      */
     static isBrowser (pBrowser:EBrowser):boolean
     {
-        EnvUtils.initDetection();
-        return EnvUtils.getBrowser() == pBrowser;
+        EnvHelper.initDetection();
+        return EnvHelper.getBrowser() == pBrowser;
     }
 
     /**
@@ -318,8 +323,8 @@ export class EnvUtils
      */
     static getBrowserEngine ():EBrowserEngine
     {
-        EnvUtils.initDetection();
-        return EnvUtils.__BROWSER_ENGINE;
+        EnvHelper.initDetection();
+        return EnvHelper.__BROWSER_ENGINE;
     }
 
     /**
@@ -328,8 +333,8 @@ export class EnvUtils
      */
     static isBrowserEngine (pBrowserEngine:EBrowserEngine):boolean
     {
-        EnvUtils.initDetection();
-        return EnvUtils.getBrowserEngine() == pBrowserEngine;
+        EnvHelper.initDetection();
+        return EnvHelper.getBrowserEngine() == pBrowserEngine;
     }
 
 
@@ -339,8 +344,8 @@ export class EnvUtils
      */
     static getCapabilities ():ICapabilities
     {
-        EnvUtils.initDetection();
-        return EnvUtils.__CAPABILITIES;
+        EnvHelper.initDetection();
+        return EnvHelper.__CAPABILITIES;
     }
 
     /**
@@ -348,12 +353,12 @@ export class EnvUtils
      */
     static log ():void
     {
-        console.group("EnvUtils.log");
-        console.log("deviceType", EnvUtils.getDeviceType());
-        console.log("platform", EnvUtils.getPlatform());
-        console.log("browser", EnvUtils.getBrowser());
-        console.log("browserEngine", EnvUtils.getBrowserEngine());
-        console.log("capabilities", EnvUtils.getCapabilities());
+        console.group('EnvHelper.log');
+        console.log('deviceType', EnvHelper.getDeviceType());
+        console.log('platform', EnvHelper.getPlatform());
+        console.log('browser', EnvHelper.getBrowser());
+        console.log('browserEngine', EnvHelper.getBrowserEngine());
+        console.log('capabilities', EnvHelper.getCapabilities());
         console.groupEnd();
     }
 
@@ -367,28 +372,32 @@ export class EnvUtils
      * has-video
      * has-geolocation
      */
-    static addClasses (pToSelector:string = 'body', pPrefix = ''):void
+    static async addClasses ( pToSelector:string = 'body' )
     {
         // Get env properties
-        EnvUtils.initDetection();
+        EnvHelper.initDetection();
 
-        // Wait DOM
-        $( () =>
+        // Wait DOM to be ready
+        await ready();
+
+        // Convert to class names
+        const classNames = [];
+        const addIs = ( property ) => classNames.push( 'is-' + property );
+        const addHas = ( feature ) => classNames.push( 'is-' + feature );
+
+        // Add properties
+        addIs( StringUtils.dashToCamelCase( EBrowser[EnvHelper.__BROWSER], '_' ) );
+        addIs( StringUtils.dashToCamelCase( EBrowserEngine[EnvHelper.__BROWSER_ENGINE], '_' ) );
+        addIs( StringUtils.dashToCamelCase( EDeviceType[EnvHelper.__DEVICE_TYPE], '_' ) );
+        addIs( StringUtils.dashToCamelCase( EPlatform[EnvHelper.__PLATFORM], '_' ) );
+
+        // Add capabilities
+        for ( let i in EnvHelper.__CAPABILITIES )
         {
-            // Target selector
-            let $domRoot = $(pToSelector);
+            EnvHelper.__CAPABILITIES[ i ] && addHas( i );
+        }
 
-            // Add env properties classes
-            $domRoot.addClass(pPrefix + 'is-' + StringUtils.dashToCamelCase(EBrowser[EnvUtils.__BROWSER]				, '_'));
-            $domRoot.addClass(pPrefix + 'is-' + StringUtils.dashToCamelCase(EBrowserEngine[EnvUtils.__BROWSER_ENGINE]	, '_'));
-            $domRoot.addClass(pPrefix + 'is-' + StringUtils.dashToCamelCase(EDeviceType[EnvUtils.__DEVICE_TYPE]		, '_'));
-            $domRoot.addClass(pPrefix + 'is-' + StringUtils.dashToCamelCase(EPlatform[EnvUtils.__PLATFORM]				, '_'));
-
-            // Add capabilites
-            for (let i in EnvUtils.__CAPABILITIES)
-            {
-                EnvUtils.__CAPABILITIES[i] && $domRoot.addClass(pPrefix + 'has-' + i);
-            }
-        });
+        // Add env properties classes to element to find (default is body)
+        find( pToSelector ).first().classList.add( ...classNames );
     }
 }
