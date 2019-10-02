@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "alwaysStrict": true,
+    "jsx": "react",
+    "target": "es5",
+    "module": "es6",
+    "lib": ["dom", "esnext"],
+    "jsxFactory": "h",
+    "noEmitHelpers": true,
+    "importHelpers": true,
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "baseUrl": "./"
+  }
+}

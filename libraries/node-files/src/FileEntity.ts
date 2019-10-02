@@ -1,5 +1,5 @@
-import {default as rimraf} from "rimraf";
-import * as ncp from "ncp";
+const rimraf = require('rimraf');
+const ncp = require('ncp');
 import * as fs from "fs";
 import * as nodePath from "path";
 
@@ -117,7 +117,7 @@ export class FileEntity
 	 */
 	async exists ()
 	{
-		this.checkStats();
+		await this.checkStats();
 		return this._exists;
 	}
 
@@ -160,12 +160,55 @@ export class FileEntity
 	// ------------------------------------------------------------------------- FS ACTIONS
 
 	/**
+	 * Will add file name to "to" if "to" is a directory.
+	 * Will create parent directories if it does not exists.
+	 *
+	 * Ex : manipulate ".htaccess" to "dist".
+	 * "to" will become dist/.htaccess if dist is a folder
+	 * Ex : manipulate "template.htaccess" to "dist/.htaccess"
+	 * "to" will still be "dist/.htaccess" because this is a folder
+	 *
+	 * @param to
+	 */
+	protected async safeTo ( to:string )
+	{
+		// Split slashes
+		const toSlashSplit = to.split('/');
+
+		// If last part of to path seems to be a file (contains a dot)
+		const fileNameContainsADot = (
+			toSlashSplit.length > 0 && toSlashSplit[ toSlashSplit.length -1 ]
+			&&
+			toSlashSplit[ toSlashSplit.length -1 ].indexOf('.') !== -1
+		);
+
+		// Then remove last part if it seems to be a file name
+		if ( fileNameContainsADot ) toSlashSplit.pop();
+
+		// Create all parent folders if needed
+		await new Promise( resolve => require('mkdirp')( toSlashSplit.join('/'), resolve));
+
+		try
+		{
+			// Get end directory stats
+			const toStats = await fs.promises.stat( to );
+			if ( toStats.isDirectory() )
+				to = nodePath.join(to, this._name);
+		}
+		catch ( e ) {}
+		return to;
+	}
+
+	/**
 	 * Copy this FileEntity recursively
 	 * @param to Path of the clone
 	 */
 	async copy ( to:string )
 	{
-		return new Promise( resolve => ncp( this._path, to, resolve ) );
+		return new Promise( async resolve => {
+			to = await this.safeTo(to);
+			ncp( this._path, to, resolve );
+		});
 	}
 
 	/**
@@ -174,7 +217,10 @@ export class FileEntity
 	 */
 	async move ( to:string )
 	{
-		return new Promise( resolve => fs.rename( this._path, to, resolve ) );
+		return new Promise( async resolve => {
+			to = await this.safeTo(to);
+			fs.rename( this._path, to, resolve );
+		});
 	}
 
 	/**

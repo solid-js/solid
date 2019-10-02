@@ -2,20 +2,19 @@
   "compilerOptions" : {
     "jsx": "react",
     "jsxFactory" : "h",
+    //"module": "es6",
+    //"target": "esnext",
+    "sourceMap": true,
+    "removeComments": true,
     "lib": ["dom", "esnext"],
-
     "rootDir": "./src",
-    "outDir": "./dist",
-    "baseUrl": "./",
-    "paths" : {
-      //"@solid-js/global/*": ["../core-utils/global/*"],
-      //"@solid-js/signal/*": ["../core-signal/dist/*"],
-      //"@solid-js/utils/*": ["../core-utils/dist/*"]
-    }
+    "outDir": "./dist"
+    //"baseUrl": "./"
   },
   "compileOnSave": false,
   "include": [
-    "src/**/*"
+    "./src/**/*.tsx",
+    "./src/**/*.ts"
   ],
   "exclude": [
     "node_modules"

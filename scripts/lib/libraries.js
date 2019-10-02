@@ -70,6 +70,9 @@ exports.buildLibrary = function ( libraryName, buildLevel = 1, progress )
     // Do add declaration files (.d.ts) this time
     execSync(`tsc -p ${libraryConfigPath} --declaration true --module commonjs`);
 
+    // Copy _global.d.ts in dist
+    fs.copyFileSync(globalTemplatePath,     path.join( libraryPath, 'dist', '_global.d.ts' ));
+
     // Update percentage
     progress && progress( buildLevel >= 1 ? 2 : 1, buildLevel + 1);
 

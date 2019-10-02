@@ -6,7 +6,6 @@
   "module": "dist/_index.mjs",
   "types": "dist/_index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
     "solid",

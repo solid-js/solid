@@ -1,0 +1,26 @@
+{
+  "name": "@solid-js/navigation",
+  "version": "0.1.0",
+  "description": "",
+  "main": "dist/_index.js",
+  "module": "dist/_index.mjs",
+  "types": "dist/_index.d.ts",
+  "scripts": {},
+  "dependencies": {
+    "@solid-js/signal": "*",
+    "@solid-js/utils": "*",
+    "@solid-js/yadl": "*",
+    "preact": "^10.0.0-rc.3",
+    "browser-or-node": "^1.2.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/solid-js/solid.git libraries/core-navigation"
+  },
+  "author": "Alexis Bouhet",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/solid-js/solid/issues"
+  },
+  "homepage": "https://github.com/solid-js/solid/libraries/core-navigation"
+}

@@ -6,23 +6,9 @@
   "author": "Alexis Bouhet",
   "license": "MIT",
   "parcel-plugin-structurize": false,
-  "__parcel-plugin-structurize": {
-    "scripts": {
-      "match": "*.{js,js.map}",
-      "folder": "js"
-    },
-    "styles": {
-      "match": "*.{css,css.map}",
-      "folder": "css"
-    },
-    "assets": {
-      "match": "*.{png,svg,jpg,jpg2,jpeg,gif,bmp,webm}",
-      "folder": "assets"
-    }
-  },
   "devDependencies": {
-    "@solid-js/cli": "^0.4.0",
-    "@solid-js/files": "^0.1.4",
+    "@solid-js/cli": "*",
+    "@solid-js/files": "*",
     "inquirer": "^7.0.0",
     "less": "^3.10.3",
     "mri": "^1.1.4",
@@ -32,19 +18,17 @@
     "yargs": "^14.0.0"
   },
   "dependencies": {
-    "@solid-js/nanostache": "^0.2.1",
-    "@solid-js/signal": "^0.4.2"
-  },
-  "WAITINGDEP": {
-    "@solid-js/utils": "latest",
-    "@solid-js/yadl": "latest",
-    "@solid-js/web-utils": "latest",
-    "@solid-js/web-helpers": "latest",
-    "@solid-js/navigation": "latest"
+    "@solid-js/nanostache": "*",
+    "@solid-js/navigation": "*",
+    "@solid-js/signal": "*",
+    "@solid-js/utils": "*",
+    "@solid-js/yadl": "*",
+    "browser-or-node": "^1.2.1",
+    "preact": "^10.0.0-rc.3"
   },
   "scripts": {
-    "dev": "node scripts/build dev",
-    "production": "node scripts/build production",
+    "dev": "node scripts/clean dist && node scripts/build dev",
+    "production": "node scripts/clean dist && node scripts/build production",
     "clean": "node scripts/clean",
     "scaff": "node scripts/scaffold"
   }

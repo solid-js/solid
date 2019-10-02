@@ -1,6 +1,5 @@
-import {StringUtils} from "../utils/StringUtils";
-import {ArrayUtils} from "../utils/ArrayUtils";
-import {Signal} from "../helpers/Signal";
+import {StringUtils} from "@solid-js/utils";
+import {Signal} from "@solid-js/signal";
 import {IPageStack} from "./IPageStack";
 
 // ----------------------------------------------------------------------------- STRUCT
@@ -208,8 +207,8 @@ export class Router
         }
 
         // Add leading and trailing slash
-        value = StringUtils.leadingSlash(value, true);
-        value = StringUtils.trailingSlash(value, true);
+        value = StringUtils.leading(value, true);
+        value = StringUtils.trailing(value, true);
 
         // Set
         this._base = value;
@@ -279,32 +278,22 @@ export class Router
     /**
      * Router constructor.
      * Please use before accessing with singleton static methods.
-     * @param pBase The base of the app from the server. @see Router.base
-     * @param pRoutes List of declared routes.
-     * @param pFakeMode With fake mode, Router is working without address bar. Usefull when embedded inside a web view for example.
+     * @param base The base of the app from the server. @see Router.base
+     * @param fakeMode With fake mode, Router is working without address bar. Usefull when embedded inside a web view for example.
      */
-    static init (pBase:string = '', pRoutes:IRoute[] = null, pFakeMode = false)
+    static init (base = '', fakeMode = false)
     {
         // Set base
-        this.base = pBase;
-
-        // Add routes
-        this.addRoutes(pRoutes);
-
-        // Record fakemode
-        this._dryMode = pFakeMode;
+        this.base = base;
 
         // In fake mode, init current path
+        this._dryMode = fakeMode;
         if ( this._dryMode )
-        {
             this._currentPath = '';
-        }
 
         // Listen to popstate
         else
-        {
             window.addEventListener('popstate', this.popStateHandler );
-        }
     }
 
     /**
@@ -327,15 +316,18 @@ export class Router
      * Default signature is a[data-internal-link]
      * @param pLinkSignature Signature to listen.
      */
-    static listenLinks (pLinkSignature = 'a[data-internal-link]')
+    // TODO : Avec Yadl
+    /*static listenLinks (pLinkSignature = 'a[data-internal-link]')
     {
         $( document ).on( 'click', pLinkSignature, this.linkClickedHandler );
     }
+     */
 
     /**
      * When an internal link is clicked.
      * @param pEvent
      */
+    /*
     protected static linkClickedHandler = (pEvent:Event) =>
     {
         // Do not follow link
@@ -355,7 +347,7 @@ export class Router
         // Follow link
         Router.openURL( fullPath );
         return true;
-    };
+    };*/
 
 
     // ------------------------------------------------------------------------- ANALYTICS
@@ -370,7 +362,7 @@ export class Router
     {
         // Page path, starting with a /
         // @see : https://developers.google.com/analytics/devguides/collection/gtagjs/pages
-        const path = StringUtils.leadingSlash(this._currentPath, true);
+        const path = StringUtils.leading(this._currentPath, true);
 
         // If old GA lib is loaded
         if ('ga' in window)
@@ -715,13 +707,13 @@ export class Router
         }
 
         // Force leading slash on URL
-        pURL = StringUtils.leadingSlash(pURL, true);
+        pURL = StringUtils.leading(pURL, true);
 
         // If our URL doesn't include base
         if (pURL.indexOf(this._base) != 0)
         {
             // Add base to URL
-            pURL = this._base + StringUtils.leadingSlash(pURL, false);
+            pURL = this._base + StringUtils.leading(pURL, false);
         }
 
         // Return prepared URL
@@ -738,7 +730,7 @@ export class Router
         pURL = this.prepareURL( pURL );
 
         // Remove base and add leading slash
-        let pathWithoutBase = StringUtils.leadingSlash(
+        let pathWithoutBase = StringUtils.leading(
             StringUtils.extractPathFromBase(pURL, this._base),
             true
         );
@@ -826,32 +818,22 @@ export class Router
         {
             // Check if this route is ok with this match
             if (
-                // Check page
                 route.page == pRouteMatch.page
-                &&
-                // Check action
-                route.action == pRouteMatch.action
-                &&
-                // Check stack
-                route.stack == pRouteMatch.stack
-            )
-            {
+                && route.action == pRouteMatch.action
+                && route.stack == pRouteMatch.stack
+            ) {
                 // Check if given parameters exists in this route
                 for (let i in pRouteMatch.parameters)
                 {
-                    if (!ArrayUtils.inArray(route._matchingParameter, i))
-                    {
+                    if (route._matchingParameter.indexOf(i) === -1)
                         return true;
-                    }
                 }
 
                 // And check if this route have a value for all needed parameters
                 for (let i in route._matchingParameter)
                 {
                     if (!(route._matchingParameter[i] in pRouteMatch.parameters))
-                    {
                         return true;
-                    }
                 }
 
                 // Replace parameters and slugify them
@@ -893,8 +875,8 @@ export class Router
         // Return found URL
         return (
             pPrependBase
-                ? this._base + StringUtils.leadingSlash(foundURL, false)
-                : foundURL
+            ? this._base + StringUtils.leading(foundURL, false)
+            : foundURL
         );
     }
 
@@ -928,8 +910,8 @@ export class Router
         {
             // Change URL and add to history or replace
             pAddToHistory
-                ? window.history.pushState(null, null, pURL)
-                : window.history.replaceState(null, null, pURL);
+            ? window.history.pushState(null, null, pURL)
+            : window.history.replaceState(null, null, pURL);
         }
 
         // Update route
