@@ -311,16 +311,25 @@ export class File extends FileEntity
 	 * @param startOrNumber
 	 * @param replaceBy
 	 */
-	line ( startOrNumber: string | number, replaceBy ?: string )
+	line ( startOrNumber?: string | number, replaceBy ?: string )
 	{
 		this.checkDataSync();
 
 		// Split content in lines
 		const lines = this._data.split("\n");
+		const totalLines = lines.length;
+
+		// Return total lines count if no parameters sent
+		if ( startOrNumber == null && replaceBy == null ) return totalLines;
 
 		// If we need to treat lines by number
 		if ( typeof startOrNumber === 'number' )
 		{
+			// Count backward if line number is negative
+			// -1 is the last line, -2 the line before, etc ...
+			if ( startOrNumber < 0 )
+				startOrNumber = totalLines + startOrNumber;
+
 			// Replace string and return chain
 			if ( replaceBy != null )
 			{
