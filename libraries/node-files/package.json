@@ -1,6 +1,6 @@
 {
   "name": "@solid-js/files",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "File (or F$) is a NodeJS file management helper with a super simple API to make build scripts lite and readable. Powered by Glob and Fs-extra.",
   "main": "dist/index.js",
   "module": "dist/index.js",

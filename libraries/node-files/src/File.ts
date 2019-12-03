@@ -308,6 +308,7 @@ export class File extends FileEntity
 	/**
 	 * TODO DOC
 	 * TODO TEST
+	 * TODO : Un replace qui est une fonction qui passe la ligne identifiée en entrée et attend la nouvelle ligne en sortie
 	 * @param startOrNumber
 	 * @param replaceBy
 	 */
@@ -320,7 +321,7 @@ export class File extends FileEntity
 		const totalLines = lines.length;
 
 		// Return total lines count if no parameters sent
-		if ( startOrNumber == null && replaceBy == null ) return totalLines;
+		if ( startOrNumber == null ) return totalLines;
 
 		// If we need to treat lines by number
 		if ( typeof startOrNumber === 'number' )
@@ -333,6 +334,7 @@ export class File extends FileEntity
 			// Replace string and return chain
 			if ( replaceBy != null )
 			{
+				// TODO opt with 362
 				lines[ startOrNumber ] = replaceBy;
 				this._data = lines.join("\n");
 				return this;
@@ -342,9 +344,7 @@ export class File extends FileEntity
 			else return ( startOrNumber in lines ) ? lines[ startOrNumber ] : null;
 		}
 
-		// Otherwise treat lines by starting
-
-		// Browse all lines
+		// Otherwise treat lines by starting identification
 		let currentLine:string;
 		for ( let i = 0; i < lines.length; i ++ )
 		{
@@ -353,11 +353,12 @@ export class File extends FileEntity
 
 			// Continue to search if not starting with startOrNumber
 			// TODO : Less strict find ? Whitespaces ?
-			if ( currentLine.indexOf(startOrNumber) !== 0 ) continue;
+			if ( currentLine.indexOf(startOrNumber) === -1 ) continue;
 
 			// Replace string and return chain
 			if ( replaceBy != null )
 			{
+				// TODO opt with 336
 				lines[ startOrNumber ] = replaceBy;
 				this._data = lines.join("\n");
 				return this;
@@ -370,6 +371,13 @@ export class File extends FileEntity
 		// Return awaited default type
 		return replaceBy != null ? this : null;
 	}
+
+	//
+	/**
+	 * TODO : lines, same as line but with mutli-lines optimisations
+	 * Par example, ajouter '-> ' au début de chaque ligne :
+	 * lines('*', content => '->' + content);
+	 */
 
 	/**
 	 * TODO DOC
