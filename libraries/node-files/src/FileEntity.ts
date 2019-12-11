@@ -71,8 +71,8 @@ export class FileEntity
 		// Get full name (name without base but with extensions)
 		this._fullName = nodePath.basename( path );
 
-		// Get name (full name without extension)
-		this._name = this._fullName.substr(this._fullName.indexOf('.'), this._fullName.length);
+		// Get name (full name without extensions)
+		this._name = this._fullName.substr(0, this._fullName.lastIndexOf('.'));
 	}
 
 	// ------------------------------------------------------------------------- STATS

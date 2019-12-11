@@ -62,7 +62,7 @@ export class File extends FileEntity
 	async updateData ():Promise<TRawWritableContent>
 	{
 		try {
-			this._data = await fs.promises.readFile( this._path, { encoding: this.encoding } ).toString();
+			this._data = (await fs.promises.readFile( this._path, { encoding: this.encoding } )).toString();
 		}
 		catch (e) {
 		    this._data = '';
