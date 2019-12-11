@@ -237,12 +237,12 @@ exports.task = function ( message, icon = '➤', dots = ' ...' )
             if ( clearOverflow )
             {
                 // Clear all line
-                stds.out.cursorTo && stds.out.cursorTo( 0 );
+                stds.out.cursorTo ? stds.out.cursorTo( 0 ) : stds.out.write("\n");
                 stds.out.write( exports.repeat(workingMessage.length + overflowToClear) );
             }
 
             // Build new state
-            stds.out.cursorTo && stds.out.cursorTo( 0 );
+            stds.out.cursorTo ? stds.out.cursorTo( 0 ) : stds.out.write("\n");
             stds.out.write( buildState(state, bold, newText ) );
         }
 
@@ -267,7 +267,7 @@ exports.task = function ( message, icon = '➤', dots = ' ...' )
             output += ( current / total > i / width ) ? '█' : '░';
 
         // Write progress bar
-        stds.out.cursorTo && stds.out.cursorTo( 0 );
+        stds.out.cursorTo ? stds.out.cursorTo( 0 ) : stds.out.write("\n");
         stds.out.write( workingMessage + '  ' + output );
     }
 
