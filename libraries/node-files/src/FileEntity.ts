@@ -48,11 +48,16 @@ export class FileEntity
 	protected _fullName:string;
 
 	/**
-	 * File extensions, reversed.
-	 * Directories can have extension too !
+	 * All file extensions, lowercase and reversed.
+	 * Directories can have extension too.
 	 */
 	get extensions () { return this._extensions }
 	protected _extensions:string[];
+
+	/**
+	 * Last file extension, lowercase
+	 */
+	get extension () { return this._extensions[0] || null }
 
 	// ------------------------------------------------------------------------- CONSTRUCT
 
@@ -62,8 +67,9 @@ export class FileEntity
 		this._stats = stats;
 
 		// Get extensions, lower case and reverse them
-		const dotExt = nodePath.extname( path ).toLowerCase();
-		this._extensions = dotExt.substr(1, dotExt.length).split('.').reverse();
+		const dotIndex = path.indexOf('.');
+		if ( dotIndex >= 0 )
+			this._extensions = path.toLowerCase().substr( dotIndex + 1, path.length ).split('.').reverse();
 
 		// Get base (parents directories from cwd)
 		this._base = nodePath.dirname( path );
