@@ -399,7 +399,7 @@ export class File extends FileEntity
 	template ( values:ScalarObject )
 	{
 	    this.checkDataSync();
-        this._data = require('@solid-js/nanostache')( this._data, values );
+        this._data = require('@solid-js/nanostache').Nanostache( this._data, values );
         return this;
 	}
 
