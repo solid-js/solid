@@ -166,7 +166,7 @@ export class File extends FileEntity
         if (this._data == null) return;
 
         // Save this content to a new file
-        if (newPath) this._path = newPath;
+        if (newPath) this._path = await this.safeTo( newPath );
         await fs.promises.writeFile( this._path, this._data, { encoding: this.encoding } );
     }
 
