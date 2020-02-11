@@ -188,7 +188,7 @@ export class FileEntity
 			toSlashSplit[ toSlashSplit.length -1 ].indexOf('.') !== -1
 		);
 
-		// Then remove last part if it seems to be a file name
+		// Then remove last part
 		if ( fileNameContainsADot ) toSlashSplit.pop();
 
 		// Create all parent folders if needed
@@ -199,7 +199,7 @@ export class FileEntity
 			// Get end directory stats
 			const toStats = await fs.promises.stat( to );
 			if ( toStats.isDirectory() )
-				to = nodePath.join(to, this._name);
+				to = nodePath.join(to, this._fullName);
 		}
 		catch ( e ) {}
 		return to;
