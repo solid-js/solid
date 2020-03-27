@@ -255,8 +255,9 @@ exports.task = function ( message, icon = '➤', dots = ' ...' )
      * @param current Current value
      * @param total Total value to compare current value with ( 1 and 10 will make 10 percent )
      * @param width Bar width. Default is 30px
+     * @param afterProgress Update text after the progress bar
      */
-    function updateProgress ( current, total, width = 30 )
+    function updateProgress ( current, total, width = 30, afterProgress = null )
     {
         // Set overflow to clear from bar width
         overflowToClear = Math.max(overflowToClear, width + 2);
@@ -269,6 +270,9 @@ exports.task = function ( message, icon = '➤', dots = ' ...' )
         // Write progress bar
         stds.out.cursorTo ? stds.out.cursorTo( 0 ) : stds.out.write("\n");
         stds.out.write( workingMessage + '  ' + output );
+
+        if (afterProgress)
+            stds.out.write( ' ' + afterProgress );
     }
 
     /**
