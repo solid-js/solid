@@ -1,4 +1,3 @@
-
 // ----------------------------------------------------------------------------- STRUCT
 
 /**
@@ -90,26 +89,23 @@ export class Signal <GArguments extends any[] = any[]>
 	dispatch (...rest:GArguments):any[]
 	{
 		const listenersToRemove	:IListener<GArguments>[] = [];
-		const results = this._listeners.filter( currentListener =>
-		{
+		const results = this._listeners.map( currentListener => {
 			// Call the listener
 			const currentResult = currentListener.handler.apply( currentListener.scope, rest );
 
 			// If it's an once listener, mark as remove
-			currentListener.once
-			&&
-			listenersToRemove.push(currentListener);
+			currentListener.once && listenersToRemove.push(currentListener);
 
-			// If we have result, add it to the return package
-			return currentResult != null;
-		});
+			// Add result to returned list
+			return currentResult
+
+			// Filter out any undefined returns
+		}).filter( v => v !== undefined );
 
 		// Remove all once listeners
 		const total = listenersToRemove.length;
 		for ( let listenerIndex = 0; listenerIndex < total; listenerIndex ++ )
-		{
 			this.remove( listenersToRemove[ listenerIndex ].handler );
-		}
 
 		// Return the result package of all listeners
 		return results;
@@ -172,14 +168,11 @@ export class Signal <GArguments extends any[] = any[]>
 
 			// Throw error if handler has not been found and deleted.
 			if ( newListeners.length == this._listeners.length )
-			{
 				throw new Error(`Signal // Handler ${handlerSignature} has not been removed. Set scope if needed and avoid adding binded functions.`);
-			}
+
 			// Throw error if more than one handler has been deleted
 			else if ( newListeners.length < this._listeners.length - 1 )
-			{
 				throw new Error(`Signal // Handler ${handlerSignature} has not been removed. Set scope if needed and avoid adding binded functions.`);
-			}
 		}
 
 		// Remap new listeners

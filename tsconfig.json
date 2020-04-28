@@ -5,7 +5,7 @@
 
     // Included libraries for NPM
     // You can add libs for Dom, Node, etc ...
-    "lib": ["es2018", "dom"],
+    "lib": ["es2018"],
 
     // Typings roots. Use node_modules types
     // and also types folder to be able to create new types

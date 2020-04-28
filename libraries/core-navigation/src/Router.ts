@@ -312,6 +312,10 @@ export class Router
     // ------------------------------------------------------------------------- LINKS LISTENING
 
     /**
+     * TODO : Faire balise link sans YADL
+     */
+
+    /**
      * Listen links to fire internal router.
      * Default signature is a[data-internal-link]
      * @param pLinkSignature Signature to listen.

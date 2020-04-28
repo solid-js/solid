@@ -334,7 +334,7 @@ export class File extends FileEntity
 			// Replace string and return chain
 			if ( replaceBy != null )
 			{
-				// TODO opt with 362
+				// TODO opt with line 362
 				lines[ startOrNumber ] = replaceBy;
 				this._data = lines.join("\n");
 				return this;
@@ -358,7 +358,7 @@ export class File extends FileEntity
 			// Replace string and return chain
 			if ( replaceBy != null )
 			{
-				// TODO opt with 336
+				// TODO opt with line 336
 				lines[ startOrNumber ] = replaceBy;
 				this._data = lines.join("\n");
 				return this;
@@ -370,6 +370,24 @@ export class File extends FileEntity
 
 		// Return awaited default type
 		return replaceBy != null ? this : null;
+	}
+
+	removeLines ( lineNumbers:number|number[] )
+	{
+		if ( typeof lineNumbers == 'number' )
+			lineNumbers = [ lineNumbers ];
+
+		// Split content in lines
+		let lines = this._data.split("\n");
+		const totalLines = lines.length;
+
+		lines = lines.filter( (line, i) => {
+			const lineIndex = ( i < 0 ? totalLines - i : i );
+			return (lineNumbers as number[]).indexOf( lineIndex ) !== 0;
+		});
+
+		this._data = lines.join("\n");
+		return this;
 	}
 
 	//

@@ -57,8 +57,19 @@ const tests = {
         });
 
         //console.log( newContent );
-    }
+    },
 
+
+    async lines ()
+    {
+        const file = await F('linestxt', cwd);
+
+        file.removeLines(2);
+        file.removeLines([4, 5]);
+        file.removeLines([-2, -3, -4]);
+
+
+    }
 };
 
 (async () =>
@@ -68,5 +79,6 @@ const tests = {
     // await tests.matchMulti1();
     // await tests.matchMulti2();
 
-    await tests.file();
+    //await tests.file();
+    await tests.lines();
 })();

@@ -9,9 +9,10 @@
   "dependencies": {
     "@solid-js/signal": "*",
     "@solid-js/utils": "*",
-    "@solid-js/yadl": "*",
-    "preact": "^10.0.0-rc.3",
     "browser-or-node": "^1.2.1"
+  },
+  "peerDependencies": {
+    "preact": "^10.0.0-rc.3"
   },
   "repository": {
     "type": "git",

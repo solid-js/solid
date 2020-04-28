@@ -25,6 +25,7 @@ export class StateSignal <GState> extends Signal <[GState]>
 	/**
 	 * Dispatch a new state to every listeners
 	 */
+	dispatch (...rest)
 	dispatch ( state:GState, force = false )
 	{
 		// Shallow equals incoming state with current state
