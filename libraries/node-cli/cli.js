@@ -250,6 +250,8 @@ exports.task = function ( message, icon = '➤', dots = ' ...' )
         exports.newLine();
     }
 
+    let previousAfterProgress = null;
+
     /**
      * Show a percentage bar next to the task name
      * @param current Current value
@@ -273,6 +275,11 @@ exports.task = function ( message, icon = '➤', dots = ' ...' )
 
         if (afterProgress)
             stds.out.write( ' ' + afterProgress );
+
+        if ( afterProgress && previousAfterProgress )
+            stds.out.write( module.exports.repeat(Math.max(0, previousAfterProgress.length - afterProgress.length), ' ') );
+
+        previousAfterProgress = afterProgress;
     }
 
     /**

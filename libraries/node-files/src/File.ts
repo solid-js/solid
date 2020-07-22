@@ -407,6 +407,7 @@ export class File extends FileEntity
 	{
 		this.checkDataSync();
 		this._data = this._data.replace( search, replace + '' );
+		return this;
 	}
 
 	/**
