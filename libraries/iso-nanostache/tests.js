@@ -1,4 +1,4 @@
-const { Nanostache } = require("./dist");
+const { Nanostache } = require("./dist/_index");
 const { test } = require("../node-cli/cli");
 
 

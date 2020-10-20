@@ -93,7 +93,7 @@ Nanostache('{{plainFunction}} == 15', {
         return this.value;
     }
 });
-// 'Brad Pitt is 55 years old'
+// '15 == 15'
 ```
 
 ### Complex example mixing functions and ternaries

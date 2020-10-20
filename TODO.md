@@ -2,13 +2,13 @@
 - Trouver un moyen propre pour partager _global.ts
 - Trouver système de doc globale qui peut taper dans chaque paquet
 
-# core-nanostache
+# iso-nanostache
 - Doc
 
-# core-signal
+# iso-signal
 - Reprendre et terminer la doc
 
-# core-utils
+# iso-utils
 - Voir TODO du proj
 
 # node-cli
@@ -48,7 +48,7 @@
 - Utile ?
 
 # web-utils
-- Trouver un nom pour le paquet qui ne rentre pas en conflit avec core-utils ...
+- Trouver un nom pour le paquet qui ne rentre pas en conflit avec iso-utils ...
 
 # web-yadl
 - A terminer 

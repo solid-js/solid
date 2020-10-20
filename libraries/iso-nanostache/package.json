@@ -1,13 +1,13 @@
 {
   "name": "@solid-js/nanostache",
   "description": "Ultra-lightweight Javascript template processor.",
-  "version": "0.9.1",
-  "main": "dist/_index.js",
+  "version": "1.0.0",
+  "main": "dist/_index",
   "module": "dist/_index.mjs",
   "types": "dist/_index.d.ts",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/solid-js/solid.git libraries/core-nanostache"
+    "url": "git+https://github.com/solid-js/solid.git libraries/iso-nanostache"
   },
   "keywords": [
     "solid",
@@ -23,11 +23,11 @@
   "bugs": {
     "url": "https://github.com/solid-js/solid/issues"
   },
-  "homepage": "https://github.com/solid-js/solid/libraries/core-nanostache",
+  "homepage": "https://github.com/solid-js/solid/libraries/iso-nanostache",
   "devDependencies": {
-    "@solid-js/cli" : "^0.9.0"
+    "@solid-js/cli": "^0.9.0"
   },
-  "scripts" : {
+  "scripts": {
     "test": "node tests"
   }
 }
