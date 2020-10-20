@@ -129,9 +129,9 @@ const terserOptions = [
  * Build library for given name.
  * @param libraryName
  * @param buildLevel
- *           1 -> Build only .mjs
- *           2 -> Build mjs and CommonJS .js fallback
- *           3 -> Also build .min.js + estimate gzip size
+ *           0 -> Build only CommonJS
+ *           1 -> Build EsNext modules and CommonJS
+ *           2 -> Also build .min.js + estimate gzip size. Only if not a node lib.
  * @param progress Called each time build progresses
  */
 exports.buildLibrary = function ( libraryName, buildLevel = 1, progress )

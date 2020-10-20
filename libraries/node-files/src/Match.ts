@@ -27,7 +27,7 @@ type TDirectoryHandler 	= (entity:Directory) 	=> any
  * @param cwd Root directory to search from. Default is process.cwd()
  * @param filter Filter function to filter some files at each updates. Useful to simplify glob pattern.
  */
-export function M ( pattern:string, cwd?:string, filter?:IFilter ):Match
+export function $M ( pattern:string, cwd?:string, filter?:IFilter ):Match
 {
 	return new Match( pattern, cwd, filter );
 }
@@ -36,6 +36,24 @@ export function M ( pattern:string, cwd?:string, filter?:IFilter ):Match
 
 export class Match
 {
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Target files and directories from a glob.
+	 * @param pattern Glob pattern @see https://www.npmjs.com/package/glob
+	 * @param cwd Root directory to search from. Default is process.cwd()
+	 * @param filter Filter function to filter some files at each updates. Useful to simplify glob pattern.
+	 */
+	static create ( pattern:string, cwd?:string, filter?:IFilter ):Match
+	{
+		return new Match( pattern, cwd, filter )
+	}
+
+	static all ( pattern:string, cwd?:string, filter?:IFilter )
+	{
+		return Match.create( pattern, cwd, filter ).all();
+	}
+
 	// ------------------------------------------------------------------------- LOCALS
 
 	// Glob pattern @see https://www.npmjs.com/package/glob
@@ -48,7 +66,7 @@ export class Match
 	readonly filter				:IFilter;
 
 	// Glob options
-	readonly globOptions			:any;
+	readonly globOptions		:any;
 
 	// List of all file and directories paths found after update() from glob and filter.
 	protected _paths			:string[];

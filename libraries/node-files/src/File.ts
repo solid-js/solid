@@ -26,7 +26,7 @@ const YAML = (raw) =>
  * @param cwd
  * @constructor
  */
-export function F ( filePath:string, cwd?:string ):File
+export function $F ( filePath:string, cwd?:string ):File
 {
 	cwd = cwd || process.cwd();
 	const fullPath = path.join( cwd, filePath );
@@ -36,6 +36,11 @@ export function F ( filePath:string, cwd?:string ):File
 
 export class File extends FileEntity
 {
+	// -------------------------------------------------------------------------
+
+
+	// -------------------------------------------------------------------------
+
 	/**
 	 * File content as string.
 	 * Call await File.updateData() to update content from disk.
