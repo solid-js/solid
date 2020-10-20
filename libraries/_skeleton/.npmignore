@@ -1,0 +1,16 @@
+node_modules/
+
+# Do not send typescripts sources to NPM, we convert them to JS and d.ts files
+src/
+
+# Do not send docs to NPM, they are on gh-pages branch and auto-generated
+doc/
+
+# Do not send unit tests to NPM, devs just want to use the lib
+tests.js
+dev.js
+demo.js
+tsconfig.json
+
+# Do not send first level files
+LICENSE

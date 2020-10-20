@@ -15,14 +15,10 @@ exports.recursiveChangeExtension = function ( dir, from, to )
 
         // Recursive browse and rename if this is a directory
         if ( stats.isDirectory() )
-        {
             recursiveChangeExtension( filePath, from, to );
-        }
 
         // Rename if this is searched type of file
         else if ( path.extname( f ) === from )
-        {
             fs.renameSync( filePath, filePath.replace(from, to) );
-        }
     });
 }

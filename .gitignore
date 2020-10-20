@@ -1,3 +1,5 @@
+_wip
+
 # IDE configs
 .idea
 
@@ -11,6 +13,7 @@ node_modules
 libraries/*/dist/
 
 # Deplyed tsconfig and npmignore files from templates
+
 libraries/*/tsconfig.json
 libraries/*/.npmignore
-libraries/*/src/_global.d.ts
+!libraries/_skeleton/*

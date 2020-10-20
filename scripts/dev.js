@@ -34,6 +34,4 @@ const foundLibraries = listLibraries( argumentLibrary, ( libraryName ) =>
 
 // Show error message if requested library is not found
 if ( foundLibraries === 0 )
-{
     halt(`Unable to find library ${argumentLibrary}`);
-}

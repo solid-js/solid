@@ -1,16 +1,16 @@
 const { recursiveChangeExtension } = require("./utils");
-const { execSync } = require("../../libraries/node-cli/cli");
+const { execSync, askList, print, newLine } = require("../../libraries/node-cli/cli");
 
 const glob = require("glob");
 const rimraf = require("rimraf");
 const path = require("path");
 const fs = require("fs");
 const zlib = require("zlib");
+const chalk = require("chalk");
 
-// Paths to templates
-const tsconfigTemplatePath  = path.join( 'libraries', 'tsconfig.template.json' );
-const npmignoreTemplatePath = path.join( 'libraries', 'template.npmignore' );
-const globalTemplatePath    = path.join( 'libraries', 'Global.template.d.ts' );
+// Target all skeleton files
+const templateRootPath = path.join( 'libraries', '_skeleton' );
+const templateFiles = glob.sync(path.join( templateRootPath, '*' ), { dot: true });
 
 // All terser options @see https://github.com/terser/terser
 const terserOptions = [
@@ -45,9 +45,7 @@ exports.buildLibrary = function ( libraryName, buildLevel = 1, progress )
     const distPath = path.join(libraryPath, 'dist');
 
     // Copy npmignore and tsconfig from templates
-    fs.copyFileSync(tsconfigTemplatePath,   libraryConfigPath);
-    fs.copyFileSync(npmignoreTemplatePath,  path.join( libraryPath, '.npmignore' ));
-    fs.copyFileSync(globalTemplatePath,     path.join( libraryPath, 'src', '_global.d.ts' ));
+    templateFiles.map( file => fs.copyFileSync(file, path.join(libraryPath, path.basename( file ))) );
 
     // Clean files
     rimraf.sync( distPath );
@@ -70,9 +68,6 @@ exports.buildLibrary = function ( libraryName, buildLevel = 1, progress )
     // Do add declaration files (.d.ts) this time
     execSync(`tsc -p ${libraryConfigPath} --declaration true --module commonjs`);
 
-    // Copy _global.d.ts in dist
-    fs.copyFileSync(globalTemplatePath,     path.join( libraryPath, 'dist', '_global.d.ts' ));
-
     // Update percentage
     progress && progress( buildLevel >= 1 ? 2 : 1, buildLevel + 1);
 
@@ -82,7 +77,6 @@ exports.buildLibrary = function ( libraryName, buildLevel = 1, progress )
     {
         // Browse all .js and .mjs files in dirst folder
         const allJsFiles = glob.sync( path.join(distPath, '**/*.?(m)js') );
-        //const allJsFiles = glob.sync( path.join(distPath, '**/*.js') );
 
         // Browse all those files and compress every of them adding a .min in file name
         let output = [];
@@ -102,11 +96,8 @@ exports.buildLibrary = function ( libraryName, buildLevel = 1, progress )
             // Filter out non module files
             if ( fileName.indexOf('.mjs') === -1 ) return;
 
-            // Remove _index.mjs
-            if ( fileName.indexOf('_index.mjs') !== -1 ) return;
-
             // Compress file as gzip to know its size
-            const zipped = zlib.gzipSync(fs.readFileSync(destinationFileName));
+            const zipped = zlib.gzipSync( fs.readFileSync(destinationFileName) );
 
             // Add terser stats to output
             output.push([
@@ -133,6 +124,9 @@ exports.listLibraries = function ( filterLibrary = null, handler )
         // Get current library name from path
         const libraryName = path.basename( libraryPath );
 
+        // Do not add libraries starting with _
+        if (libraryName.indexOf('_') === 0) return;
+
         // Do not continue if we do not need to build this lib
         if (
             filterLibrary !== null
@@ -156,3 +150,60 @@ exports.listLibraries = function ( filterLibrary = null, handler )
     // Return total found libraries
     return found;
 };
+
+
+exports.autoTargetLibrary = async function ( needSpecificLib, handler )
+{
+    // Get library to target from command arguments
+    let argumentLibrary = process.argv[2] || null;
+
+    // If we need a library and user didn't gave us one
+    if ( (needSpecificLib && !argumentLibrary) || needSpecificLib === 2 )
+    {
+        // Ask which one from library list
+        const list = [];
+        exports.listLibraries( null, a => list.push(a) );
+        argumentLibrary = await askList(`Please choose which library`, list);
+    }
+
+    // We can now list all or select
+    const foundLibraries = exports.listLibraries( argumentLibrary, handler );
+
+    // Show error message if requested library is not found
+    if ( foundLibraries === 0 && argumentLibrary !== null )
+    {
+        print(chalk.red.bold( `  Unable to find library ${argumentLibrary}`) );
+        newLine();
+        exports.autoTargetLibrary( 2, handler );
+    }
+}
+
+exports.getLibraryPackageJson = function ( libraryName )
+{
+    // Target library path and package.json
+    const libraryPath = path.join( 'libraries', libraryName );
+    const packagePath = path.join( libraryPath, 'package.json' );
+
+    // Can't test if there is no package.json
+    if ( !fs.existsSync(packagePath) ) return null;
+
+    // Load package.json and search for scripts.test or scripts.tests
+    const requirePath = path.join( process.cwd(), packagePath );
+    return require( requirePath );
+}
+
+
+exports.testLibrary = function ( libraryName )
+{
+    const packageContent = exports.getLibraryPackageJson( libraryName );
+
+    if ( !('scripts' in packageContent) ) return;
+    const hasTest = 'test' in packageContent.scripts;
+    const hasTests = 'tests' in packageContent.scripts;
+    if ( !hasTest && !hasTests ) return;
+
+    // Execute this test
+    execSync(`npm run ${hasTest ? 'test' : 'tests'}`, 3, {
+        cwd: libraryPath
+    });
+}

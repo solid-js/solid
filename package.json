@@ -1,5 +1,5 @@
 {
-  "name": "root",
+  "name": "@solid-js/root",
   "private": true,
   "devDependencies": {
     "@types/node": "^12.6.8",
@@ -14,7 +14,6 @@
     "clean": "node scripts/clean",
     "build": "node scripts/build",
     "dev": "node scripts/dev",
-    "bootstrap": "lerna bootstrap",
-    "publish": "lerna publish"
+    "publish": "node scripts/publish"
   }
 }
