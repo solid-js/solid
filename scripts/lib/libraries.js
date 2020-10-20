@@ -1,12 +1,109 @@
 const { recursiveChangeExtension } = require("./utils");
 const { execSync, askList, print, newLine } = require("../../libraries/node-cli/cli");
-
 const glob = require("glob");
 const rimraf = require("rimraf");
 const path = require("path");
 const fs = require("fs");
 const zlib = require("zlib");
 const chalk = require("chalk");
+
+// --–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–----- LIBRARY BROWSING
+
+/**
+ * Browse all libraries having a package.json file.
+ * @param filterLibrary Pass a name as string to filter to only this library
+ * @param handler Called for each found lib
+ */
+exports.listLibraries = function ( filterLibrary = null, handler )
+{
+    let found = 0;
+    glob.sync( path.join('libraries', '*') ).map( libraryPath =>
+    {
+        // Get current library name from path
+        const libraryName = path.basename( libraryPath );
+
+        // Do not add libraries starting with _
+        if (libraryName.indexOf('_') === 0) return;
+
+        // Do not continue if we do not need to build this lib
+        if (
+            filterLibrary !== null
+            &&
+            libraryName.toLowerCase() !== filterLibrary.toLowerCase()
+        )
+            return;
+
+        // Do not continue if there is no package.json or no src
+        if (
+            !fs.existsSync(path.join( libraryPath, 'package.json' ))
+            ||
+            !fs.existsSync(path.join( libraryPath, 'src' ))
+        ) return;
+
+        // Count and call handler
+        found ++;
+        handler( libraryName );
+    });
+
+    // Return total found libraries
+    return found;
+};
+
+/**
+ * Auto target library, and call handler with found lib names.
+ * Can target all libs if needSpecificLib is false and no lib name is given.
+ * If any lib name is given, but not found, cli will ask user which lib to use.
+ * @param needSpecificLib If we do not allow to find all libs, set to true.
+ * @param handler Called with found lib names
+ * @returns {Promise<void>}
+ */
+exports.autoTargetLibrary = async function ( needSpecificLib, handler )
+{
+    // Get library to target from command arguments
+    let argumentLibrary = process.argv[2] || null;
+
+    // If we need a library and user didn't gave us one
+    if ( (needSpecificLib && !argumentLibrary) || needSpecificLib === 2 )
+    {
+        // Ask which one from library list
+        const list = [];
+        exports.listLibraries( null, a => list.push(a) );
+        argumentLibrary = await askList(`Please choose which library`, list);
+    }
+
+    // We can now list all or select
+    const foundLibraries = exports.listLibraries( argumentLibrary, handler );
+
+    // Show error message if requested library is not found
+    if ( foundLibraries === 0 && argumentLibrary !== null )
+    {
+        print(chalk.red.bold( `  Unable to find library ${argumentLibrary}`) );
+        newLine();
+        exports.autoTargetLibrary( 2, handler );
+    }
+}
+
+// --–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–----- PACKAGE JSON
+
+/**
+ * Get package.json data for a given library name.
+ * Will return null if package.json not found
+ */
+exports.getLibraryPackageJson = function ( libraryName )
+{
+    // Target library path and package.json
+    const libraryPath = path.join( 'libraries', libraryName );
+    const packagePath = path.join( libraryPath, 'package.json' );
+
+    // Can't test if there is no package.json
+    if ( !fs.existsSync(packagePath) ) return null;
+
+    // Load package.json and search for scripts.test or scripts.tests
+    const requirePath = path.join( process.cwd(), packagePath );
+    return require( requirePath );
+}
+
+// --–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–----- LIBRARY BUILDING
 
 // Target all skeleton files
 const templateRootPath = path.join( 'libraries', '_skeleton' );
@@ -29,10 +126,13 @@ const terserOptions = [
 ];
 
 /**
- * TODO DOC
+ * Build library for given name.
  * @param libraryName
  * @param buildLevel
- * @param progress
+ *           1 -> Build only .mjs
+ *           2 -> Build mjs and CommonJS .js fallback
+ *           3 -> Also build .min.js + estimate gzip size
+ * @param progress Called each time build progresses
  */
 exports.buildLibrary = function ( libraryName, buildLevel = 1, progress )
 {
@@ -84,8 +184,8 @@ exports.buildLibrary = function ( libraryName, buildLevel = 1, progress )
         {
             // Create destination file name
             const destinationFileName = fileName
-                .replace('.mjs', '.min.mjs')
-                .replace('.js', '.min.js');
+            .replace('.mjs', '.min.mjs')
+            .replace('.js', '.min.js');
 
             // Compress this file with terser and options
             execSync(`node_modules/.bin/terser ${terserOptions.join(' ')} -o ${destinationFileName} -- ${fileName}`);
@@ -111,90 +211,14 @@ exports.buildLibrary = function ( libraryName, buildLevel = 1, progress )
     }
 };
 
+// --–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–----- LIBRARY TESTING
+
 /**
- * Browse all libraries having a package.json file.
- * @param filterLibrary Pass a name as string to filter to only this library
- * @param handler Called for each found lib
+ * 'npm run test' a lib if tests are available.
  */
-exports.listLibraries = function ( filterLibrary = null, handler )
-{
-    let found = 0;
-    glob.sync( path.join('libraries', '*') ).map( libraryPath =>
-    {
-        // Get current library name from path
-        const libraryName = path.basename( libraryPath );
-
-        // Do not add libraries starting with _
-        if (libraryName.indexOf('_') === 0) return;
-
-        // Do not continue if we do not need to build this lib
-        if (
-            filterLibrary !== null
-            &&
-            libraryName.toLowerCase() !== filterLibrary.toLowerCase()
-        )
-            return;
-
-        // Do not continue if there is no package.json or no src
-        if (
-            !fs.existsSync(path.join( libraryPath, 'package.json' ))
-            ||
-            !fs.existsSync(path.join( libraryPath, 'src' ))
-        ) return;
-
-        // Count and call handler
-        found ++;
-        handler( libraryName );
-    });
-
-    // Return total found libraries
-    return found;
-};
-
-
-exports.autoTargetLibrary = async function ( needSpecificLib, handler )
-{
-    // Get library to target from command arguments
-    let argumentLibrary = process.argv[2] || null;
-
-    // If we need a library and user didn't gave us one
-    if ( (needSpecificLib && !argumentLibrary) || needSpecificLib === 2 )
-    {
-        // Ask which one from library list
-        const list = [];
-        exports.listLibraries( null, a => list.push(a) );
-        argumentLibrary = await askList(`Please choose which library`, list);
-    }
-
-    // We can now list all or select
-    const foundLibraries = exports.listLibraries( argumentLibrary, handler );
-
-    // Show error message if requested library is not found
-    if ( foundLibraries === 0 && argumentLibrary !== null )
-    {
-        print(chalk.red.bold( `  Unable to find library ${argumentLibrary}`) );
-        newLine();
-        exports.autoTargetLibrary( 2, handler );
-    }
-}
-
-exports.getLibraryPackageJson = function ( libraryName )
-{
-    // Target library path and package.json
-    const libraryPath = path.join( 'libraries', libraryName );
-    const packagePath = path.join( libraryPath, 'package.json' );
-
-    // Can't test if there is no package.json
-    if ( !fs.existsSync(packagePath) ) return null;
-
-    // Load package.json and search for scripts.test or scripts.tests
-    const requirePath = path.join( process.cwd(), packagePath );
-    return require( requirePath );
-}
-
-
 exports.testLibrary = function ( libraryName )
 {
+    const libraryPath = path.join( 'libraries', libraryName );
     const packageContent = exports.getLibraryPackageJson( libraryName );
 
     if ( !('scripts' in packageContent) ) return;
@@ -207,3 +231,5 @@ exports.testLibrary = function ( libraryName )
         cwd: libraryPath
     });
 }
+
+// --–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–-----

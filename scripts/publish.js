@@ -1,16 +1,19 @@
-
-const { askInput, execSync, halt, table, task, askList, newLine, offset, print} = require("../libraries/node-cli/cli");
-const { testLibrary, autoTargetLibrary, buildLibrary, getLibraryPackageJson } = require("./lib/libraries");
-const filesize = require("filesize");
-const chalk = require("chalk");
+const { askInput, execSync, askList, newLine, print} = require("../libraries/node-cli/cli");
+const { autoTargetLibrary, getLibraryPackageJson } = require("./lib/libraries");
 const path = require("path");
 
 newLine();
+
 
 autoTargetLibrary(true, async (libraryName) =>
 {
 	// Target library folder
 	const libraryPath = path.join( 'libraries', libraryName );
+	const libraryExecOptions = { cwd: libraryPath };
+	const stdioLevel = 3;
+
+	execSync(`npm run clean ${libraryName}`, 3);
+	execSync(`npm run build ${libraryName}`, 3);
 
 	// Get package json and show current version
 	let packageContent = getLibraryPackageJson( libraryName );
@@ -27,20 +30,17 @@ autoTargetLibrary(true, async (libraryName) =>
 	let message = await askInput(`Commit message ?`);
 	message = message.replace(/["']/g, "'");
 
-	const execOptions = { cwd: libraryPath };
-	const stdioLevel = 3;
-
 	// Increment with npm
-	execSync(`npm version ${increment} -m"${libraryName} - %s - ${message}"`, stdioLevel, execOptions);
+	execSync(`npm version ${increment} -m"${libraryName} - %s - ${message}"`, stdioLevel, libraryExecOptions);
 
 	// Update version from package json
 	packageContent = getLibraryPackageJson(libraryName);
 
 	// Add to git
-	execSync(`git add .`, stdioLevel, execOptions);
-	execSync(`git commit -m"${libraryName} - ${packageContent.version} : ${message}"`, stdioLevel, execOptions);
-	execSync(`git push`, stdioLevel, execOptions);
+	execSync(`git add .`, stdioLevel, libraryExecOptions);
+	execSync(`git commit -m"${libraryName} - ${packageContent.version} : ${message}"`, stdioLevel, libraryExecOptions);
+	execSync(`git push`, stdioLevel, libraryExecOptions);
 
 	// Publish on npm
-	execSync(`npm publish`, stdioLevel, execOptions);
+	execSync(`npm publish`, stdioLevel, libraryExecOptions);
 });
