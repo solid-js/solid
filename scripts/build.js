@@ -1,15 +1,22 @@
-const {halt, table, task, newLine, offset, print} = require("../libraries/node-cli/cli");
+const {halt, table, task, newLine, offset, print} = require("@solid-js/cli");
 const { testLibrary, autoTargetLibrary, buildLibrary } = require("./lib/libraries");
 const filesize = require("filesize");
 const chalk = require("chalk");
+const path = require("path");
+const fs = require("fs");
 
-// Counters
 let totalBuiltLibraries = 0;
 
 newLine();
-
 autoTargetLibrary(false, (libraryName) =>
 {
+    // Target library
+    const libraryPath = path.join( 'libraries', libraryName );
+    const srcPath = path.join( libraryPath, 'src' );
+
+    // If library does have a src folder, do not build it
+    if ( !fs.existsSync(srcPath) ) return;
+
     const buildTask = task( `Building ${libraryName}` );
     let minifyResults;
 

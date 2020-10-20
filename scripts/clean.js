@@ -1,4 +1,4 @@
-const { task, newLine } = require('../libraries/node-cli/cli');
+const { task, newLine } = require('@solid-js/cli');
 const { autoTargetLibrary } = require("./lib/libraries");
 const path = require('path');
 const rimraf = require('rimraf');

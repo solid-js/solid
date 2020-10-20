@@ -27,9 +27,9 @@
   },
   "homepage": "https://github.com/solid-js/solid/tree/master/libraries/node-cli",
   "dependencies": {
-    "chalk": "^2.4.2",
-    "inquirer": "^7.0.0",
-    "mri": "^1.1.4",
-    "strip-ansi": "^5.2.0"
+    "chalk": "^4.1.0",
+    "inquirer": "^7.3.3",
+    "mri": "^1.1.6",
+    "strip-ansi": "^6.0.0"
   }
 }

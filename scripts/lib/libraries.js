@@ -1,5 +1,5 @@
+const { execSync, askList, print, newLine } = require("@solid-js/cli");
 const { recursiveChangeExtension } = require("./utils");
-const { execSync, askList, print, newLine } = require("../../libraries/node-cli/cli");
 const glob = require("glob");
 const rimraf = require("rimraf");
 const path = require("path");
@@ -36,8 +36,8 @@ exports.listLibraries = function ( filterLibrary = null, handler )
         // Do not continue if there is no package.json or no src
         if (
             !fs.existsSync(path.join( libraryPath, 'package.json' ))
-            ||
-            !fs.existsSync(path.join( libraryPath, 'src' ))
+            //||
+            //!fs.existsSync(path.join( libraryPath, 'src' ))
         ) return;
 
         // Count and call handler

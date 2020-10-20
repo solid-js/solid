@@ -1,6 +1,6 @@
+const {execSync, halt, task} = require("@solid-js/cli");
 const {buildLibrary, listLibraries} = require("./lib/libraries");
 const path = require("path");
-const {execSync, halt, task} = require("../libraries/node-cli/cli");
 
 
 if (!(2 in process.argv))

@@ -1,10 +1,8 @@
-const { askInput, execSync, askList, newLine, print} = require("../libraries/node-cli/cli");
+const { askInput, execSync, askList, newLine, print} = require("@solid-js/cli");
 const { autoTargetLibrary, getLibraryPackageJson } = require("./lib/libraries");
 const path = require("path");
 
 newLine();
-
-
 autoTargetLibrary(true, async (libraryName) =>
 {
 	// Target library folder
