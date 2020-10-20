@@ -1,7 +1,7 @@
 {
   "name": "@solid-js/nanostache",
   "description": "Ultra-lightweight Javascript template processor.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "dist/_index",
   "module": "dist/_index.mjs",
   "types": "dist/_index.d.ts",
