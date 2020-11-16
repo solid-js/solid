@@ -47,11 +47,13 @@ export class Signal <GArguments extends any[] = any[]>
 	 * @param andCall
 	 * @returns {number} The register index, to remove easily.
 	 */
-	add ( scopeOrHandler:THandler<GArguments>|object, handlerIfScope?: THandler<GArguments>, andCall:GArguments[] = null ):void
+	add ( scopeOrHandler:THandler<GArguments>|object, handlerIfScope?: THandler<GArguments>, andCall:GArguments[] = null ):() => void
 	{
-		arguments.length == 1
-		? this.register( scopeOrHandler as THandler<GArguments>, null, false, andCall )
-		: this.register( handlerIfScope, scopeOrHandler as object, false, andCall );
+		return (
+			arguments.length == 1
+			? this.register( scopeOrHandler as THandler<GArguments>, null, false, andCall )
+			: this.register( handlerIfScope, scopeOrHandler as object, false, andCall )
+		);
 	}
 
 	/**
@@ -60,23 +62,27 @@ export class Signal <GArguments extends any[] = any[]>
 	 * @param scopeOrHandler Called when signal is dispatched.
 	 * @param handlerIfScope Scope to apply to handler. Let null to keep default.
 	 */
-	addOnce ( scopeOrHandler:THandler<GArguments>|object, handlerIfScope?: THandler<GArguments> ):void
+	addOnce ( scopeOrHandler:THandler<GArguments>|object, handlerIfScope?: THandler<GArguments> ):() => void
 	{
-		arguments.length == 1
-		? this.register( scopeOrHandler as THandler<GArguments>, null, true )
-		: this.register( handlerIfScope, scopeOrHandler as object, true );
+		return (
+			arguments.length == 1
+			? this.register( scopeOrHandler as THandler<GArguments>, null, true )
+			: this.register( handlerIfScope, scopeOrHandler as object, true )
+		);
 	}
 
 	/**
 	 * Register a listener.
 	 */
-	protected register ( handler:THandler<GArguments>, scope:object, once:boolean, andCall:GArguments[] = null ):void
+	protected register ( handler:THandler<GArguments>, scope:object, once:boolean, andCall:GArguments[] = null ):() => void
 	{
 		// Store this listener with its scope
 		this._listeners.push({ handler, scope, once });
 
 		// Call handler with scope directly if we have arguments
 		andCall && handler.apply( scope, andCall );
+
+		return () => this.remove( handler );
 	}
 
 
