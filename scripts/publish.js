@@ -1,10 +1,20 @@
-const { askInput, execSync, askList, newLine, print} = require("@solid-js/cli");
+const { askInput, execSync, askList, newLine, print, halt } = require("@solid-js/cli");
 const { autoTargetLibrary, getLibraryPackageJson } = require("./lib/libraries");
 const path = require("path");
 
 newLine();
 autoTargetLibrary(true, async (libraryName) =>
 {
+	// Check if user logued to npm
+	newLine();
+	try {
+		const connectedUser = execSync(`npm whoami`).toString();
+		print(`> Connected user : ${connectedUser}`);
+	}
+	catch (e) {
+		halt(`> Please connect to npm with ${'npm login'.bold()}`, 1, false);
+	}
+
 	// Target library folder
 	const libraryPath = path.join( 'libraries', libraryName );
 	const libraryExecOptions = { cwd: libraryPath };
@@ -29,7 +39,7 @@ autoTargetLibrary(true, async (libraryName) =>
 	message = message.replace(/["']/g, "'");
 
 	// Increment with npm
-	execSync(`npm version ${increment} -m"${libraryName} - %s - ${message}"`, stdioLevel, libraryExecOptions);
+	const version = execSync(`npm version ${increment} -m"${libraryName} - %s - ${message}"`, undefined, libraryExecOptions).toString();
 
 	// Update version from package json
 	packageContent = getLibraryPackageJson(libraryName);
@@ -41,4 +51,6 @@ autoTargetLibrary(true, async (libraryName) =>
 
 	// Publish on npm
 	execSync(`npm publish`, stdioLevel, libraryExecOptions);
+
+	print(`Published, new version is ${version}`)
 });
