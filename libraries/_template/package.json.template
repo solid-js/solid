@@ -1,0 +1,23 @@
+{
+	"name": "@solid-js/$name",
+	"version": "0.1.0",
+	"description": "",
+	"main": "lib/_index.js",
+	"module": "lib/_index.mjs",
+	"types": "lib/_index.d.ts",
+	"dependencies": {
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/solid-js/solid.git lib-$type/$name"
+	},
+	"keywords": [
+		"typescript"
+	],
+	"author": "",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/solid-js/solid/issues"
+	},
+	"homepage": "https://github.com/solid-js/solid/lib-$type/$name"
+}
