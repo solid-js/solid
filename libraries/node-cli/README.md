@@ -258,10 +258,9 @@ const columnPositions = table( data );
 ```javascript
 const { test } = require('@solid-js/cli');
 
-// Here we are starting a new cli task
 test("My lib's feature", it =>
 {
-    // It is a function to declare list of assertions
+    // "It" is a function to declare list of assertions
     // Every "it" will add a progress bar to the current task
     // Every "it" can be sync or async it does not matter
     
