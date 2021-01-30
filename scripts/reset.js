@@ -3,10 +3,10 @@ const { autoTargetLibrary } = require("./lib/libraries");
 const path = require('path');
 const rimraf = require('rimraf');
 
-const rootTask = task(`Reinstalling node_modules on root folder`);
-rimraf.sync('node_modules');
-execSync(`npm i`);
-rootTask.success();
+// const rootTask = task(`Re-installing dependencies on root folder`);
+// rimraf.sync('node_modules');
+// execSync(`npm i`);
+// rootTask.success();
 
 autoTargetLibrary(false, async (libraryName) =>
 {

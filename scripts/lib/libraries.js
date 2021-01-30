@@ -105,9 +105,13 @@ exports.getLibraryPackageJson = function ( libraryName )
 
 // --–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–--–----- LIBRARY BUILDING
 
-// Target all skeleton files
-const templateRootPath = path.join( 'libraries', '_skeleton' );
-const templateFiles = glob.sync(path.join( templateRootPath, '*' ), { dot: true });
+// Files copied to package before build
+const templateRootPath = path.join( 'libraries', '_template' );
+//const templateFiles = glob.sync(path.join( templateRootPath, '*' ), { dot: true });
+const templateFiles = [
+    '.npmignore',
+    'tsconfig.json'
+].map( f => path.join(templateRootPath, f) );
 
 // All terser options @see https://github.com/terser/terser
 const terserOptions = [
@@ -175,7 +179,7 @@ exports.buildLibrary = function ( libraryName, buildLevel = 1, progress )
     // and this lib is not a node one (no need to minify for node)
     if ( libraryName.indexOf('node-') !== 0 && buildLevel >= 2 )
     {
-        // Browse all .js and .mjs files in dirst folder
+        // Browse all .js and .mjs files in dist folder
         const allJsFiles = glob.sync( path.join(distPath, '**/*.?(m)js') );
 
         // Browse all those files and compress every of them adding a .min in file name

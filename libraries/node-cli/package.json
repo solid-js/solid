@@ -2,7 +2,9 @@
   "name": "@solid-js/cli",
   "version": "0.9.4",
   "description": "Node CLI, shell, tests and task runner utilities",
-  "main": "cli.js",
+  "main": "dist/_index.js",
+  "module": "dist/_index.mjs",
+  "types": "dist/_index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/solid-js/solid.git",

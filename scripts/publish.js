@@ -50,7 +50,7 @@ autoTargetLibrary(true, async (libraryName) =>
 	execSync(`git push`, stdioLevel, libraryExecOptions);
 
 	// Publish on npm
-	execSync(`npm publish`, stdioLevel, libraryExecOptions);
+	execSync(`npm publish --access public`, stdioLevel, libraryExecOptions);
 
 	print(`Published, new version is ${version}`)
 });

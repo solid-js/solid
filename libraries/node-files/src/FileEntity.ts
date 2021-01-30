@@ -57,7 +57,7 @@ export class FileEntity
 	/**
 	 * Last file extension, lowercase
 	 */
-	get extension () { return this._extensions[0] || null }
+	get extension () { return this._extensions[ this._extensions.length - 1 ] || null }
 
 	// ------------------------------------------------------------------------- CONSTRUCT
 

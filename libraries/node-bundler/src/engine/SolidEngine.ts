@@ -1,9 +1,9 @@
 import { SolidPlugin } from "./SolidPlugin";
 import Parcel from "@parcel/core";
 
-// -----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------- STRUCT
 
-export type TBundleType = 'parcel'|'tsc'
+export type TBundler = 'parcel'|'tsc'
 
 export type TBuildMode = "production"|"dev"
 
@@ -13,16 +13,54 @@ export type TEnvFilter = ( envs:object, buildMode:TBuildMode ) => object;
 
 export interface IAppOptions
 {
-	bundler 	?:TBundleType,
+	/**
+	 * Bundle with
+	 * - Parcel, optimized for the web
+	 * - TSC (Typescript compiler), optimized for Node based applications
+	 */
+	bundler 	?:TBundler,
 
-	input		?:string
+	/**
+	 * List of starting points paths, can be list, can be globs :
+	 * Default is `src/${appName}/*.{ts,tsx}`
+	 *
+	 * ex : 'src/app/index.tsx'
+	 * ex : 'src/app/*.tsx'
+	 * ex : ['src/app/index.tsx', 'src/app/index.ts']
+	 * ex : ['src/app/*.tsx', 'src/app/*.ts']
+	 */
+	input		?:string|string[]
+
+	/**
+	 * Output directory.
+	 * Default is `public/static/${appName}/`
+	 */
 	output		?:string
-	root		?:string
-	publicUrl 	?:string
-	envsFilter	?:TEnvFilter
 
+	/**
+	 * Optional, sources root.
+	 * Default is 'src/'
+	 */
+	root		?:string
+
+	/**
+	 * TODO
+	 */
+	publicUrl 	?:string
+
+	/**
+	 * TODO
+	 */
+	passEnvs	?:string[]
+
+	/**
+	 * TODO
+	 */
 	actions 	?:{ [key:string] : IAction }
 
+	/**
+	 * TODO
+	 */
 	plugins		?:SolidPlugin[]
 }
 
@@ -38,7 +76,7 @@ export interface ISolidMiddleware
 	afterBuild ( appOptions?:IAppOptions, buildMode?:TBuildMode, envProps?:object ) : Promise<any>|void|null
 }
 
-// -----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------- ENGINE CLASS
 
 export class SolidEngine
 {
@@ -46,12 +84,23 @@ export class SolidEngine
 
 	static _apps : { [appName:string] : IAppOptions } = {};
 
+	/**
+	 * TODO
+	 * @param appName
+	 * @param config
+	 */
 	static app ( appName:string, config:IAppOptions ) {
 		this._apps[ appName ] = config;
 	}
 
 	// ------------------------------------------------------------------------- BUILD
 
+	/**
+	 * TODO
+	 * @param appName
+	 * @param type
+	 * @param envName
+	 */
 	static async build ( appName:string, type:TBuildMode, envName?:string )
 	{
 		if ( !this._apps[ appName ] )
@@ -64,7 +113,7 @@ export class SolidEngine
 			bundler: 'parcel',
 
 			input: `src/${appName}/*.{ts,tsx}`,
-			output: `public/${appName}`,
+			output: `public/static/${appName}/`,
 			root: 'src/',
 			publicUrl: null,
 
@@ -74,11 +123,8 @@ export class SolidEngine
 		// TODO -> Clean output folder
 
 		// TODO -> Read .env props with envName
+		// TODO -> Pass envs from envs array
 		let envProps = {};
-
-		// Filter env properties
-		if ( options.envsFilter )
-			envProps = options.envsFilter( envProps, type )
 
 		// Build with parcel
 		if ( options.bundler === 'parcel' )
@@ -89,11 +135,13 @@ export class SolidEngine
 			await this.bundleTypescript( options, type, envProps );
 	}
 
-	// ------------------------------------------------------------------------- PARCEL
+	// ------------------------------------------------------------------------- BUILD PARCEL
 
 	protected static async bundleParcel ( options:IAppOptions, type:TBuildMode, envProps?:object )
 	{
 		const isProd = type === 'production';
+
+		await this.callMiddleware( "before", options, type, envProps );
 
 		const bundler = new Parcel({
 			entries: options.input,
@@ -105,7 +153,7 @@ export class SolidEngine
 					context: 'browser',
 					distDir: options.output,
 					outputFormat: 'global',
-					// TODO
+					// TODO : Add to config or read package.json ?
 					//engines: {
 					//	browsers: "> 5%"
 					//}
@@ -126,9 +174,6 @@ export class SolidEngine
 			sourceMaps: !isProd
 		})
 
-
-		await this.callMiddleware( "before", options, type, envProps );
-
 		if ( isProd )
 		{
 			await bundler.run();
@@ -137,15 +182,20 @@ export class SolidEngine
 		}
 		else
 		{
-			const watcher = await bundler.watch( async (error, buildEvent) => {
+			try {
+				const watcher = await bundler.watch( async (error, buildEvent) => {
 
-				// FIXME : Async works ?
-				//console.log(a, b); // ?
+					// FIXME : Async works ?
+					//console.log(a, b); // ?
 
-				console.log(error, buildEvent)
+					console.log(error, buildEvent)
 
-				await this.callMiddleware( "after", options, type, envProps );
-			});
+					await this.callMiddleware( "after", options, type, envProps );
+				});
+			}
+			catch (e) {
+				console.error('ERR', e);
+			}
 
 
 			// TODO : Start plugins watch
@@ -157,7 +207,7 @@ export class SolidEngine
 		console.log('DONE');
 	}
 
-	// ------------------------------------------------------------------------- TYPESCRIPT
+	// ------------------------------------------------------------------------- BUILD TYPESCRIPT
 
 	protected static async bundleTypescript ( options:IAppOptions, type:TBuildMode, envProps?:object )
 	{
@@ -173,7 +223,7 @@ export class SolidEngine
 		const middlewareName = event+'Build';
 
 		for ( const plugin of options.plugins ) {
-			console.log('PLUGIN', plugin.name) // TODO : Clean log task with success and failure
+			//console.log('PLUGIN', plugin.name) // TODO : Clean log task with success and failure
 			await plugin[ middlewareName ]( options, type, envProps );
 		}
 	}
