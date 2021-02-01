@@ -1,0 +1,24 @@
+{
+  "name": "@solid-js/types",
+  "version": "0.1.1",
+  "description": "Common types for Solid Framework",
+  "main": "dist/solid-types.d.ts",
+  "types": "dist/solid-types.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/solid-js/solid.git libraries/iso-types",
+    "directory": "libraries/iso-types"
+  },
+  "dependencies": {},
+  "keywords": [
+    "solid",
+    "typescript",
+    "types"
+  ],
+  "author": "Alexis Bouhet",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/solid-js/files/issues"
+  },
+  "homepage": "https://github.com/solid-js/solid/tree/master/libraries/iso-types"
+}
