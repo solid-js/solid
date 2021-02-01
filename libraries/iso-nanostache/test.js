@@ -1,5 +1,5 @@
 const { Nanostache } = require("./dist/_index");
-const { test } = require("../node-cli/cli");
+const { test } = require("@solid-js/cli");
 
 
 test('Nanostache variables', it =>
