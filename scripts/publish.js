@@ -2,7 +2,6 @@ const { askInput, execSync, askList, newLine, print, halt } = require("@solid-js
 const { autoTargetLibrary, getLibraryPackageJson } = require("./lib/libraries");
 const path = require("path");
 
-newLine();
 autoTargetLibrary(true, async (libraryName) =>
 {
 	// Check if user logued to npm
@@ -45,6 +44,7 @@ autoTargetLibrary(true, async (libraryName) =>
 	packageContent = getLibraryPackageJson(libraryName);
 
 	// Add to git
+	//execSync(`git add .`, stdioLevel, libraryExecOptions);
 	execSync(`git add .`, stdioLevel, libraryExecOptions);
 	execSync(`git commit -m"${libraryName} - ${packageContent.version} : ${message}"`, stdioLevel, libraryExecOptions);
 	execSync(`git push`, stdioLevel, libraryExecOptions);

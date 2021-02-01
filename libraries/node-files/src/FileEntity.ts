@@ -55,27 +55,37 @@ export class FileEntity
 	protected _extensions:string[];
 
 	/**
-	 * Last file extension, lowercase
+	 * Main extension, lowercase.
 	 */
-	get extension () { return this._extensions[ this._extensions.length - 1 ] || null }
+	get extension () { return this._extensions[ 0 ] || null }
 
 	// ------------------------------------------------------------------------- CONSTRUCT
 
 	constructor ( path:string, stats?:fs.Stats )
 	{
+		if ( !path )
+			throw new Error(`FileEntity.constructor // FileEntity needs a path to be initialized.`);
+
 		this._path = path;
 		this._stats = stats;
 
+		this.updateFileProperties();
+	}
+
+	// ------------------------------------------------------------------------- UPDATE FILE PROPERTIES
+
+	protected updateFileProperties ()
+	{
 		// Get extensions, lower case and reverse them
-		const dotIndex = path.indexOf('.');
+		const dotIndex = this._path.indexOf('.');
 		if ( dotIndex >= 0 )
-			this._extensions = path.toLowerCase().substr( dotIndex + 1, path.length ).split('.').reverse();
+			this._extensions = this._path.toLowerCase().substr( dotIndex + 1, this._path.length ).split('.').reverse();
 
 		// Get base (parents directories from cwd)
-		this._base = nodePath.dirname( path );
+		this._base = nodePath.dirname( this._path );
 
 		// Get full name (name without base but with extensions)
-		this._fullName = nodePath.basename( path );
+		this._fullName = nodePath.basename( this._path );
 
 		// Get name (full name without extensions)
 		this._name = this._fullName.substr(0, this._fullName.lastIndexOf('.'));
@@ -84,86 +94,161 @@ export class FileEntity
 	// ------------------------------------------------------------------------- STATS
 
 	/**
-	 * Update file stats ( size, last modified date, stuff like that ).
-	 * Stats will be available in File.stats or through specific methods ( like lastModified() )
+	 * Update file stats from disk synchronously ( size, last modified date, stuff like that ).
 	 */
-	async updateStats ():Promise<fs.Stats>
+	update ()
 	{
 		// Get stats and try to detect if file really exists
-		let exists = true;
-		try
-		{
-			this._stats = await fs.promises.stat( this.path );
+		try {
+			this._stats = fs.statSync( this.path );
+			this._exists = true;
 		}
-		// Fail silently here
-		catch (e)
-		{
+			// Fail silently here
+		catch (e) {
 			// File does not exists
-			if ( e.code === 'ENOENT') exists = false;
+			if ( e.code === 'ENOENT')
+			{
+				this._stats = null;
+				this._exists = false;
+			}
 		}
-
-		// Save exists and return stats
-		this._exists = exists;
-		return this._stats;
 	}
 
 	/**
-	 * Check stats availability and request file stats from disk if needed.
+	 * Update file stats from disk asynchronously ( size, last modified date, stuff like that ).
 	 */
-	protected async checkStats ()
+	async updateAsync ()
 	{
-		if (!this._stats) await this.updateStats();
+		// Get stats and try to detect if file really exists
+		try {
+			this._stats = await fs.promises.stat( this.path );
+			this._exists = true;
+		}
+		// Fail silently here
+		catch (e) {
+			// File does not exists
+			if ( e.code === 'ENOENT')
+			{
+				this._stats = null;
+				this._exists = false;
+			}
+		}
 	}
 
-	// ------------------------------------------------------------------------- STATS
+	// ------------------------------------------------------------------------- STATS - EXISTS
 
 	/**
 	 * If this file or directory exists in the file system.
 	 * Can be false when creating a new file for example.
 	 */
-	async exists ()
-	{
-		await this.checkStats();
+	exists () {
+		if ( !this._stats ) this.update();
 		return this._exists;
+	}
+
+	/**
+	 * If this file or directory exists in the file system.
+	 * Can be false when creating a new file for example.
+	 */
+	async existsAsync () {
+		if ( !this._stats ) await this.updateAsync();
+		return this._exists;
+	}
+
+	// ------------------------------------------------------------------------- STATS - IS REAL
+
+	/**
+	 * File exists and is not a symbolic link
+	 */
+	isReal () {
+		if ( !this._stats ) this.update();
+		return this._exists && !this._stats.isSymbolicLink()
 	}
 
 	/**
 	 * File exists and is not a symbolic link
 	 */
-	async isReal ()
-	{
-		await this.checkStats();
+	async isRealAsync () {
+		if ( !this._stats ) await this.updateAsync();
 		return this._exists && !this._stats.isSymbolicLink()
 	}
 
 	/**
 	 * File exists and is a symbolic link
 	 */
-	async isSymLink ()
-	{
-		await this.checkStats();
-		return this._exists && !this._stats.isSymbolicLink()
+	isSymbolicLink () { return !this.isReal() }
+
+	/**
+	 * File exists and is a symbolic link
+	 */
+	async isSymbolicLinkAsync () { return !(await this.isRealAsync()) }
+
+	// ------------------------------------------------------------------------- STATS - LAST MODIFIED
+
+	/**
+	 * Get last modified timestamp ( as ms )
+	 */
+	lastModified ():number|false {
+		this.update();
+		return this._exists && this._stats.mtimeMs;
 	}
 
 	/**
-	 * If this is a directory.
+	 * Get last modified timestamp ( as ms )
 	 */
-	async isDirectory ()
-	{
-		await this.checkStats();
-		return this._stats.isDirectory()
+	async lastModifiedAsync ():Promise<number|false> {
+		await this.updateAsync();
+		return this._exists && this._stats.mtimeMs;
+	}
+
+	// ------------------------------------------------------------------------- STATS - IS REAL
+
+	/**
+	 * If file exists and is a directory, not a file.
+	 */
+	isDirectory () {
+		if ( !this._stats ) this.update();
+		return this._exists && this._stats.isDirectory()
 	}
 
 	/**
-	 * If this is a file.
+	 * If file exists and is a directory, not a file.
 	 */
-	async isFile ()
-	{
-		await this.checkStats();
-		return this._stats.isFile()
+	async isDirectoryAsync () {
+		if ( !this._stats ) await this.updateAsync();
+		return this._exists && this._stats.isDirectory()
 	}
 
-	// ------------------------------------------------------------------------- FS ACTIONS
+	/**
+	 * If file exists and is a file, not a directory.
+	 */
+	isFile () {
+		if ( !this._stats ) this.update();
+		return this._exists && this._stats.isFile()
+	}
+	async isFileAsync () {
+		if ( !this._stats ) await this.updateAsync();
+		return this._exists && this._stats.isFile()
+	}
+
+	// ------------------------------------------------------------------------- ENSURE
+
+	/**
+	 * Create all needed parent directory to this file / directory.
+	 */
+	ensureParents () {
+		// @ts-ignore
+		require('mkdirp').sync( this._base );
+	}
+
+	/**
+	 * Create all needed parent directory to this file / directory.
+	 */
+	async ensureParentsAsync () {
+		return new Promise( resolve => require('mkdirp')( this._base, resolve ) );
+	}
+
+	// ------------------------------------------------------------------------- SAFE-TO ARGUMENT
 
 	/**
 	 * Will add file name to "to" if "to" is a directory.
@@ -205,11 +290,14 @@ export class FileEntity
 		return to;
 	}
 
+	// ------------------------------------------------------------------------- COPY TO / MOVE TO
+
 	/**
-	 * Copy this FileEntity recursively
-	 * @param to Path of the clone
+	 * Copy this FileEntity recursively.
+	 * Asynchronous call only.
+	 * @param to path of the clone
 	 */
-	async copy ( to:string )
+	async copyToAsync ( to:string )
 	{
 		return new Promise( async resolve => {
 			to = await this.safeTo(to);
@@ -219,9 +307,10 @@ export class FileEntity
 
 	/**
 	 * Move this FileEntity recursively.
-	 * @param to New path
+	 * Asynchronous call only.
+	 * @param to new path
 	 */
-	async move ( to:string )
+	async moveToAsync ( to:string )
 	{
 		return new Promise( async resolve => {
 			to = await this.safeTo(to);
@@ -234,22 +323,33 @@ export class FileEntity
 	 * @see move()
 	 * @param to New path
 	 */
-	async rename ( to:string ) { return this.move( to ) }
+	async renameAsync ( to:string ) { return this.moveToAsync( to ) }
+
+	// ------------------------------------------------------------------------- SYMBOLIC LINKS
 
 	/**
 	 * Create a symbolic link to this FileEntity.
 	 * @param to Path of created symbolic link.
 	 */
-	async link ( to:string )
-	{
-		await fs.promises.symlink( this._path, to );
+	linkTo ( to:string ) {
+		fs.symlinkSync( this._path, to );
 	}
 
 	/**
-	 * Delete this file or folder.
+	 * Create a symbolic link to this FileEntity.
+	 * @param to Path of created symbolic link.
 	 */
-	async delete ()
-	{
+	async linkToAsync ( to:string ) {
+		await fs.promises.symlink( this._path, to );
+	}
+
+	// ------------------------------------------------------------------------- DELETE
+
+	/**
+	 * Delete this file or folder.
+	 * TODO : Force needs to be true to remove files parent to process.cwd
+	 */
+	async delete ( force = false ) {
 		return new Promise( resolve => rimraf( this._path, resolve ) );
 	}
 
@@ -257,5 +357,5 @@ export class FileEntity
 	 * Delete Alias
 	 * @see delete()
 	 */
-	async remove () { return await this.delete() }
+	async remove ( force = false ) { return await this.delete( force ) }
 }

@@ -1,6 +1,8 @@
 
 // ----------------------------------------------------------------------------- EXEC UTILITIES
 
+import { exec } from "child_process";
+
 const stdLevels = [
 	[0, null, null],
 	[0, 1, null],
@@ -30,6 +32,7 @@ const makeExecOptions = (stdLevel, options) => {
  * @param options See execSync options. Ignore to call and hide command's stdout.
  * @returns Promise with stdout if success, stderr if fail
  */
+/*
 exports.exec = async function ( command, stdLevel = 0, options )
 {
 	return new Promise( (resolve, reject) =>
@@ -40,12 +43,30 @@ exports.exec = async function ( command, stdLevel = 0, options )
 			makeExecOptions(stdLevel, options),
 			( error, stdout, stderr) => {
 				error
-					? reject( (stderr || '').toString() )
-					: resolve( (stdout || '').toString() )
+				? reject( (stderr || '').toString() )
+				: resolve( (stdout || '').toString() )
 			}
 		);
 	});
-};
+};*/
+
+const execAsync = (command, verbose, options) => new Promise( (resolve, reject) =>
+{
+	const childProcess = exec(
+		command, options,
+		( error, stdout, stderr) => {
+			error
+			? reject( (stderr || '').toString() )
+			: resolve( (stdout || '').toString() )
+		}
+	);
+
+	if ( verbose === true || verbose === 1 || verbose === 3 )
+		childProcess.stdout.pipe( process.stdout );
+	if ( verbose === true || verbose === 2 || verbose === 3 )
+		childProcess.stderr.pipe( process.stderr );
+});
+
 
 /**
  * Exec a command and return stdout as string.

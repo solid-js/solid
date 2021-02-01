@@ -1,5 +1,35 @@
+import { createTask, ITask } from "./Task";
+import chalk from "chalk";
 
-// ----------------------------------------------------------------------------- UNIT TESTING
+// ----------------------------------------------------------------------------- HELPER
+
+// TODO : Déplacer dans iso-core
+
+export type TPassiveOperator = ('==='|'=='|'!=='|'!='|'>='|'>'|'<='|'<');
+
+function processPassiveOperator (operandA, operandB, operator:TPassiveOperator)
+{
+	if ( operator == '===' )
+		return operandA === operandB;
+	else if ( operator == '==' )
+		return operandA == operandB;
+	else if ( operator == '!==' )
+		return operandA !== operandB;
+	else if ( operator == '!=' )
+		return operandA != operandB;
+	else if ( operator == '>=' )
+		return operandA >= operandB;
+	else if ( operator == '>' )
+		return operandA > operandB;
+	else if ( operator == '<=' )
+		return operandA >= operandB;
+	else if ( operator == '<' )
+		return operandA < operandB;
+	else
+		return false
+}
+
+// ----------------------------------------------------------------------------- RUN TEST
 
 // If there is a running test, added tests will not start
 let runningTest = false;
@@ -10,10 +40,9 @@ const waitingTests = [];
 /**
  * Run a test
  * @param name Name of the test / task
- * @param testHandler Called to initialized test
- * @returns {Promise<void>}
+ * @param testHandler Called to initialize test
  */
-async function runTest ( name, testHandler )
+async function runTest ( name:string, testHandler ) : Promise<any>
 {
 	// Tests are running now, put new tests in waiting line
 	runningTest = true;
@@ -26,7 +55,7 @@ async function runTest ( name, testHandler )
 	const it = ( should, handler ) => allAssertions.push({ should, handler });
 
 	// Start task in CLI
-	const task = exports.task( 'Test ' + name );
+	const task:ITask = createTask( 'Test ' + name );
 
 	// Call test initialization handler to have assertions list
 	await testHandler( it );
@@ -57,14 +86,16 @@ async function runTest ( name, testHandler )
 			await new Promise( (resolve, reject) =>
 			{
 				// Call this "it" and pass assertion handler
-				assertionResult.handler( (result, expectedValue = true) =>
+				assertionResult.handler( (result, expectedValue = true, operator:TPassiveOperator = '===') =>
 					// When "assert" is called, we check here if assertion is true
 					// If true, we resolve promise, otherwise promise fails
-					(result === expectedValue) ? resolve() : reject( {result, expectedValue} )
+					processPassiveOperator( result, expectedValue, operator )
+					? resolve()
+					: reject( {result, expectedValue, operator} )
 				)
 			})
 		}
-			// If there are any failed assertion
+		// If there are any failed assertion
 		catch ( e )
 		{
 			// We stop any further testing
@@ -75,17 +106,18 @@ async function runTest ( name, testHandler )
 
 			// Show error message
 			exports.newLine();
-			consoleError( exports.offset( 6, chalk.redBright.bold(`${name} failed at :`) ) );
-			consoleError( exports.offset( 6, chalk.bold(`It ${assertionResult.should}.`)) );
+			console.error( exports.offset( 6, chalk.redBright.bold(`${name} failed at :`) ) );
+			console.error( exports.offset( 6, chalk.bold(`It ${assertionResult.should}.`)) );
 			exports.newLine();
 
 			// Show values
-			consoleError( exports.offset( 6, `Received value : ${chalk.bold(e.result)}` ) );
-			consoleError( exports.offset( 6, `Expected value : ${chalk.bold(e.awaitedValue)}` ) );
+			console.error( exports.offset( 6, `Received value : ${chalk.bold(e.result)}` ) );
+			console.error( exports.offset( 6, `Expected value : ${chalk.bold(e.awaitedValue)}` ) );
+			console.error( exports.offset( 6, `With operator : ${chalk.bold(e.operator)}` ) );
 			exports.newLine();
 
 			// Stop process here
-			stds.exit( 1 );
+			process.exit( 1 );
 		}
 
 		// Continue to next assertion if there were no failure
@@ -103,7 +135,7 @@ async function runTest ( name, testHandler )
 	{
 		// Target next test and do it
 		const nextTest = waitingTests.shift();
-		runTest(nextTest.name, nextTest.testHandler);
+		runTest( nextTest.name, nextTest.testHandler );
 		return;
 	}
 
@@ -117,17 +149,12 @@ async function runTest ( name, testHandler )
  * @param name Name of unit test to run. Will show in CLI.
  * @param testHandler Function with "it" parameter to declare list of assertions.
  */
-exports.test = async function ( name, testHandler )
+export async function test ( name, testHandler )
 {
 	// Put in waiting line if test are already running
 	if ( runningTest )
-	{
-		waitingTests.push({
-			name,
-			testHandler
-		});
-	}
+		waitingTests.push({ name, testHandler });
 
 	else await runTest( name, testHandler );
-};
+}
 

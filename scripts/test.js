@@ -1,25 +1,32 @@
-const {execSync, halt, task, newLine} = require("@solid-js/cli");
-const {buildLibrary, autoTargetLibrary, getLibraryPackageJson} = require("./lib/libraries");
-const path = require("path");
+const path = require( "path" );
+const fs = require( "fs" );
+const { task } = require( "@solid-js/cli" );
+const { buildLibrary, testLibrary } = require( "./lib/libraries" );
+const { newLine } = require("@solid-js/cli");
+const { autoTargetLibrary } = require("./lib/libraries");
 
 newLine();
 autoTargetLibrary( true, ( libraryName ) =>
 {
+    // Target library
     const libraryPath = path.join( 'libraries', libraryName );
+    const srcPath = path.join( libraryPath, 'src' );
 
-    // Check if this lib has a dev script
-    const packageContent = getLibraryPackageJson( libraryName );
-    if ( packageContent == null || !('scripts' in packageContent) || !('dev' in packageContent.scripts) )
-        halt(`Unable to find scripts.dev in ${libraryName}'s package.json.`, 2, true);
+    // If library does have a src folder, do not build it
+    if ( !fs.existsSync(srcPath) ) return;
 
-    // Build library quickly (no commonjs / no minify)
     const buildTask = task( `Building ${libraryName}` );
-    try
-    {
-        buildLibrary( libraryName, 0 );
+    try {
+        buildLibrary( libraryName, 0, buildTask.progress );
         buildTask.success();
     }
+    // Show error and exit with code
     catch ( e ) { buildTask.error( e, 1 ); }
 
-    execSync('node dev', 3, { cwd: libraryPath });
+    // Test this lib if possible
+    newLine();
+    testLibrary( libraryName );
+
+    // New line for next task
+    newLine();
 });

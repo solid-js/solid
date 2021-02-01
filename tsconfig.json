@@ -70,6 +70,6 @@
   "exclude": ["./node_modules/**", "./_/**"],
 
   // Configure IDE to not compile typescript
-  "compileOnSave": true,
-  "buildOnSave": true
+  "compileOnSave": false,
+  "buildOnSave": false
 }

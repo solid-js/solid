@@ -9,8 +9,6 @@ export type TBuildMode = "production"|"dev"
 
 export type TMiddlewareType = "before"|"after";
 
-export type TEnvFilter = ( envs:object, buildMode:TBuildMode ) => object;
-
 export interface IAppOptions
 {
 	/**
@@ -49,12 +47,15 @@ export interface IAppOptions
 	publicUrl 	?:string
 
 	/**
-	 * TODO
+	 * Pass envs variables from current env to bundle env.
+	 * Those envs variables will override .env variables.
+	 * Ex : ['API_GATEWAY', 'BASE'] will allow env variables injections when
+	 * running : API_GATEWAY='/api/' BASE='/base/' npm run production
 	 */
 	passEnvs	?:string[]
 
 	/**
-	 * TODO
+	 * TODO TO DEFINE
 	 */
 	actions 	?:{ [key:string] : IAction }
 

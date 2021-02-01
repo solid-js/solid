@@ -1,0 +1,8 @@
+
+test:
+  - yaml
+  - properties
+
+object :
+  property: "Complex value"
+  other : 12.5

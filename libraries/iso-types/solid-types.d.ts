@@ -6,11 +6,11 @@
 export type AnyHandler = (...rest) => any|void;
 
 /**
- * Functional transformer with generic. Describes :
+ * Functional filter with generic. Describes :
  * - a function which have only one argument of type GType
  * - and returns a value of type GType
  */
-export type TFunctionalTransformer <GType> = ( r:GType ) => GType
+export type TFunctionalFilter <GType> = ( r:GType ) => GType
 
 /**
  * Any scalar value which can hold data and not structure :
@@ -36,6 +36,6 @@ export type ScalarObject = {
  * - Scalar values allowed (no nesting)
  * - Functions as value allowed
  */
-export type OneLevelScalarFunctionalObject = {
-    [key:string] : ScalarValue | AnyHandler
-}
+// export type OneLevelScalarFunctionalObject = {
+//     [key:string] : ScalarValue | AnyHandler
+// }
