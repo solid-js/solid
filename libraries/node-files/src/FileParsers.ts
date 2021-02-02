@@ -14,9 +14,9 @@ export const DotEnvParser = {
 	decode ( buffer:string ) {
 		const data:ScalarObject = {};
 		buffer.split("\n").map( line => {
-			line.split("=", 2);
-			if (line.length == 0) return;
-			data[ line[0].trim() ] = line[1].trim();
+			const parts = line.split("=", 2);
+			if ( parts.length < 2 ) return;
+			data[ parts[0].trim() ] = parts[1].trim();
 		})
 		return data;
 	},

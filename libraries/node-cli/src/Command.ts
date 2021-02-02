@@ -1,6 +1,13 @@
 import { ScalarObject } from "@solid-js/core";
 const path = require('path');
 
+
+export type TCommandHandler = (args?:string[], options?:ScalarObject, commandName?:string) => any|Promise<any>
+
+// Custom CommandError to be able to detect commands not found
+class CommandError extends Error { }
+
+
 // ----------------------------------------------------------------------------- ARGV
 
 /**
@@ -13,7 +20,7 @@ const path = require('path');
  * 		getProcessRoot : "project/directory/"
  *
  */
-export function getProcessRoot () {
+export function getCLIRoot () {
 	return (
 		process.argv.length > 1
 		? path.dirname( process.argv[1] )
@@ -52,14 +59,8 @@ export function getCLIArguments () : [string[], ScalarObject]
 
 // ----------------------------------------------------------------------------- CLI COMMANDS
 
-
-export type TCommandHandler = (args?:string[], options?:ScalarObject, commandName?:string) => any|Promise<any>
-
 // All parsed args and list of commands
 let _registeredCommands = {};
-
-// Custom CommandError to be able to detect commands not found
-class CommandError extends Error { }
 
 export const CLICommands = {
 
@@ -84,7 +85,14 @@ export const CLICommands = {
 		})
 	},
 
-	help ( name:string|string[], group:string, message:string, options : {[index:string] : string} = {})
+	/**
+	 * TODO DOC
+	 * @param name
+	 * @param group
+	 * @param message
+	 * @param options
+	 */
+	addHelp ( name:string|string[], group:string, message:string, options : {[index:string] : string} = {})
 	{
 		( typeof name === "string" ? [name] : name ).map( n => {
 			n = n.toLowerCase();
@@ -189,9 +197,14 @@ export const CLICommands = {
 		}, command.name);
 	},
 
+	showHelp ()
+	{
+		// TODO : Show nice help
+	},
+
 	promptAvailableCommands ()
 	{
-
+		// TODO : Show all available commands in a selectable list
 	}
 };
 

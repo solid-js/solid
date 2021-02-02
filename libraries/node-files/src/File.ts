@@ -41,12 +41,16 @@ export class File extends FileEntity
 	 * Will fail silently and get empty string if file can't be accessed.
 	 */
 	load () {
+		if ( !this._stats )
+			this.update();
+
 		try {
 			this._data = fs.readFileSync( this._path, { encoding: this.encoding } ).toString();
 		}
 		catch (e) {
 			this._data = '';
 		}
+		return this;
 	}
 
 	/**
@@ -55,6 +59,9 @@ export class File extends FileEntity
      * Will fail silently and get empty string if file can't be accessed.
 	 */
 	async loadAsync () {
+		if ( !this._stats )
+			await this.updateAsync();
+
 		try {
 			this._data = (await fs.promises.readFile( this._path, { encoding: this.encoding } )).toString();
 		}

@@ -112,6 +112,7 @@ export class FileEntity
 				this._exists = false;
 			}
 		}
+		return this;
 	}
 
 	/**

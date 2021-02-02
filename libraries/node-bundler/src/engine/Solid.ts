@@ -1,6 +1,8 @@
 import { SolidPlugin } from "./SolidPlugin";
 import Parcel from "@parcel/core";
-import { CLICommands } from "@solid-js/cli";
+import { CLICommands, getCLIRoot } from "@solid-js/cli";
+import { File } from "@solid-js/files"
+
 
 // ----------------------------------------------------------------------------- STRUCT
 
@@ -93,6 +95,7 @@ export class Solid
 
 		// Listen dev and build commands
 		CLICommands.add(['dev', 'build'], { env: '' }, Solid.commandHandler.bind(Solid));
+		// TODO : CLICommands.help
 	}
 
 	// ------------------------------------------------------------------------- COMMAND INPUTS
@@ -177,9 +180,25 @@ export class Solid
 
 		// TODO -> Clean output folder
 
-		// TODO -> Read .env props with envName
+
+		const dotEnvPath = '.env' + (envName ? '.'+envName : '');
+
+		// TODO : Log loading ${dotEnvPath}
+
+		const dotEnvFile = new File(dotEnvPath).load();
+		const envProps = (
+			dotEnvFile.exists()
+			? dotEnvFile.dotEnv()
+			: {}
+		);
+
 		// TODO -> Pass envs from envs array
-		let envProps = {};
+		// process.env ...
+
+		console.log(envProps);
+
+		if (global['a'] != 12)
+			process.exit(0);
 
 		// Build with parcel
 		if ( options.bundler === 'parcel' )
