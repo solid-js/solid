@@ -1,7 +1,7 @@
 
 
 
-export * from './engine/SolidEngine';
+export * from './engine/Solid';
 export * from './engine/SolidPlugin';
 
 export * from './plugins/atoms/SolidAtomsPlugin';

@@ -10,7 +10,7 @@
 	"bugs": {
 		"url": "https://github.com/solid-js/solid/issues"
 	},
-	"homepage": "https://github.com/solid-js/solid/libraries/$type-$name",
+	"homepage": "https://github.com/solid-js/solid/tree/master/libraries/$type-$name",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/solid-js/solid.git libraries/$type-$name"

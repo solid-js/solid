@@ -1,26 +1,9 @@
+import * as child_process from "child_process";
+import { ExecSyncOptions } from "child_process";
+
+type TVerboseLevel = boolean|0|1|2|3;
 
 // ----------------------------------------------------------------------------- EXEC UTILITIES
-
-import { exec } from "child_process";
-
-const stdLevels = [
-	[0, null, null],
-	[0, 1, null],
-	[0, null, 1],
-	[0, 1, 2]
-];
-
-const makeExecOptions = (stdLevel, options) => {
-	return (
-		typeof stdLevel === 'object'
-			? stdLevel
-			: {
-				stdio: stdLevels[ stdLevel ] || 'pipe',
-				env: process.env,
-				...options
-			}
-	)
-};
 
 /**
  * Exec a command async and resolve stdout as string.
@@ -28,43 +11,33 @@ const makeExecOptions = (stdLevel, options) => {
  * Set stdLevel to show stdout and / or stderr.
  * Options argument can be collapsed onto stdlevel argument.
  * @param command Command to execute.
- * @param stdLevel standard outputs to use. 0 is none, 1 is only stdout, 2 is only stderr, 3 is stdout and stdin.
- * @param options See execSync options. Ignore to call and hide command's stdout.
+ * @param verboseLevel standard outputs to use. 0 is none, 1 is only stdout, 2 is only stderr, 3 is stdout and stdin.
+ * @param options See child_process.exec options. Ignore to call and hide command's stdout.
  * @returns Promise with stdout if success, stderr if fail
  */
-/*
-exports.exec = async function ( command, stdLevel = 0, options )
+export const execAsync = ( command:string, verboseLevel:TVerboseLevel = 0, options:ExecSyncOptions = null ) => new Promise( (resolve, reject) =>
 {
-	return new Promise( (resolve, reject) =>
-	{
-		// Call command with default options
-		exec(
-			command,
-			makeExecOptions(stdLevel, options),
-			( error, stdout, stderr) => {
-				error
-				? reject( (stderr || '').toString() )
-				: resolve( (stdout || '').toString() )
-			}
-		);
-	});
-};*/
-
-const execAsync = (command, verbose, options) => new Promise( (resolve, reject) =>
-{
-	const childProcess = exec(
+	// Call command with default options
+	const childProcess = child_process.exec(
 		command, options,
 		( error, stdout, stderr) => {
 			error
-			? reject( (stderr || '').toString() )
-			: resolve( (stdout || '').toString() )
+			? reject( (stderr ?? '').toString() )
+			: resolve( (stdout ?? '').toString() )
 		}
 	);
 
-	if ( verbose === true || verbose === 1 || verbose === 3 )
+	// Go to stdout
+	if ( verboseLevel === true || verboseLevel === 1 || verboseLevel === 3 ) {
+		// @ts-ignore
 		childProcess.stdout.pipe( process.stdout );
-	if ( verbose === true || verbose === 2 || verbose === 3 )
+	}
+
+	// Go to stderr
+	if ( verboseLevel === true || verboseLevel === 2 || verboseLevel === 3 ) {
+		// @ts-ignore
 		childProcess.stderr.pipe( process.stderr );
+	}
 });
 
 
@@ -74,14 +47,36 @@ const execAsync = (command, verbose, options) => new Promise( (resolve, reject) 
  * Set stdLevel to show stdout and / or stderr.
  * Options argument can be collapsed onto stdlevel argument.
  * @param command Command to execute.
- * @param stdLevel standard outputs to use. 0 is none, 1 is only stdout, 2 is only stderr, 3 is stdout and stdin
- * @param options See execSync options. Ignore to call and hide command's stdout.
+ * @param verboseLevel standard outputs to use. 0 is none, 1 is only stdout, 2 is only stderr, 3 is stdout and stdin.
+ * @param options See child_process.execSync options. Ignore to call and hide command's stdout.
  * @returns Stringified result of command's stdout
  */
-exports.execSync = function ( command, stdLevel = 0, options )
+export function execSync ( command:string, verboseLevel:TVerboseLevel = 0, options:ExecSyncOptions = null ):string
 {
-	// Call command with default options
-	const result = execSync(command, makeExecOptions(stdLevel, options));
-	return result ? result.toString() : null;
-};
+	try {
+		// Call command with default options
+		let result = child_process.execSync( command, options );
+
+		// Convert to string
+		const resultString = (result ?? '').toString();
+
+		// Go to stdout if needed
+		if ( resultString && (verboseLevel === true || verboseLevel === 1 || verboseLevel === 3) )
+			process.stdout.write( resultString );
+
+		// Return string result
+		return resultString;
+	}
+	catch ( error ) {
+		const resultString = (error.stdout ?? '').toString();
+		if ( verboseLevel === true || verboseLevel === 1 || verboseLevel === 3 )
+			process.stdout.write( resultString );
+
+		if ( verboseLevel === true || verboseLevel === 2 || verboseLevel === 3 )
+			process.stderr.write( (error.stderr ?? '').toString() );
+
+		// Return string result
+		return resultString;
+	}
+}
 

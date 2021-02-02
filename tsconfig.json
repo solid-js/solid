@@ -67,7 +67,7 @@
   },
 
   // Files to includes and exclude from typescript builds
-  "exclude": ["./node_modules/**", "./_/**"],
+  "exclude": ["./node_modules/**", "**/_/**", "./wip/**"],
 
   // Configure IDE to not compile typescript
   "compileOnSave": false,

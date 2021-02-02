@@ -1,33 +1,6 @@
 import { createTask, ITask } from "./Task";
+import { compareWithOperator, TCompareOperators } from "@solid-js/core"
 import chalk from "chalk";
-
-// ----------------------------------------------------------------------------- HELPER
-
-// TODO : Déplacer dans iso-core
-
-export type TPassiveOperator = ('==='|'=='|'!=='|'!='|'>='|'>'|'<='|'<');
-
-function processPassiveOperator (operandA, operandB, operator:TPassiveOperator)
-{
-	if ( operator == '===' )
-		return operandA === operandB;
-	else if ( operator == '==' )
-		return operandA == operandB;
-	else if ( operator == '!==' )
-		return operandA !== operandB;
-	else if ( operator == '!=' )
-		return operandA != operandB;
-	else if ( operator == '>=' )
-		return operandA >= operandB;
-	else if ( operator == '>' )
-		return operandA > operandB;
-	else if ( operator == '<=' )
-		return operandA >= operandB;
-	else if ( operator == '<' )
-		return operandA < operandB;
-	else
-		return false
-}
 
 // ----------------------------------------------------------------------------- RUN TEST
 
@@ -42,7 +15,7 @@ const waitingTests = [];
  * @param name Name of the test / task
  * @param testHandler Called to initialize test
  */
-async function runTest ( name:string, testHandler ) : Promise<any>
+async function runTest ( name:string, testHandler ) : Promise<void>
 {
 	// Tests are running now, put new tests in waiting line
 	runningTest = true;
@@ -83,13 +56,13 @@ async function runTest ( name:string, testHandler ) : Promise<any>
 		try
 		{
 			// Create a new self-awaited promise
-			await new Promise( (resolve, reject) =>
+			await new Promise<void>( (resolve, reject) =>
 			{
 				// Call this "it" and pass assertion handler
-				assertionResult.handler( (result, expectedValue = true, operator:TPassiveOperator = '===') =>
+				assertionResult.handler( (result, expectedValue = true, operator:TCompareOperators = '===') =>
 					// When "assert" is called, we check here if assertion is true
 					// If true, we resolve promise, otherwise promise fails
-					processPassiveOperator( result, expectedValue, operator )
+					compareWithOperator( result, expectedValue, operator )
 					? resolve()
 					: reject( {result, expectedValue, operator} )
 				)

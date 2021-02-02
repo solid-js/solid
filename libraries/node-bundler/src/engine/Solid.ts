@@ -1,5 +1,6 @@
 import { SolidPlugin } from "./SolidPlugin";
 import Parcel from "@parcel/core";
+import { CLICommands } from "@solid-js/cli";
 
 // ----------------------------------------------------------------------------- STRUCT
 
@@ -79,10 +80,49 @@ export interface ISolidMiddleware
 
 // ----------------------------------------------------------------------------- ENGINE CLASS
 
-export class SolidEngine
+export class Solid
 {
 	// ------------------------------------------------------------------------- SETUP
 
+	static _initialized = false;
+
+	static init ()
+	{
+		// Initialize once
+		if ( Solid._initialized ) return;
+
+		// Listen dev and build commands
+		CLICommands.add(['dev', 'build'], { env: '' }, Solid.commandHandler.bind(Solid));
+	}
+
+	// ------------------------------------------------------------------------- COMMAND INPUTS
+
+	protected static async commandHandler ( args?:string[], options?:any, commandName?:string )
+	{
+		// Get build mode from command name
+		const buildMode:TBuildMode = commandName == 'dev' ? 'dev' : 'production'
+
+		// Get app name from arguments, use default if not found
+		const appName = args[0] ?? this._mainAppName;
+
+		// console.log(appName, buildMode, options.env);
+
+		// Start build with env option
+		await Solid.internalBuild( appName, buildMode, options.env )
+	}
+
+	// ------------------------------------------------------------------------- APP SETUP
+
+	/**
+	 * Main app is first declared Solid.app().
+	 * It will catch all commands without appName argument.
+	 */
+	static get mainAppName () { return this._mainAppName }
+	static _mainAppName : string
+
+	/**
+	 * List of all registered apps configurations
+	 */
 	static _apps : { [appName:string] : IAppOptions } = {};
 
 	/**
@@ -90,19 +130,33 @@ export class SolidEngine
 	 * @param appName
 	 * @param config
 	 */
-	static app ( appName:string, config:IAppOptions ) {
+	static app ( appName:string, config:IAppOptions )
+	{
+		if ( !Solid._mainAppName )
+			Solid._mainAppName = appName;
+
 		this._apps[ appName ] = config;
+
+		this.init();
 	}
 
 	// ------------------------------------------------------------------------- BUILD
 
+	static async dev ( appName:string, envName?:string ) {
+		return await Solid.internalBuild( appName, 'dev', envName);
+	}
+
+	static async build ( appName:string, envName?:string ) {
+		return await Solid.internalBuild( appName, 'production', envName);
+	}
+
 	/**
 	 * TODO
 	 * @param appName
-	 * @param type
+	 * @param buildMode
 	 * @param envName
 	 */
-	static async build ( appName:string, type:TBuildMode, envName?:string )
+	protected static async internalBuild ( appName:string, buildMode:TBuildMode, envName?:string )
 	{
 		if ( !this._apps[ appName ] )
 		{
@@ -129,11 +183,11 @@ export class SolidEngine
 
 		// Build with parcel
 		if ( options.bundler === 'parcel' )
-			await this.bundleParcel( options, type, envProps );
+			await this.bundleParcel( options, buildMode, envProps );
 
 		// Build with typescript
 		else if ( options.bundler === 'tsc' )
-			await this.bundleTypescript( options, type, envProps );
+			await this.bundleTypescript( options, buildMode, envProps );
 	}
 
 	// ------------------------------------------------------------------------- BUILD PARCEL

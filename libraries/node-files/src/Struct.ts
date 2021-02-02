@@ -1,4 +1,4 @@
-import { ScalarValue, TFunctionalTransformer } from "@solid-js/types/solid-types";
+import { ScalarValue, TFunctionalFilter } from "@solid-js/core";
 
 
 export type TFileType = 'file'|'directory'|'all';
@@ -14,6 +14,6 @@ export type TGlobOptionsArgument = Partial <IGlobOptions>
 
 export type TRawWritableContent = ScalarValue | null
 
-export type TContentArgument<G> = null | G | TFunctionalTransformer <G>
+export type TContentArgument<G> = null | G | TFunctionalFilter <G>
 
 export type TStructuralWritableContent = ScalarValue | object | any[]

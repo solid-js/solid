@@ -16,7 +16,7 @@ const chalk = require("chalk");
  */
 exports.listLibraries = function ( filterLibrary = null, handler )
 {
-    let found = 0;
+    const libraries = [];
     glob.sync( path.join('libraries', '*') ).map( libraryPath =>
     {
         // Get current library name from path
@@ -36,17 +36,17 @@ exports.listLibraries = function ( filterLibrary = null, handler )
         // Do not continue if there is no package.json or no src
         if (
             !fs.existsSync(path.join( libraryPath, 'package.json' ))
-            //||
-            //!fs.existsSync(path.join( libraryPath, 'src' ))
+            ||
+            !fs.existsSync(path.join( libraryPath, 'src' ))
         ) return;
 
         // Count and call handler
-        found ++;
-        handler( libraryName );
+        libraries.push( libraryName );
+        handler && handler( libraryName );
     });
 
     // Return total found libraries
-    return found;
+    return libraries;
 };
 
 /**
@@ -66,16 +66,15 @@ exports.autoTargetLibrary = async function ( needSpecificLib, handler )
     if ( (needSpecificLib && !argumentLibrary) || needSpecificLib === 2 )
     {
         // Ask which one from library list
-        const list = [];
-        exports.listLibraries( null, a => list.push(a) );
-        argumentLibrary = await askList(`Please choose which library`, list);
+        const allLibraries = exports.listLibraries();
+        argumentLibrary = await askList(`Please choose which library`, allLibraries);
     }
 
     // We can now list all or select
     const foundLibraries = exports.listLibraries( argumentLibrary, handler );
 
     // Show error message if requested library is not found
-    if ( foundLibraries === 0 && argumentLibrary !== null )
+    if ( foundLibraries.length === 0 && argumentLibrary !== null )
     {
         print(chalk.red.bold( `  Unable to find library ${argumentLibrary}`) );
         newLine();

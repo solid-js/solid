@@ -24,7 +24,7 @@
   "bugs": {
     "url": "https://github.com/solid-js/solid/issues"
   },
-  "homepage": "https://github.com/solid-js/solid/libraries/iso-nanostache",
+  "homepage": "https://github.com/solid-js/solid/tree/master/libraries/iso-nanostache",
   "devDependencies": {
     "@solid-js/cli": "0.9.4"
   },

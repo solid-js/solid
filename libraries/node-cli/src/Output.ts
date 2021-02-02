@@ -1,59 +1,132 @@
-const {exec, execSync} = require('child_process');
+import * as buffer from "buffer";
+
 const chalk = require('chalk');
 const stripAnsi = require('strip-ansi');
 
 // ----------------------------------------------------------------------------- PRINT UTILITIES
 
 /**
+ * Size of a tab for every CLI function.
+ * Can be changed
+ */
+export let cliTabSize = 3;
+
+/**
  * Create a specified number of char in a string. Default are spaces.
  */
-exports.repeat = function (total, char = ' ' )
-{
+export function repeat ( total:number, char:string = ' ' ) {
 	let buffer = '';
-	for (let i = 0; i < total; i ++) buffer += char;
+	for ( let i = 0; i < total; i ++ ) buffer += char;
 	return buffer
-};
+}
 
 /**
- * Print content on standard output
- * @param content Content to show
- * @param bold If we need to print it bold
- * @param newLine If we add a new line after printed chars
+ * TODO
+ * @param total
+ * @param content
  */
-exports.print = function ( content, bold = false, newLine = true )
-{
-	stds.out.write( bold ? chalk.bold(content) : content );
-	newLine && exports.newLine();
-};
+export function indent ( total:number, content = '' ) {
+	return repeat( total * cliTabSize, " " ) + content;
+}
 
 /**
- * Offset a string by adding leading spaces
- * @param spaces Total spaces to add
- * @param content Content to offset
- * @returns {string}
+ * TODO
+ * @param content
+ * @param newLine
  */
-exports.offset = function ( spaces, content )
-{
-	return exports.repeat( spaces ) + content;
-};
+export function print ( content:string, newLine = "\n\r" ) {
+	process.stdout.write( content );
+	newLine && process.stdout.write( newLine );
+}
 
 /**
  * Print a new line
  */
-exports.newLine = function ()
-{
-	stds.out.write('\r\n');
+export function newLine () { process.stdout.write('\r\n'); }
+
+// ----------------------------------------------------------------------------- NICE PRINT
+
+export type TNicePrintOutput = 'stdout'|'stderr'|'return';
+
+const _nicePrintStyleReplacerRegex = /\{([a-z]*\/?[a-z]+)\}([^{]*)(\{\/\})?/gi;
+
+const _formatters = {
+	'bold'		: chalk.bold,
+	'underline'	: chalk.underline,
+	'strike'	: chalk.strikethrough,
+	'italic'	: chalk.italic,
+
+	'red'		: chalk.red,
+	'yellow'	: chalk.yellow,
+	'cyan'		: chalk.cyan,
+	'blue'		: chalk.blue,
+	'green' 	: chalk.greenBright,
+	'purple'	: () => chalk.keyword('purple'),
+	'orange'	: () => chalk.keyword('orange'),
+	'grey'		: chalk.gray,
+	'lite'		: chalk.gray,
+
+	'invert' 	: chalk.inverse,
 };
 
-/**
- * Halt with an error message.
- */
-exports.halt = function ( content = null, code = 1, redAndBold = false )
+function styleReplacer ( from:string, identifier:string, content )
 {
-	content && consoleError( redAndBold ? chalk.red.bold( content ) : content );
-	content && consoleError('');
-	stds.exit( code );
-};
+	//console.log('>', {from, value: identifier, content});
+
+	// Identifier is just slash, this is a close tag {/}
+	if ( identifier == '/' )
+		return chalk.reset()
+
+	// Split identifiers
+	const split = identifier.toLowerCase().split('/');
+
+	// Get chained list of formatters from identifier
+	let formattersChain = [];
+	split.map( marker => {
+		for ( const key of Object.keys(_formatters) ) {
+			if ( key.indexOf( marker ) !== 0 ) continue;
+			formattersChain.push(  _formatters[ key ] );
+			break;
+		}
+	})
+
+	// Execute all formatters in chain like so :
+	// Ex : chalk.bold( chalk.italic( chalk.red( content ) ) )
+	return formattersChain.reduce( (previous, current) => current( previous ), content);
+}
+
+/**
+ * TODO DOC
+ * @param template
+ * @param output
+ * @param code
+ */
+export function nicePrint ( template:string, output:TNicePrintOutput = 'stdout', code = 0 )
+{
+	// Process nice print templating with styleReplacer()
+	const lines = template.split("\n").map( line =>
+		line.replace(_nicePrintStyleReplacerRegex, styleReplacer)
+	)
+
+	// Add reset at each end of line and add line jumps
+	const content = lines
+		.join( chalk.reset() + "\n" )
+		.replace(/\t/gmi, indent(1));
+
+	// Go to stdout
+	if ( output == 'stdout')
+		process.stdout.write( content );
+
+	// Go to stderr
+	else if ( output == 'stderr' )
+		process.stderr.write( content );
+
+	// Exit if we have an error code
+	code > 0 && process.exit( code );
+
+	//
+	return content;
+}
 
 
 // ----------------------------------------------------------------------------- CLI UTILITIES
@@ -65,14 +138,14 @@ exports.halt = function ( content = null, code = 1, redAndBold = false )
  * @param margin
  * @param padding
  */
-exports.banner = function ( title, width = 78, margin = 1, padding = 2 )
+export function banner ( title:string, width = 78, margin = 1, padding = 2 )
 {
-	const marginBuffer = exports.repeat( margin );
-	const line = marginBuffer + chalk.bgWhite( exports.repeat( width ) );
-	consoleLog( line );
-	consoleLog( marginBuffer + chalk.bgWhite.black( exports.repeat( padding ) + title + exports.repeat( width - padding - title.length )) );
-	consoleLog( line );
-};
+	const marginBuffer = repeat( margin );
+	const line = marginBuffer + chalk.bgWhite( repeat( width ) );
+	print( line );
+	print( marginBuffer + chalk.bgWhite.black( repeat( padding ) + title + repeat( width - padding - title.length )) );
+	print( line );
+}
 
 /**
  * Print a nice table in stdout
@@ -83,19 +156,18 @@ exports.banner = function ( title, width = 78, margin = 1, padding = 2 )
  * @param lineEnd String to print after each line
  * @param separator Separator to show between each column.
  */
-exports.table = function ( lines, firstLineAreLabels = false, minColumnWidths = [], lineStart = ' ', lineEnd = '', separator = chalk.grey(' │ ') )
+export function table ( lines:string[][], firstLineAreLabels = false, minColumnWidths:number[] = [], lineStart = ' ', lineEnd = '', separator = chalk.grey(' │ ') )
 {
 	// Init column widths and total number of columns from arguments
 	let columnWidths = minColumnWidths;
 	let totalColumns = minColumnWidths.length;
 
-	let prevColumnPosition = stripAnsi(lineStart.length);
-	const columnPositions = [prevColumnPosition];
+	let prevColumnPosition = stripAnsi( lineStart ).length;
+	const columnPositions = [ prevColumnPosition ];
 
 	// Measure columns widths
 	lines.map(
-		line => line.map( (column, columnIndex) =>
-		{
+		line => line.map( (column, columnIndex) => {
 			// Count total columns for every lines
 			totalColumns = Math.max(totalColumns, columnIndex);
 
@@ -106,8 +178,8 @@ exports.table = function ( lines, firstLineAreLabels = false, minColumnWidths = 
 			// Measure column width and keep the largest
 			columnWidths[ columnIndex ] = (
 				! (columnIndex in columnWidths)
-					? stringColumn.length
-					: Math.max( columnWidths[ columnIndex ], stringColumn.length )
+				? stringColumn.length
+				: Math.max( columnWidths[ columnIndex ], stringColumn.length )
 			);
 		})
 	);
@@ -116,12 +188,10 @@ exports.table = function ( lines, firstLineAreLabels = false, minColumnWidths = 
 	lines.map( (line, lineIndex) =>
 	{
 		// Print line start if needed
-		lineStart && stds.out.write( lineStart );
-
+		lineStart && process.stdout.write( lineStart );
 
 		// Browse line's columns
-		line.map( (column, columnIndex) =>
-		{
+		line.map( (column, columnIndex) => {
 			const stringColumn = column + '';
 
 			// Get column width and if last column
@@ -137,11 +207,11 @@ exports.table = function ( lines, firstLineAreLabels = false, minColumnWidths = 
 			// Print column + spaces + separator
 			const content = [
 				columnToPrint,
-				exports.repeat( columnWidth - stripAnsi(stringColumn).length ),
+				repeat( columnWidth - stripAnsi(stringColumn).length ),
 				isLastColumn ? lineEnd : separator
 			].join('');
 
-			stds.out.write( content );
+			process.stdout.write( content );
 
 			if ( lineIndex === lines.length - 1)
 			{
@@ -150,10 +220,9 @@ exports.table = function ( lines, firstLineAreLabels = false, minColumnWidths = 
 			}
 		});
 
-
 		// Go to next line
-		exports.newLine();
+		newLine();
 	});
 
 	return columnPositions;
-};
+}

@@ -11,7 +11,7 @@
     "directory": "libraries/node-files"
   },
   "dependencies": {
-    "@solid-js/types" : "^0.1.0",
+    "@solid-js/core": "^0.1.0",
     "@solid-js/nanostache": "^0.2.1",
     "get-folder-size": "^2.0.1",
     "glob": "^7.1.6",

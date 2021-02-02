@@ -15,6 +15,7 @@
     "build": "node scripts/build",
     "clean": "node scripts/clean",
     "dev": "node scripts/dev",
+    "link": "node scripts/link",
     "test": "node scripts/test",
     "prune": "node scripts/prune",
     "publish": "node scripts/publish",

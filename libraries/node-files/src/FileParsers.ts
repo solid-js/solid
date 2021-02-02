@@ -1,4 +1,4 @@
-import { ScalarObject } from "@solid-js/types/solid-types";
+import { ScalarObject } from "@solid-js/core";
 
 // Quick helper to create YAML parser which keep comments and structure
 export const YAMLParser = ( raw) => {

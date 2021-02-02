@@ -2,7 +2,7 @@ import { FileEntity } from './FileEntity'
 import * as fs from "fs";
 import { TContentArgument, TGlobOptionsArgument, TRawWritableContent, TStructuralWritableContent } from "./Struct";
 import { FileFinder } from "./FileFinder";
-import { ScalarObject, ScalarValue, TFunctionalTransformer } from "@solid-js/types/solid-types";
+import { ScalarObject, ScalarValue, TFunctionalFilter } from "@solid-js/core";
 import { DotEnvParser, YAMLParser } from "./FileParsers";
 
 
@@ -159,7 +159,7 @@ export class File extends FileEntity
 
 	// ------------------------------------------------------------------------- PROCESS AND PARSE DATA
 
-	protected processData <G> ( content : null|G|TFunctionalTransformer<G>, decode:(source:string) => G, encode:(data:G) => string ) : G|File
+	protected processData <G> ( content : null|G|TFunctionalFilter<G>, decode:(source:string) => G, encode:(data:G) => string ) : G|File
 	{
 		const type = typeof content;
 		let dataToStore:string;
@@ -173,7 +173,7 @@ export class File extends FileEntity
 		// Call handler, pass it current file data, get back file data
 		else if ( type === 'function' )
 			dataToStore = encode(
-				(content as TFunctionalTransformer<G>)( decode(this._data) )
+				(content as TFunctionalFilter<G>)( decode(this._data) )
 			);
 
 		// We have data to save so we encode

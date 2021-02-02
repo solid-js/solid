@@ -1,5 +1,5 @@
 import { SolidPlugin } from "../../engine/SolidPlugin";
-import { IAppOptions, ISolidMiddleware, TBuildMode } from "../../engine/SolidEngine";
+import { IAppOptions, ISolidMiddleware, TBuildMode } from "../../engine/Solid";
 
 // -----------------------------------------------------------------------------
 

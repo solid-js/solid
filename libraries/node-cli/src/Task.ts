@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import { repeat, task } from "@solid-js/cli";
+import { indent } from "./Output";
 
 // NOTE : DEMO
 // (async function () {
@@ -30,7 +30,7 @@ export interface ITask
 	custom		: (state:boolean, bold:boolean, clearOverflow?:boolean, newText?:string ) => void
 }
 
-export type ITaskHandler = ( task:ITask ) => Promise<any>
+export type ITaskHandler<G> = ( task:ITask ) => G
 
 // ----------------------------------------------------------------------------- TASK IN A PROMISE
 
@@ -39,10 +39,33 @@ export type ITaskHandler = ( task:ITask ) => Promise<any>
  * @param configOrMessage Task config object or task name as string.
  * @param taskHandler Async handler with task object as first argument.
  */
-export async function runTask ( configOrMessage:ITaskConfig|string, taskHandler?:ITaskHandler ) : Promise<any>
+export function runTask <G> ( configOrMessage:ITaskConfig|string, taskHandler?:ITaskHandler<G> ) : G
 {
 	const taskObject = createTask( configOrMessage );
-	return await taskHandler( taskObject );
+	return taskHandler( taskObject );
+}
+
+// ----------------------------------------------------------------------------- TRY TASK
+
+/**
+ * TODO DOC
+ * @param configOrMessage
+ * @param taskHandler
+ */
+export async function tryTask <G> ( configOrMessage:ITaskConfig|string, taskHandler?:ITaskHandler<G> ) : Promise<G|void>
+{
+	const taskObject = createTask( configOrMessage );
+	try {
+		const result = await taskHandler( taskObject );
+		taskObject.success()
+		return result;
+	}
+	catch (e) {
+		taskObject.error(
+			e?.code ?? 0,
+			e?.message ?? 'Error'
+		)
+	}
 }
 
 // ----------------------------------------------------------------------------- CREATE TASK
@@ -66,7 +89,7 @@ export function createTask ( configOrMessage:ITaskConfig|string ):ITask
 		...configOrMessage
 	};
 
-	const taskIndent = repeat( totalTasks * 4, " " );
+	const taskIndent = indent( totalTasks )
 	totalTasks ++;
 
 	// Function to build a state message
