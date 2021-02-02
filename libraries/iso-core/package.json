@@ -1,0 +1,25 @@
+{
+  "name": "@solid-js/core",
+  "version": "0.1.1",
+  "description": "",
+  "main": "dist/_index.js",
+  "module": "dist/_index.mjs",
+  "types": "dist/_index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/solid-js/solid.git libraries/iso-core",
+    "directory": "libraries/iso-core"
+  },
+  "dependencies": {},
+  "keywords": [
+    "solid",
+    "typescript",
+    "types"
+  ],
+  "author": "Alexis Bouhet",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/solid-js/files/issues"
+  },
+  "homepage": "https://github.com/solid-js/solid/tree/master/libraries/iso-core"
+}
