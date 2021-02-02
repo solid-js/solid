@@ -98,10 +98,11 @@ function styleReplacer ( from:string, identifier:string, content )
 /**
  * TODO DOC
  * @param template
+ * @param newLine
  * @param output
  * @param code
  */
-export function nicePrint ( template:string, output:TNicePrintOutput = 'stdout', code = 0 )
+export function nicePrint ( template:string, newLine = "\n", output:TNicePrintOutput = 'stdout', code = 0 )
 {
 	// Process nice print templating with styleReplacer()
 	const lines = template.split("\n").map( line =>
@@ -109,9 +110,11 @@ export function nicePrint ( template:string, output:TNicePrintOutput = 'stdout',
 	)
 
 	// Add reset at each end of line and add line jumps
-	const content = lines
+	let content = lines
 		.join( chalk.reset() + "\n" )
 		.replace(/\t/gmi, indent(1));
+
+	content += newLine;
 
 	// Go to stdout
 	if ( output == 'stdout')

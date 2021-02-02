@@ -21,8 +21,8 @@ export function getProcessRoot () {
 	);
 }
 
-// Cached argvs
-let _parsedArgs;
+// Cached args and options
+let _argsAndOptionsCache;
 
 /**
  * Get parsed arguments from CLI.
@@ -33,22 +33,25 @@ let _parsedArgs;
 export function getCLIArguments () : [string[], ScalarObject]
 {
 	// Parse and put to cache
-	if ( !_parsedArgs ) {
+	if ( !_argsAndOptionsCache ) {
 		const mri = require('mri');
 		const argv = process.argv.slice(2);
-		_parsedArgs = mri( argv );
+		const parsedArgs = mri( argv );
+
+		// Separate arguments and options
+		const args = parsedArgs._ ?? [];
+		delete parsedArgs._;
+		_argsAndOptionsCache = [args, parsedArgs]
 	}
 
-	// Separate arguments and options
-	const args = _parsedArgs._ ?? [];
-	delete _parsedArgs._;
 
 	// Return cached as a tuple
 	// [ arguments, options ]
-	return [args, _parsedArgs]
+	return _argsAndOptionsCache
 }
 
 // ----------------------------------------------------------------------------- CLI COMMANDS
+
 
 export type TCommandHandler = (args?:string[], options?:ScalarObject, commandName?:string) => any|Promise<any>
 
@@ -75,9 +78,19 @@ export const CLICommands = {
 			_registeredCommands[ n.toLowerCase() ] = {
 				name: n,
 				options,
-				handler
+				handler,
+				help: {}
 			};
 		})
+	},
+
+	help ( name:string|string[], group:string, message:string, options : {[index:string] : string} = {})
+	{
+		( typeof name === "string" ? [name] : name ).map( n => {
+			n = n.toLowerCase();
+			if ( !( n in _registeredCommands) ) return; // fixme : error ?
+			_registeredCommands[ n ].help = { group, message, options };
+		});
 	},
 
 	/**
@@ -174,6 +187,11 @@ export const CLICommands = {
 			...command.options,
 			...options
 		}, command.name);
+	},
+
+	promptAvailableCommands ()
+	{
+
 	}
 };
 
