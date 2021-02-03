@@ -3,4 +3,5 @@
 
 
 export * from "./types"
-export * from "./Operations"
+export * from "./operations"
+export * from "./strings"

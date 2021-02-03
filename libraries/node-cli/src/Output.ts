@@ -1,15 +1,14 @@
-import * as buffer from "buffer";
-
+import { untab } from "@solid-js/core";
 const chalk = require('chalk');
 const stripAnsi = require('strip-ansi');
-
-// ----------------------------------------------------------------------------- PRINT UTILITIES
 
 /**
  * Size of a tab for every CLI function.
  * Can be changed
  */
 export let cliTabSize = 3;
+
+// ----------------------------------------------------------------------------- PRINT UTILITIES
 
 /**
  * Create a specified number of char in a string. Default are spaces.
@@ -44,9 +43,19 @@ export function print ( content:string, newLine = "\n\r" ) {
  */
 export function newLine () { process.stdout.write('\r\n'); }
 
+
 // ----------------------------------------------------------------------------- NICE PRINT
 
 export type TNicePrintOutput = 'stdout'|'stderr'|'return';
+
+interface INicePrintOptions
+{
+	newLine		:string|null|boolean
+	output		:TNicePrintOutput,
+	code		:number
+	untab		:"auto"|"last"|number|false
+	replaceTabs	:boolean
+}
 
 const _nicePrintStyleReplacerRegex = /\{([a-z]*\/?[a-z]+)\}([^{]*)(\{\/\})?/gi;
 
@@ -98,36 +107,49 @@ function styleReplacer ( from:string, identifier:string, content )
 /**
  * TODO DOC
  * @param template
- * @param newLine
- * @param output
- * @param code
+ * @param options
  */
-export function nicePrint ( template:string, newLine = "\n", output:TNicePrintOutput = 'stdout', code = 0 )
+export function nicePrint ( template:string, options:Partial<INicePrintOptions> = {} )
 {
+	options = {
+		newLine: "\n",
+		output: 'stdout',
+		code: 0,
+		untab: "last",
+		replaceTabs: true,
+		...options
+	};
+
+	// Untab
+	if ( options.untab !== false )
+		template = untab( template, options.untab )
+
 	// Process nice print templating with styleReplacer()
 	const lines = template.split("\n").map( line =>
 		line.replace(_nicePrintStyleReplacerRegex, styleReplacer)
 	)
 
 	// Add reset at each end of line and add line jumps
-	let content = lines
-		.join( chalk.reset() + "\n" )
-		.replace(/\t/gmi, indent(1));
+	let content = lines.join( chalk.reset() + "\n" )
 
-	content += newLine;
+	// Replace all tabs by spaces
+	if ( options.replaceTabs )
+		content = content.replace(/\t/gmi, indent(1));
+
+	// Add new line
+	if ( options.newLine )
+		content += options.newLine;
 
 	// Go to stdout
-	if ( output == 'stdout')
+	if ( options.output == 'stdout')
 		process.stdout.write( content );
 
 	// Go to stderr
-	else if ( output == 'stderr' )
+	else if ( options.output == 'stderr' )
 		process.stderr.write( content );
 
 	// Exit if we have an error code
-	code > 0 && process.exit( code );
-
-	//
+	options.code > 0 && process.exit( options.code );
 	return content;
 }
 

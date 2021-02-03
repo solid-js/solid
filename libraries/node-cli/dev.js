@@ -1,23 +1,43 @@
 const { nicePrint, getCLIArguments, CLICommands, getProcessRoot, askInput, askList, askMenu } = require("./dist/_index");
+const { countStartingChars, untab } = require("../iso-core/dist/_index");
 
 
-
-/*
 nicePrint(`
 	{bold/red}Wrong usage
 	{lite}Missing a parameter $param
-	
-		{bold}Usage{/} : {italic}npm run $bla $truc{/}
-		{bold}Ex{/} : {italic}npm run bar baz{/} 
-`)
 
-nicePrint(`
-	{B/R}Wrong usage
-	{L}Missing a parameter $param
-	
-		{B}Usage{/} : {I}npm run $bla $truc{/}
-		{B}Ex{/} : {I}npm run bar baz{/} 
-`)*/
+		{bold}Usage{/} : {italic}npm run $bla $truc{/}
+		{bold}Ex{/} : {italic}npm run bar baz{/}
+`);
+
+(function () {
+
+	console.log( countStartingChars( `\n			test` ) );
+	console.log( countStartingChars( `
+		super
+		génial
+	` ) );
+	const str = `
+		{B/R}Wrong usage
+		{L}Missing a parameter $param
+		
+			{B}Usage{/} : {I}npm run $bla $truc{/}
+			{B}Ex{/} : {I}npm run bar baz{/}
+	`
+	const split = str.split("\n");
+
+	console.log( (split[ split.length - 1 ]) );
+	console.log( countStartingChars(split[ split.length - 1 ]) );
+
+	nicePrint(`
+		{B/R}Wrong usage
+		{L}Missing a parameter $param
+
+			{B}Usage{/} : {I}npm run $bla $truc{/}
+			{B}Ex{/} : {I}npm run bar baz{/}
+	`, {});
+
+})();
 
 
 // CWD :
@@ -53,6 +73,7 @@ CLICommands.start( (commandName) => {
 	})
 	console.log( name );
 */
+	/*
 	let [index, value] = await askList('Which lib is better ?', {
 		react: 'React',
 		preact: 'Preact',
@@ -85,7 +106,7 @@ CLICommands.start( (commandName) => {
 
 	console.log('2 >', index, value);
 
-
+*/
 	/*
 	await askMenu('What kind of file to create ?', {}, [
 		{
