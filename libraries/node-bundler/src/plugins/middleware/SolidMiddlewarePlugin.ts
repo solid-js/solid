@@ -1,5 +1,5 @@
 import { SolidPlugin } from "../../engine/SolidPlugin";
-import { IAppOptions, ISolidMiddleware, TBuildMode } from "../../engine/Solid";
+import { IExtendedAppOptions, ISolidMiddleware, TBuildMode } from "../../engine/Solid";
 
 // -----------------------------------------------------------------------------
 
@@ -18,11 +18,11 @@ export class SolidMiddlewarePlugin extends SolidPlugin <ISolidMiddlewarePluginCo
 		return new SolidMiddlewarePlugin('middleware', { ..._defaultConfig, ...config })
 	}
 
-	beforeBuild ( appOptions?:IAppOptions, buildMode?:TBuildMode, envProps?:object ) {
-		this._config.beforeBuild( appOptions, buildMode, envProps );
+	beforeBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object ) {
+		this._config.beforeBuild( buildMode, appOptions, envProps );
 	}
 
-	afterBuild ( appOptions?:IAppOptions, buildMode?:TBuildMode, envProps?:object ) {
-		this._config.afterBuild( appOptions, buildMode, envProps )
+	afterBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object ) {
+		this._config.afterBuild( buildMode, appOptions, envProps )
 	}
 }

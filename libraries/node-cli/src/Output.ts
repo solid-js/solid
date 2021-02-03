@@ -33,7 +33,7 @@ export function indent ( total:number, content = '' ) {
  * @param content
  * @param newLine
  */
-export function print ( content:string, newLine = "\n\r" ) {
+export function print ( content:string, newLine:string = "\n\r" ) {
 	process.stdout.write( content );
 	newLine && process.stdout.write( newLine );
 }
@@ -43,6 +43,33 @@ export function print ( content:string, newLine = "\n\r" ) {
  */
 export function newLine () { process.stdout.write('\r\n'); }
 
+
+// ----------------------------------------------------------------------------- PRINT REMOVABLE LINE
+
+/**
+ * TODO
+ * @param content
+ */
+export function printLine ( content:string )
+{
+	const niceContent = nicePrint( content, { output:'return', newLine: false } );
+	const strLen = stripAnsi( niceContent ).length;
+
+	print( niceContent, null );
+
+	return ( newContent:string, last = true ) => {
+		process.stdout.cursorTo( 0 );
+		print( repeat( strLen ), null );
+		process.stdout.cursorTo( 0 );
+
+		if ( last ) {
+			printLine( newContent )
+			newLine();
+			return null;
+		}
+		return printLine( newContent );
+	}
+}
 
 // ----------------------------------------------------------------------------- NICE PRINT
 
@@ -74,6 +101,7 @@ const _formatters = {
 	'orange'	: () => chalk.keyword('orange'),
 	'grey'		: chalk.gray,
 	'lite'		: chalk.gray,
+	'white'		: chalk.white,
 
 	'invert' 	: chalk.inverse,
 };

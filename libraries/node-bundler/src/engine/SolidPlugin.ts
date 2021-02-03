@@ -13,9 +13,12 @@ export class SolidPlugin <C = any> implements ISolidMiddleware
 	{
 		this._name = name;
 		this._config = config;
+		this.init();
 	}
 
-	registerActions () { }
+	//registerActions () { }
+
+	init () { }
 
 	beforeBuild () { }
 

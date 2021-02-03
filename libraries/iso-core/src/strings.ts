@@ -48,6 +48,6 @@ export function untab ( content:string, level:"last"|"auto"|number = "last" ):st
 	totalTabsToRemove = Math.max(0, totalTabsToRemove);
 
 	const regex = new RegExp(`\n(\\t){${totalTabsToRemove}}`, 'gmi');
-	console.log('->', level, totalTabsToRemove, regex);
+	//console.log('->', level, totalTabsToRemove, regex);
 	return content.replace( regex, "\n" );
 }
