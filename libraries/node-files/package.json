@@ -1,6 +1,6 @@
 {
   "name": "@solid-js/files",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "File is a NodeJS file operations helper with a super simple API to make build scripts easy and readable.",
   "main": "dist/_index",
   "module": "dist/_index.js",
