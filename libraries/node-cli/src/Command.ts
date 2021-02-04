@@ -2,7 +2,9 @@ import { ScalarObject } from "@solid-js/core";
 const path = require('path');
 
 
-export type TCommandHandler = (args?:string[], options?:ScalarObject, commandName?:string) => any|Promise<any>
+export type TCommandHandler = ( cliArguments?:string[], cliOptions?:ScalarObject, commandName?:string ) => any|Promise<any>
+
+export type TCommandDefaultHandler = ( commandName:string, error:CommandError, cliArguments:string[], cliOptions?:ScalarObject, results?:any[] ) => any|Promise<any>
 
 // Custom CommandError to be able to detect commands not found
 class CommandError extends Error { }
@@ -70,17 +72,28 @@ export const CLICommands = {
 	 * Use CLICommands.exists( commandName ) to avoid override.
 	 *
 	 * @param name Name of the command or list of commands.
-	 * @param options Default options of the command.
 	 * @param handler Handler called with options as first argument.
+	 * @param options Default options of the command.
 	 */
-	add ( name:string|string[], options:ScalarObject, handler:TCommandHandler )
+	add ( name:string|string[], handler:TCommandHandler, options:ScalarObject = {} )
 	{
 		(typeof name === "string" ? [name] : name).map( n => {
-			_registeredCommands[ n.toLowerCase() ] = {
+			n = n.toLowerCase();
+			const alreadyRegisteredConfig = (
+				n in _registeredCommands ? _registeredCommands[ n ] : {}
+			);
+
+			_registeredCommands[ n ] = {
 				name: n,
-				options,
-				handler,
-				help: {}
+				options: {
+					...(alreadyRegisteredConfig.options ?? {}),
+					...options
+				},
+				handlers: [
+					...(alreadyRegisteredConfig.handlers ?? []),
+					handler
+				],
+				help: alreadyRegisteredConfig.help ?? {}
 			};
 		})
 	},
@@ -120,38 +133,38 @@ export const CLICommands = {
 	 * @param defaultHandler Called when command has not been found.
 	 * @returns {Promise<void>}
 	 */
-	async start ( defaultHandler )
+	async start ( defaultHandler?:TCommandDefaultHandler )
 	{
-		// If we await for a command, askMenu need to catch next argument
-		//menuIndex ++;
-
 		// Get arguments from CLI
-		const [ args, options ] = getCLIArguments();
+		const [ cliArguments, cliOptions ] = getCLIArguments();
+
+		let commandName = ''
+		let results = [];
+		let error:CommandError = null;
 
 		// If we have a command to start
-		if ( args.length > 0 )
+		if ( cliArguments.length > 0 )
 		{
 			// Get command name
-			const commandName = args[0].toLowerCase();
+			commandName = cliArguments[0].toLowerCase();
 
 			// Remove command name from _ args
-			args.shift();
+			cliArguments.shift();
 
 			// Try to run
 			try {
-				await this.run( commandName, args, options );
+				results = await this.run( commandName, cliArguments, cliOptions );
 			}
-			catch ( e )
-			{
+			catch ( e ) {
 				// Start default handler if command has not been found
-				if ( e instanceof CommandError && defaultHandler )
-					await defaultHandler( commandName, args, options );
+				if ( e instanceof CommandError )
+					error = e;
 			}
 		}
 
-		// No command found, call default handler with empty command as argument
-		else if ( defaultHandler )
-			await defaultHandler( '', options );
+		// Call default handler
+		if ( defaultHandler )
+			await defaultHandler( commandName, error, cliArguments, cliOptions, results );
 	},
 
 	/**
@@ -159,11 +172,11 @@ export const CLICommands = {
 	 * Will make a loose check if command not found
 	 * ( will accepted command starting with commandName )
 	 * @param commandName Lowercase command name.
-	 * @param args List of arguments passed to CLI
-	 * @param options List of options passed to CLI, with defaults
+	 * @param cliArguments List of arguments passed to CLI
+	 * @param cliOptions List of options passed to CLI, with defaults
 	 * @returns {Promise<*>}
 	 */
-	async run ( commandName, args, options )
+	async run ( commandName, cliArguments, cliOptions )
 	{
 		// Throw if command does not exists
 		let selectedCommand;
@@ -191,10 +204,17 @@ export const CLICommands = {
 		const command = _registeredCommands[ selectedCommand ];
 
 		// Execute command with options on top of default options
-		return await command.handler(args, {
-			...command.options,
-			...options
-		}, command.name);
+		const results = [];
+		// console.log('--', command.handlers);
+		for ( const handler of command.handlers ) {
+			results.push(
+				await handler(cliArguments, {
+					...command.options,
+					...cliOptions
+				}, command.name)
+			);
+		}
+		return results;
 	},
 
 	showHelp ()

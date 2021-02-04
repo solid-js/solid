@@ -1,7 +1,7 @@
 import * as child_process from "child_process";
 import { ExecSyncOptions } from "child_process";
 
-type TVerboseLevel = boolean|0|1|2|3;
+type TVerboseLevel = boolean|number|"out"|"err";
 
 // ----------------------------------------------------------------------------- EXEC UTILITIES
 
@@ -28,13 +28,13 @@ export const execAsync = ( command:string, verboseLevel:TVerboseLevel = 0, optio
 	);
 
 	// Go to stdout
-	if ( verboseLevel === true || verboseLevel === 1 || verboseLevel === 3 ) {
+	if ( verboseLevel === true || verboseLevel === 1 || verboseLevel === 3 || verboseLevel == 'out' ) {
 		// @ts-ignore
 		childProcess.stdout.pipe( process.stdout );
 	}
 
 	// Go to stderr
-	if ( verboseLevel === true || verboseLevel === 2 || verboseLevel === 3 ) {
+	if ( verboseLevel === true || verboseLevel === 2 || verboseLevel === 3 || verboseLevel == 'err' ) {
 		// @ts-ignore
 		childProcess.stderr.pipe( process.stderr );
 	}
@@ -61,7 +61,7 @@ export function execSync ( command:string, verboseLevel:TVerboseLevel = 0, optio
 		const resultString = (result ?? '').toString();
 
 		// Go to stdout if needed
-		if ( resultString && (verboseLevel === true || verboseLevel === 1 || verboseLevel === 3) )
+		if ( resultString && (verboseLevel === true || verboseLevel === 1 || verboseLevel === 3 || verboseLevel == 'out') )
 			process.stdout.write( resultString );
 
 		// Return string result
@@ -69,10 +69,10 @@ export function execSync ( command:string, verboseLevel:TVerboseLevel = 0, optio
 	}
 	catch ( error ) {
 		const resultString = (error.stdout ?? '').toString();
-		if ( verboseLevel === true || verboseLevel === 1 || verboseLevel === 3 )
+		if ( verboseLevel === true || verboseLevel === 1 || verboseLevel === 3 || verboseLevel == 'out')
 			process.stdout.write( resultString );
 
-		if ( verboseLevel === true || verboseLevel === 2 || verboseLevel === 3 )
+		if ( verboseLevel === true || verboseLevel === 2 || verboseLevel === 3 || verboseLevel == 'err')
 			process.stderr.write( (error.stderr ?? '').toString() );
 
 		// Return string result

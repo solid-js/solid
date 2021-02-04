@@ -1,4 +1,5 @@
 import { untab } from "@solid-js/core";
+import ora from "ora";
 const chalk = require('chalk');
 const stripAnsi = require('strip-ansi');
 
@@ -179,6 +180,102 @@ export function nicePrint ( template:string, options:Partial<INicePrintOptions> 
 	// Exit if we have an error code
 	options.code > 0 && process.exit( options.code );
 	return content;
+}
+
+
+// ----------------------------------------------------------------------------- PRINT REMOVABLE LINE
+
+// Name of the current executing loader scope.
+// This will be shown in grey in every solid log
+let _currentLoaderScope:string = null
+
+/**
+ * Name of current loader scope.
+ * Will be shown in grey with printLoaderLine.
+ * @param scope null to remove
+ */
+export function setLoaderScope ( scope:string|null ) {
+	_currentLoaderScope = scope;
+}
+
+// We count how many lines we draw to clear all after each watch build
+const _lineCountersByScope = {};
+
+// Create a log template for loader scope
+export const generateLoaderLineTemplate = ( c, i = '' ) => {
+	return nicePrint((
+		_currentLoaderScope !== null
+		? `${i} {l}${_currentLoaderScope} -{/} ${c}`
+		: `${i} ${c}`
+	), {
+		output: 'return',
+		newLine: false,
+		replaceTabs: false
+	})
+}
+
+//
+/**
+ * Clear all printed solid lines for current loader scope
+ * @param linesToClear Override total lines to clear. Let null for automatic.
+ */
+export function clearPrintedLoaderLines ( linesToClear:number = null ) {
+
+	if ( linesToClear !== null )
+		_lineCountersByScope[_currentLoaderScope] = linesToClear;
+
+	if ( _currentLoaderScope in _lineCountersByScope )
+		for ( let i = 0; i < _lineCountersByScope[_currentLoaderScope]; i++ ) {
+			process.stdout.cursorTo(0, -1)
+			process.stdout.clearLine(0);
+		}
+
+	_lineCountersByScope[ _currentLoaderScope ] = 0;
+}
+
+/**
+ * Print a loader like log, current scope shown in grey if multiple apps.
+ * Content can be nicePrint formatted.
+ */
+export function printLoaderLine ( content:string, oraOptions? )
+{
+	// Init line count for this app name
+	if ( !(_currentLoaderScope in _lineCountersByScope) )
+		_lineCountersByScope[ _currentLoaderScope ] = 0;
+
+	// Add a line
+	_lineCountersByScope[ _currentLoaderScope ] += 1;
+
+	// Format, print line and get clear function
+	const renderedTemplate = generateLoaderLineTemplate( content );
+	// const strLen = stripAnsi( renderedTemplate ).length + 3;
+	const loader = ora( renderedTemplate ).start( oraOptions );
+
+	// Return clear function to override previous line
+	return ( content?:string, statusOrIcon:"success"|"error"|"warning"|"info"|string = "success" ) => {
+
+		if (!content) {
+			loader.stop();
+			return;
+		}
+
+		//process.stdout.cursorTo( 0 );
+		//print( repeat( strLen ), null );
+		//process.stdout.cursorTo( 0 );
+		if ( statusOrIcon == 'success' )
+			loader.succeed( generateLoaderLineTemplate(content) )
+		else if ( statusOrIcon == 'error' )
+			loader.fail( generateLoaderLineTemplate(content) )
+		else if ( statusOrIcon == 'warning' )
+			loader.warn( generateLoaderLineTemplate(content) )
+		else if ( statusOrIcon == 'info' )
+			loader.info( generateLoaderLineTemplate(content) )
+		else {
+			loader.stop();
+			printLine( generateLoaderLineTemplate(content, statusOrIcon) );
+			newLine();
+		}
+	}
 }
 
 
