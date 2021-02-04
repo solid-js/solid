@@ -57,11 +57,6 @@ export interface IAppOptions
 	appType				?:"web"|"node"
 
 	/**
-	 * TODO
-	 */
-	cleanBeforeBuild	?:boolean
-
-	/**
 	 * Pass envs variables from current env to bundle env.
 	 * Those envs variables will override .env variables.
 	 * Ex : ['API_GATEWAY', 'BASE'] will allow env variables injections when
@@ -152,9 +147,6 @@ export class Solid
 	// List of all registered apps configurations
 	protected static _apps : { [appName:string] : IAppOptions } = {};
 
-
-
-
 	/**
 	 * TODO
 	 * @param appName
@@ -190,7 +182,7 @@ export class Solid
 		if ( !Solid._apps[ appName ] )
 			nicePrint(`
 				{b/r}App ${appName} does not exists.
-				{l}Please use {w|i}Solid.app( ... )
+				{l}Please use {w/i}Solid.app( ... )
 			`, {
 				code: 1
 			});
@@ -209,17 +201,9 @@ export class Solid
 
 			root: 'src/',
 			publicUrl: path.dirname( appOptionsWithoutDefaults.output ?? defaultOutput ),
-			cleanBeforeBuild: false,
 
 			...appOptionsWithoutDefaults
 		};
-
-		// Clean output before build
-		if ( appOptions.cleanBeforeBuild ) {
-			// TODO -> Clean output before build
-			// TODO -> Does not remove folders, only files at root of output
-			// TODO -> Check if output is at least one level after project root
-		}
 
 		// Dot env file to load
 		const dotEnvPath = '.env' + (dotEnvName ? '.'+dotEnvName : '');
@@ -240,7 +224,8 @@ export class Solid
 		// Inject envs from passEnvs option
 		// FIXME : To test
 		appOptions.passEnvs && appOptions.passEnvs.map( key => {
-			if ( key in process.env) envProps[ key ] = process.env[ key ]
+			if ( key in process.env )
+				envProps[ key ] = process.env[ key ]
 		});
 
 		//console.log(envProps);
@@ -266,7 +251,7 @@ export class Solid
 				// https://v2.parceljs.org/plugin-system/api/#PackageTargetDescriptor
 				app: {
 					// Optimization and dev options
-					minify: isProd,
+					minify: isProd && isWeb,
 					sourceMap: !isProd,
 					scopeHoist: true,
 
@@ -292,11 +277,12 @@ export class Solid
 			env: envProps,
 			hot: !isProd,
 
-			patchConsole: false, // NOTE : Does not works
+			//patchConsole: false, // NOTE : Does not works
+			//disableCache: isProd,
 			disableCache: false,
 
 			mode: isProd ? 'production' : 'development',
-			minify: isProd,
+			minify: isProd && isWeb,
 			sourceMaps: !isProd
 		})
 
