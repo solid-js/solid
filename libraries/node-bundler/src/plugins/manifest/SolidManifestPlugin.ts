@@ -1,5 +1,5 @@
 import { SolidPlugin } from "../../engine/SolidPlugin";
-import { IAppOptions, TBuildMode } from "../../engine/Solid";
+import { IAppOptions, TBuildMode } from "../../engine/SolidParcel";
 import * as path from "path";
 
 // -----------------------------------------------------------------------------

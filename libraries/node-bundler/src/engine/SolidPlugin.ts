@@ -1,4 +1,4 @@
-import { ISolidMiddleware } from "./Solid";
+import { ISolidMiddleware } from "./SolidParcel";
 
 
 export class SolidPlugin <C = any> implements ISolidMiddleware

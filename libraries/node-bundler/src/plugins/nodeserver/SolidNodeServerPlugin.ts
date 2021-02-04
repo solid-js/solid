@@ -1,9 +1,12 @@
 import { SolidPlugin } from "../../engine/SolidPlugin";
-import { IExtendedAppOptions, ISolidMiddleware, printSolidLine, TBuildMode } from "../../engine/Solid";
+import { IExtendedAppOptions, ISolidMiddleware, TBuildMode } from "../../engine/SolidParcel";
 import { ChildProcess, exec } from 'child_process'
 import { delay } from '@solid-js/core'
+import { generateLoaderLineTemplate, printLine, printLoaderLine } from '@solid-js/cli'
 
 // -----------------------------------------------------------------------------
+
+type TStdStreamType = 'pipe'|'nice'|'none'|false
 
 interface ISolidNodeServerPluginConfig extends Partial<ISolidMiddleware>
 {
@@ -13,13 +16,17 @@ interface ISolidNodeServerPluginConfig extends Partial<ISolidMiddleware>
 	// Default is app option output directory
 	cwd			 	?: string
 
+	// Safe delay after server shutdown
 	delay			?: number
 
-	// TODO : Envs ! Function with envProps of app in entry ?
+	stdout			?: TStdStreamType
+	stderr			?: TStdStreamType
 }
 
 const _defaultConfig:Partial<ISolidNodeServerPluginConfig> = {
-	delay: .2
+	delay	: .1,
+	stdout	: 'nice',
+	stderr	: 'nice',
 }
 
 // -----------------------------------------------------------------------------
@@ -35,11 +42,10 @@ export class SolidNodeServerPlugin extends SolidPlugin <ISolidNodeServerPluginCo
 	init () { }
 
 	async beforeBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object ) {
-		//this._config.beforeBuild( buildMode, appOptions, envProps );
 		if ( buildMode === 'dev' && this._runningServer ) {
 
 			// newLine();
-			const killingServer = printSolidLine('🔪', 'Killing node server ...');
+			const killingServer = printLoaderLine('🔪', 'Killing node server ...');
 			this._runningServer.stdout.destroy();
 			this._runningServer.stderr.destroy();
 			this._runningServer.kill("SIGKILL");
@@ -60,30 +66,25 @@ export class SolidNodeServerPlugin extends SolidPlugin <ISolidNodeServerPluginCo
 				command: this._config.startCommand,
 				cwd: this._config.cwd ?? appOptions.output
 			});*/
-
-			// newLine();
-			const startingServer = printSolidLine('⚙️ ', 'Starting server ...');
+			const startingServerLoader = printLoaderLine('Starting server ...');
 			this._runningServer = exec( this._config.startCommand, {
 				cwd: this._config.cwd ?? appOptions.output,
 				env: envProps as any
 			})
+			await delay( this._config.delay );
+			startingServerLoader('Server started', '🥳');
 
-			//await delay( this._config.delay );
-			startingServer('🥳', 'Server started');
+			// Nice stream piping
+			if ( this.config.stdout === 'nice' )
+				this._runningServer.stdout.on('data', data => printLine( generateLoaderLineTemplate(data, '🔎') ));
+			if ( this.config.stderr === 'nice' )
+				this._runningServer.stderr.on('data', data => printLine( generateLoaderLineTemplate(data, '🔥') ));
 
-			this._runningServer.stdout.on('data', (data) => {
-				printSolidLine('🔎', data);
-			})
-			this._runningServer.stderr.on('data', (data) => {
-				printSolidLine('🔥', data);
-			})
-
-			// TODO : Config pipe
+			// Classic stream piping
 			// @ts-ignore
-			//this._runningServer.stdout.pipe( process.stdout );
+			this.config.stdout === 'pipe' && this._runningServer.stdout.pipe( process.stdout );
 			// @ts-ignore
-			//this._runningServer.stderr.pipe( process.stderr );
-
+			this.config.stderr === 'pipe' && this._runningServer.stderr.pipe( process.stderr );
 		}
 	}
 }
