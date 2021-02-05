@@ -2,9 +2,9 @@ import { ScalarObject } from "@solid-js/core";
 const path = require('path');
 
 
-export type TCommandHandler = ( cliArguments?:string[], cliOptions?:ScalarObject, commandName?:string ) => any|Promise<any>
+export type TCommandHandler<G extends object> = ( cliArguments?:string[], cliOptions?:G, commandName?:string ) => any|Promise<any>
 
-export type TCommandDefaultHandler = ( commandName:string, error:CommandError, cliArguments:string[], cliOptions?:ScalarObject, results?:any[] ) => any|Promise<any>
+export type TCommandDefaultHandler = ( commandName:string, error:CommandError, cliArguments:string[], cliOptions?:object, results?:any[] ) => any|Promise<any>
 
 // Custom CommandError to be able to detect commands not found
 class CommandError extends Error { }
@@ -75,7 +75,7 @@ export const CLICommands = {
 	 * @param handler Handler called with options as first argument.
 	 * @param options Default options of the command.
 	 */
-	add ( name:string|string[], handler:TCommandHandler, options:ScalarObject = {} )
+	add <G extends object> ( name:string|string[], handler:TCommandHandler<G>, options:G = {} as any )
 	{
 		(typeof name === "string" ? [name] : name).map( n => {
 			n = n.toLowerCase();
