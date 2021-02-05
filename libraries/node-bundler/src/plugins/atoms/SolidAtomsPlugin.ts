@@ -1,8 +1,8 @@
-import { SolidPlugin } from "../../engine/SolidPlugin";
+import { IBaseSolidPluginConfig, SolidPlugin } from "../../engine/SolidPlugin";
 
 // -----------------------------------------------------------------------------
 
-interface ISolidAtomsPluginConfig
+interface ISolidAtomsPluginConfig extends IBaseSolidPluginConfig
 {
 	path	?:string|string[]
 
@@ -21,7 +21,7 @@ let _config:ISolidAtomsPluginConfig;
 export class SolidAtomsPlugin extends SolidPlugin <ISolidAtomsPluginConfig>
 {
 	static init ( config:ISolidAtomsPluginConfig ) {
-		return new SolidAtomsPlugin('atoms', { ..._defaultConfig, ...config })
+		return new SolidAtomsPlugin({ name: 'atoms', ..._defaultConfig, ...config })
 	}
 
 	beforeBuild ()

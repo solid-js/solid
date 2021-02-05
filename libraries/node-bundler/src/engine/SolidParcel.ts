@@ -1,4 +1,4 @@
-import { SolidPlugin } from "./SolidPlugin";
+import { SolidPlugin, SolidPluginException } from "./SolidPlugin";
 import Parcel from "@parcel/core";
 import { nicePrint, printLine, newLine, clearPrintedLoaderLines, printLoaderLine, setLoaderScope } from "@solid-js/cli";
 import { File } from "@solid-js/files"
@@ -38,12 +38,15 @@ export interface IAppOptions
 	root				?:string
 
 	/**
-	 * TODO
+	 * Public URL is where assets are loaded from source of execution.
+	 * For example, if app is starting in /my-app/ and assets are in sub-folder named /assets/
+	 * publicURL can be /my-app/assets/ for absolute based targeting, or ./assets/ for relative targeting.
 	 */
 	publicUrl 			?:string
 
 	/**
-	 * TODO
+	 * App type is what kind of runtime will execute bundle.
+	 * For web-browser or node. Default is web.
 	 */
 	appType				?:"web"|"node"
 
@@ -56,17 +59,32 @@ export interface IAppOptions
 	passEnvs			?:string[]
 
 	/**
-	 * TODO
+	 * List of all Solid Plugin to execute, in order.
 	 */
 	plugins				?:SolidPlugin[]
 
 	/**
-	 * TODO
+	 * In hard watch mode, watch will and restarted each time a file changes.
+	 * This allow Solid Plugins to have correct before and after, even in watch mode.
+	 * Default is true, if you disable it you will only have after middlewares.
 	 */
 	hardWatch			?:boolean
 
 
-	parcelLogLevel		?:"none"|"error"|"warn"|"info"|"verbose"
+	/**
+	 * Engines object passed to main app target.
+	 * @see : https://v2.parceljs.org/plugin-system/api/#Engines
+	 * @see https://www.npmjs.com/package/browserslist
+	 */
+	engines				?: {
+		[index:string] : any,
+		browsers: string|string[]
+	}
+
+	/**
+	 * Parcel log level. Default is null to keep Parcel's default.
+	 */
+	parcelLogLevel		?:"none"|"error"|"warn"|"info"|"verbose"|null
 }
 
 // Options after setup, we injected the name so plugins know which app it is
@@ -80,28 +98,28 @@ export interface ISolidMiddleware {
 	afterBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) : Promise<any>|void|null
 }
 
-// ----------------------------------------------------------------------------- PRINT SOLID LINE
-
-// TODO -> GOTO NODE-CLI
-
 // ----------------------------------------------------------------------------- ENGINE CLASS
 
 export class SolidParcel
 {
-	// If first app, we need a log patch for all but first
-	protected static _isFirstApp = true;
-
 	// ------------------------------------------------------------------------- APP SETUP
 
 	// List of all registered apps configurations
 	protected static _apps : { [appName:string] : IAppOptions } = {};
 
 	/**
-	 * TODO
-	 * @param appName
-	 * @param config
+	 * Declare a new app Config.
+	 * @param appName Application name, have to be unique.
+	 * @param config See IAppOptions
 	 */
 	static app ( appName:string, config:IAppOptions ) {
+		if ( appName in SolidParcel._apps )
+			nicePrint(`
+				{b/r}App ${appName} is already registered.
+			`, {
+				code: 1
+			});
+
 		SolidParcel._apps[ appName ] = config;
 	}
 
@@ -110,23 +128,31 @@ export class SolidParcel
 	 */
 	static get appNames () { return Object.keys(SolidParcel._apps); }
 
-	// ------------------------------------------------------------------------- BUILD
+	// ------------------------------------------------------------------------- PUBLIC BUILD
 
-	static async dev ( appName:string, envName?:string ) {
+	/**
+	 * Start dev and watch mode.
+	 * @param appName Application name to build in dev mode. Have to be declared with SolidParcel.app()
+	 * @param envName Dot env file to load. If envName is empty or null, will load '.env'.
+	 * 				  Ex : If envName is 'production', it will load '.env.production'.
+	 */
+	static async dev ( appName:string, envName?:string, disabledPlugins?:string[] ) {
 		return await SolidParcel.internalBuild( appName, 'dev', envName);
 	}
 
-	static async build ( appName:string, envName?:string ) {
+	/**
+	 * Start build in production.
+	 * @param appName Application name to build in production mode. Have to be declared with SolidParcel.app()
+	 * @param envName Dot env file to load. If envName is empty or null, will load '.env'.
+	 * 				  Ex : If envName is 'production', it will load '.env.production'.
+	 */
+	static async build ( appName:string, envName?:string, disabledPlugins?:string[] ) {
 		return await SolidParcel.internalBuild( appName, 'production', envName);
 	}
 
-	/**
-	 * TODO
-	 * @param appName
-	 * @param buildMode
-	 * @param dotEnvName
-	 */
-	protected static async internalBuild ( appName:string, buildMode:TBuildMode, dotEnvName?:string )
+	// ------------------------------------------------------------------------- INTERNAL BUILD
+
+	protected static async internalBuild ( appName:string, buildMode:TBuildMode, dotEnvName?:string, disabledPlugins?:string[] )
 	{
 		// Check if this app exists
 		if ( !SolidParcel._apps[ appName ] )
@@ -159,6 +185,11 @@ export class SolidParcel
 
 			parcelLogLevel: null,
 
+			engines: {
+				browsers: "> 5%",
+				...appOptionsWithoutDefaults.engines
+			},
+
 			...appOptionsWithoutDefaults
 		};
 
@@ -185,22 +216,16 @@ export class SolidParcel
 		});
 
 		// Start parcel build
-		await SolidParcel.bundleParcel( buildMode, appOptions, envProps );
+		await SolidParcel.bundleParcel( buildMode, appOptions, envProps, disabledPlugins );
 	}
 
 	// ------------------------------------------------------------------------- BUILD PARCEL
 
-	/**
-	 * TODO
-	 * @param buildMode
-	 * @param appOptions
-	 * @param envProps
-	 */
-	protected static bundleParcel = ( buildMode:TBuildMode, appOptions:IExtendedAppOptions, envProps?:object ) => new Promise<void>( async resolve =>
+	protected static bundleParcel = ( buildMode:TBuildMode, appOptions:IExtendedAppOptions, envProps?:object, disabledPlugins?:string[]  ) => new Promise<void>( async resolve =>
 	{
 		// FIXME : For now, parcel follow logLevel only on prod ?
 		// FIXME : Or maybe because we have 2 apps ...
-		if ( buildMode === 'dev')
+		if ( buildMode === 'dev' )
 			delete appOptions.parcelLogLevel;
 
 		// Config to booleans
@@ -251,9 +276,9 @@ export class SolidParcel
 					outputFormat: ( isWeb ? 'global' : 'commonjs' ),
 
 					// TODO : Add to config or read package.json ?
-					//engines: {
-					//	browsers: "> 5%"
-					//}
+					engines : {
+						...appOptions.engines
+					}
 				}
 			},
 
@@ -265,25 +290,23 @@ export class SolidParcel
 			// --log-level (none/error/warn/info/verbose)
 			logLevel: appOptions.parcelLogLevel,
 
-			// patchConsole: false, // NOTE : Does not works
-			// disableCache: isProd,
-			// disableCache: false,
+			patchConsole: false, // NOTE : Does not seems to work
+
+			shouldAutoInstall: true,
+			autoInstall: true,
 
 			mode: isProd ? 'production' : 'development',
 			minify: isProd && isWeb,
 			sourceMaps: !isProd
 		});
 
-		// Patch, we need to add a line if not first app to show
-		//if ( !SolidParcel._isFirstApp ) newLine();
-		//SolidParcel._isFirstApp = false;
-
 		// Unpatch console each time we setup a new parcel project
-		//logger.unpatchConsole(); // Does not work ?
+		logger.unpatchConsole(); // NOTE : Does not work ?
 
 		// Before build middleware
-		await SolidParcel.callMiddleware( "before", buildMode, appOptions, envProps );
+		await SolidParcel.callMiddleware( "before", buildMode, appOptions, envProps, null, null, disabledPlugins );
 
+		// Build log
 		startBuildProgress();
 
 		/**
@@ -303,7 +326,7 @@ export class SolidParcel
 			}
 
 			// After middleware
-			await SolidParcel.callMiddleware( "after", buildMode, appOptions, envProps, buildEvent, buildError );
+			await SolidParcel.callMiddleware( "after", buildMode, appOptions, envProps, buildEvent, buildError, disabledPlugins );
 
 			// We can now resolve. We need this resolve because the bundler.run does not wait
 			resolve();
@@ -323,9 +346,14 @@ export class SolidParcel
 
 				count ++;
 
+				// FIXME : Sure about that ? Maybe an option ? watchMode = 'classic'|'complete'|'hard'
+				// In regular watch mode, do before middleware now
+				if ( !appOptions.hardWatch && count > 1 )
+					await SolidParcel.callMiddleware( "before", buildMode, appOptions, envProps, buildEvent, buildError, disabledPlugins );
+
 				// After middleware, only at first build in hardWatch mode because we will restart bundler
 				if ( (appOptions.hardWatch && count == 1) || !appOptions.hardWatch )
-					await SolidParcel.callMiddleware( "after", buildMode, appOptions, envProps, buildEvent, buildError );
+					await SolidParcel.callMiddleware( "after", buildMode, appOptions, envProps, buildEvent, buildError, disabledPlugins );
 
 				// First build, this is not a file change trigger
 				if ( count == 1 )
@@ -336,7 +364,7 @@ export class SolidParcel
 				if ( appOptions.hardWatch && count == 2) {
 					await watcher.unsubscribe();
 					clearPrintedLoaderLines();
-					SolidParcel.bundleParcel( buildMode, appOptions, envProps );
+					SolidParcel.bundleParcel( buildMode, appOptions, envProps, disabledPlugins );
 				}
 			});
 		}
@@ -344,17 +372,7 @@ export class SolidParcel
 
 	// ------------------------------------------------------------------------- MIDDLEWARES & PLUGINS
 
-	/**
-	 * Middleware calling system
-	 * @param event Type of middleware event. Before or after
-	 * @param buildMode
-	 * @param appOptions
-	 * @param envProps
-	 * @param buildEvent
-	 * @param buildError
-	 * @protected
-	 */
-	protected static async callMiddleware ( event:TMiddlewareType, buildMode:TBuildMode, appOptions:IExtendedAppOptions, envProps:object, buildEvent?, buildError?  )
+	protected static async callMiddleware ( event:TMiddlewareType, buildMode:TBuildMode, appOptions:IExtendedAppOptions, envProps:object, buildEvent?, buildError?, disabledPlugins = [] )
 	{
 		// Target current solid app building for logs
 		if ( SolidParcel.appNames.length > 1 )
@@ -369,15 +387,37 @@ export class SolidParcel
 		// Call each middleware sequentially
 		let currentPlugin
 		try {
-			for ( currentPlugin of appOptions.plugins )
+			for ( currentPlugin of appOptions.plugins ) {
+				if ( disabledPlugins.indexOf(currentPlugin.name) !== -1 ) continue;
 				await currentPlugin[ middlewareName ]( buildMode, appOptions, envProps, buildEvent, buildError );
+			}
 		}
-		catch (e) {
-			// FIXME : Explain error better ?
-			nicePrint(`
-				{r} Error on plugin {b}${currentPlugin?.name ?? 'unknown'}{/}
-			`);
-			process.exit(3);
+
+		// Oops something bad happened inside a plugin
+		catch ( e ) {
+			// Uncaught error
+			if ( e == null || !(e instanceof SolidPluginException) ) {
+				// Show nice message if possible and exit process
+				nicePrint(`
+					{r} Uncaught error in plugin {b}${currentPlugin?.name ?? 'unknown'}{/}
+				`);
+				if ( e && typeof e.message === 'string' )
+					nicePrint('	{b}'+e.message, { output: 'stderr' } )
+				e && console.error( e );
+				process.exit(3);
+			}
+
+			// Show message
+			if ( e.message )
+				nicePrint( e.message, { output: 'stderr' } )
+
+			// Show object
+			if ( e.object )
+				console.error( e );
+
+			// Exit if needed
+			if ( e.code > 0 )
+				process.exit( e.code );
 		}
 	}
 }

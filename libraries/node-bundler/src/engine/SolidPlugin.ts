@@ -1,7 +1,28 @@
 import { ISolidMiddleware } from "./SolidParcel";
 
 
-export class SolidPlugin <C = any> implements ISolidMiddleware
+export interface IBaseSolidPluginConfig
+{
+	// Custom plugin name
+	name	?:	string
+}
+
+export class SolidPluginException extends Error
+{
+	public message	:string;
+	public code 	:number;
+	public object	:any;
+
+	constructor ( code = 1, message?:string, object? )
+	{
+		super();
+		this.message = message;
+		this.code = code;
+		this.object = object;
+	}
+}
+
+export class SolidPlugin <C extends IBaseSolidPluginConfig = any> implements ISolidMiddleware
 {
 	protected _config:C;
 	get config ():C { return this._config; }
@@ -9,9 +30,9 @@ export class SolidPlugin <C = any> implements ISolidMiddleware
 	protected _name:string
 	get name () { return this._name; }
 
-	constructor ( name:string, config:C )
+	constructor ( config:C )
 	{
-		this._name = name;
+		this._name = config.name;
 		this._config = config;
 		this.init();
 	}

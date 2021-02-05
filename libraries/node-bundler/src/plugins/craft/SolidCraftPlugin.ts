@@ -1,8 +1,8 @@
-import { SolidPlugin } from "../../engine/SolidPlugin";
+import { IBaseSolidPluginConfig, SolidPlugin } from "../../engine/SolidPlugin";
 
 // -----------------------------------------------------------------------------
 
-interface ISolidCraftPluginConfig
+interface ISolidCraftPluginConfig extends IBaseSolidPluginConfig
 {
 	paths		?:string[]
 }
@@ -17,7 +17,7 @@ let _config:ISolidCraftPluginConfig;
 export class SolidCraftPlugin extends SolidPlugin <ISolidCraftPluginConfig>
 {
 	static init ( config:ISolidCraftPluginConfig ) {
-		return new SolidCraftPlugin('craft', { ..._defaultConfig, ...config })
+		return new SolidCraftPlugin({ name: 'craft', ..._defaultConfig, ...config })
 	}
 
 

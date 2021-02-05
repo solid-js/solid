@@ -1,12 +1,14 @@
-import { SolidPlugin } from "../../engine/SolidPlugin";
-import { IExtendedAppOptions, ISolidMiddleware, TBuildMode } from "../../engine/SolidParcel";
+import { IBaseSolidPluginConfig, SolidPlugin, SolidPluginException } from "../../engine/SolidPlugin";
+import { IExtendedAppOptions, TBuildMode } from "../../engine/SolidParcel";
 import { ChildProcess, exec } from "child_process";
 import { printLoaderLine } from "@solid-js/cli";
-import { delay } from "@solid-js/core";
+import { delay, untab } from "@solid-js/core";
+import { File, FileFinder } from "@solid-js/files";
+import path from "path";
 
 // -----------------------------------------------------------------------------
 
-interface ISolidTypeCheckerPluginConfig extends Partial<ISolidMiddleware> {
+interface ISolidTypeCheckerPluginConfig extends IBaseSolidPluginConfig {
 
 	sounds 		?: "full"|"always"|"errors"|"none"|boolean
 
@@ -26,7 +28,7 @@ const _defaultConfig:Partial<ISolidTypeCheckerPluginConfig> = {
 export class SolidTypeCheckerPlugin extends SolidPlugin <ISolidTypeCheckerPluginConfig>
 {
 	static init ( config:ISolidTypeCheckerPluginConfig ) {
-		return new SolidTypeCheckerPlugin('middleware', { ..._defaultConfig, ...config })
+		return new SolidTypeCheckerPlugin({ name: 'typechecker', ..._defaultConfig, ...config })
 	}
 
 	protected _buildIndex 			= 0;
@@ -34,7 +36,53 @@ export class SolidTypeCheckerPlugin extends SolidPlugin <ISolidTypeCheckerPlugin
 	protected _currentChecker		:ChildProcess;
 	protected _checkingLoader		:any;
 
-	protected typeCheck = ( buildMode:TBuildMode, appOptions:IExtendedAppOptions ) => new Promise<void>( (resolve, reject) => {
+	protected _projectRoot			:string;
+
+	protected initProjectRoot ( appOptions:IExtendedAppOptions )
+	{
+		// Get project's root directory from inputs globs
+		( Array.isArray( appOptions.input ) ? appOptions.input : [appOptions.input] ).map( input => {
+			FileFinder.list( input ).map( filePath => {
+				const fileRoot = path.dirname( filePath );
+				// Take shorted project path root as project root
+				if ( this._projectRoot == null || fileRoot.length < this._projectRoot.length )
+					this._projectRoot = fileRoot;
+			});
+		});
+
+		// Target tsconfig.json at project's root
+		this._projectRoot = path.join(this._projectRoot, 'tsconfig.json');
+
+		// Check is file exists
+		const projectTsConfigFile = new File( this._projectRoot );
+		if ( projectTsConfigFile.exists() ) return;
+
+		// Compte parent relative to root tsconfig.json and write tsconfig.json file
+		const relative = path.relative( path.join(this._projectRoot, '../'), './');
+		projectTsConfigFile.content(untab(`
+			{
+			  "extends": "${relative}/tsconfig.json",
+			  "include": [
+				"./**/*.ts",
+				"./**/*.tsx",
+			  ],
+			  "exclude" : [
+			  	"${relative}/node_modules"
+			  ],
+			  "compilerOptions" : {
+				"rootDir": "./",
+				"baseUrl": "./"
+			  }
+			}
+		`, 3));
+		projectTsConfigFile.save();
+	}
+
+	protected typeCheck = ( buildMode:TBuildMode, appOptions:IExtendedAppOptions ) => new Promise<void|SolidPluginException>( (resolve, reject) => {
+
+		// Init project root
+		if ( !this._projectRoot )
+			this.initProjectRoot( appOptions );
 
 		// Kill already running type checker
 		if ( this._currentChecker ) {
@@ -42,18 +90,23 @@ export class SolidTypeCheckerPlugin extends SolidPlugin <ISolidTypeCheckerPlugin
 			this._checkingLoader && this._checkingLoader();
 		}
 
-		// TODO : Frequency
+		// TODO : Implement frequency check
 
 		// Start typechecking command with tsc
 		this._checkingLoader = printLoaderLine('Checking typescript ...');
-		const command = `./node_modules/typescript/bin/tsc --noEmit --pretty`;
-		this._currentChecker = exec( command ); // TODO : Target entry points
+		const command = `./node_modules/typescript/bin/tsc -p ${this._projectRoot} --noEmit --allowUnreachableCode --incremental --pretty`
+		this._currentChecker = exec( command );
+
+		// FIXME : Can we do better ?
+		// Get tsc out and err buffers
+		let outBuffer = '';
+		let errBuffer = '';
+		this._currentChecker.stdout.on('data', d => outBuffer += d )
+		this._currentChecker.stderr.on('data', d => errBuffer += d )
 
 		// Type check is finished
 		this._currentChecker.once('exit', ( code ) => {
-			// Remove typechecker instance
 			this._currentChecker.kill();
-			this._currentChecker = null;
 
 			// Success
 			if ( code === 0 ) {
@@ -64,22 +117,29 @@ export class SolidTypeCheckerPlugin extends SolidPlugin <ISolidTypeCheckerPlugin
 
 			// Fail
 			else {
+				// Pipe buffers to CLI
+				process.stdout.write( outBuffer );
+				process.stderr.write( errBuffer );
+
 				// TODO : Sound
 				this._checkingLoader('Typescript error', 'error');
-				buildMode == 'production' ? reject() : resolve();
+				buildMode == 'production' ? reject() : resolve( new SolidPluginException() );
 			}
 
-			// Remove loader instance
+			// Remove instances
+			this._currentChecker = null;
 			this._checkingLoader = null;
 		})
 	});
 
-	async beforeBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object ) {
+	async beforeBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) {
+
 		if ( buildMode === 'production' )
 			await this.typeCheck( buildMode, appOptions );
 	}
 
-	async afterBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object ) {
+	async afterBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) {
+		// TODO : Optimisation, only check changed file from buildEvent;
 		if ( buildMode === 'dev')
 			await this.typeCheck( buildMode, appOptions );
 	}

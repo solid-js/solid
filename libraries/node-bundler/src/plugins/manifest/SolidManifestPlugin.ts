@@ -1,10 +1,10 @@
-import { SolidPlugin } from "../../engine/SolidPlugin";
+import { IBaseSolidPluginConfig, SolidPlugin } from "../../engine/SolidPlugin";
 import { IAppOptions, TBuildMode } from "../../engine/SolidParcel";
 import * as path from "path";
 
 // -----------------------------------------------------------------------------
 
-interface ISolidManifestPluginConfig
+interface ISolidManifestPluginConfig extends IBaseSolidPluginConfig
 {
 	/**
 	 * Filter manifest before writing file.
@@ -50,7 +50,7 @@ const _defaultConfig:Partial<ISolidManifestPluginConfig> = {}
 export class SolidManifestPlugin extends SolidPlugin <ISolidManifestPluginConfig>
 {
 	static init ( config:ISolidManifestPluginConfig ) {
-		return new SolidManifestPlugin('middleware', { ..._defaultConfig, ...config })
+		return new SolidManifestPlugin({ name: 'middleware', ..._defaultConfig, ...config })
 	}
 
 	beforeBuild ()
@@ -60,34 +60,34 @@ export class SolidManifestPlugin extends SolidPlugin <ISolidManifestPluginConfig
 
 	afterBuild ( appOptions?:IAppOptions, buildMode?:TBuildMode, envProps?:object )
 	{
-		// TODO : Read output folder structure
-
-		// TODO : Generate manifest from file list and extensions
-		let manifest:Partial<IManifest> = {
-			version : 'package.version',
-			files: {
-				font : [ // todo : key is compatible with preload[as]
-					'static/typo-regular.woff',
-					'static/typo-bold.woff',
-				],
-				script : [
-					'static/index.js'
-				],
-				style : [
-					'static/index.css'
-				],
-				image : [
-
-				]
-			}
-		}
-
-		// Filter manifest
-		if ( this._config.filterManifest )
-			manifest = this._config.filterManifest( manifest, appOptions, buildMode, envProps )
-
-		const output = this._config.output ?? path.join( appOptions.output, '/manifest.json')
-
-		// TODO : Write manifest file to destination
+		// // TODO : Read output folder structure
+		//
+		// // TODO : Generate manifest from file list and extensions
+		// let manifest:Partial<IManifest> = {
+		// 	version : 'package.version',
+		// 	files: {
+		// 		font : [ // todo : key is compatible with preload[as]
+		// 			'static/typo-regular.woff',
+		// 			'static/typo-bold.woff',
+		// 		],
+		// 		script : [
+		// 			'static/index.js'
+		// 		],
+		// 		style : [
+		// 			'static/index.css'
+		// 		],
+		// 		image : [
+		//
+		// 		]
+		// 	}
+		// }
+		//
+		// // Filter manifest
+		// if ( this._config.filterManifest )
+		// 	manifest = this._config.filterManifest( manifest, appOptions, buildMode, envProps )
+		//
+		// const output = this._config.output ?? path.join( appOptions.output, '/manifest.json')
+		//
+		// // TODO : Write manifest file to destination
 	}
 }

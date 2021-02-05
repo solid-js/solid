@@ -1,13 +1,13 @@
-import { SolidPlugin } from "../../engine/SolidPlugin";
+import { IBaseSolidPluginConfig, SolidPlugin } from "../../engine/SolidPlugin";
 import { IExtendedAppOptions, ISolidMiddleware, TBuildMode } from "../../engine/SolidParcel";
 
 // -----------------------------------------------------------------------------
 
-interface ISolidMiddlewarePluginConfig extends Partial<ISolidMiddleware> { }
+interface ISolidMiddlewarePluginConfig extends Partial<ISolidMiddleware>, IBaseSolidPluginConfig { }
 
 const _defaultConfig:Partial<ISolidMiddlewarePluginConfig> = {
-	beforeBuild : () => {}, // TODO : Remplace noop lib
-	afterBuild : () => {}, // TODO : Remplace noop lib
+	beforeBuild : () => {},
+	afterBuild : () => {},
 }
 
 // -----------------------------------------------------------------------------
@@ -15,7 +15,7 @@ const _defaultConfig:Partial<ISolidMiddlewarePluginConfig> = {
 export class SolidMiddlewarePlugin extends SolidPlugin <ISolidMiddlewarePluginConfig>
 {
 	static init ( config:ISolidMiddlewarePluginConfig ) {
-		return new SolidMiddlewarePlugin('middleware', { ..._defaultConfig, ...config })
+		return new SolidMiddlewarePlugin({ name: 'middleware', ..._defaultConfig, ...config })
 	}
 
 	async beforeBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object ) {

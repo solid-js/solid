@@ -1,5 +1,5 @@
-import { SolidPlugin } from "../../engine/SolidPlugin";
-import { IExtendedAppOptions, ISolidMiddleware, TBuildMode } from "../../engine/SolidParcel";
+import { IBaseSolidPluginConfig, SolidPlugin } from "../../engine/SolidPlugin";
+import { IExtendedAppOptions, TBuildMode } from "../../engine/SolidParcel";
 import { ChildProcess, exec } from 'child_process'
 import { delay } from '@solid-js/core'
 import { generateLoaderLineTemplate, printLine, printLoaderLine } from '@solid-js/cli'
@@ -8,7 +8,7 @@ import { generateLoaderLineTemplate, printLine, printLoaderLine } from '@solid-j
 
 type TStdStreamType = 'pipe'|'nice'|'none'|false
 
-interface ISolidNodeServerPluginConfig extends Partial<ISolidMiddleware>
+interface ISolidNodeServerPluginConfig extends IBaseSolidPluginConfig
 {
 	// Default is `node $appName.js`
 	startCommand 	?: string
@@ -33,8 +33,8 @@ const _defaultConfig:Partial<ISolidNodeServerPluginConfig> = {
 
 export class SolidNodeServerPlugin extends SolidPlugin <ISolidNodeServerPluginConfig>
 {
-	static init ( config:ISolidNodeServerPluginConfig ) {
-		return new SolidNodeServerPlugin('nodeserver', { ..._defaultConfig, ...config })
+	static init ( config:ISolidNodeServerPluginConfig) {
+		return new SolidNodeServerPlugin({ name:'nodeserver', ..._defaultConfig, ...config })
 	}
 
 	protected _runningServer:ChildProcess;

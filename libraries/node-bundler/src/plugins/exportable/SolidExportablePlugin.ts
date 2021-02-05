@@ -1,12 +1,12 @@
-import { SolidPlugin } from "../../engine/SolidPlugin";
+import { IBaseSolidPluginConfig, SolidPlugin } from "../../engine/SolidPlugin";
 
 // -----------------------------------------------------------------------------
 
-interface ISolidExportablePluginConfig
+interface ISolidExportablePluginConfig extends IBaseSolidPluginConfig
 {
-	[key:string] : {
+	[key:string] : string|{
 		input	:string
-		output		:string
+		output	:string
 		// TODO ...
 	}
 }
@@ -20,7 +20,7 @@ const _defaultConfig:Partial<ISolidExportablePluginConfig> = {
 export class SolidExportablePlugin extends SolidPlugin <ISolidExportablePluginConfig>
 {
 	static init ( config:ISolidExportablePluginConfig ) {
-		return new SolidExportablePlugin('exportable', { ..._defaultConfig, ...config })
+		return new SolidExportablePlugin({ name: 'exportable', ..._defaultConfig, ...config })
 	}
 
 	beforeBuild ()

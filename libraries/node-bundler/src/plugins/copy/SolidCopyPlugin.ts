@@ -1,10 +1,10 @@
-import { SolidPlugin } from "../../engine/SolidPlugin";
+import { IBaseSolidPluginConfig, SolidPlugin } from "../../engine/SolidPlugin";
 
 // -----------------------------------------------------------------------------
 
-interface ISolidCopyPluginConfig
+interface ISolidCopyPluginConfig extends IBaseSolidPluginConfig
 {
-	[key:string] : {
+	[key:string] : string|{
 		from: string,
 		to: string
 	}
@@ -19,7 +19,7 @@ const _defaultConfig:Partial<ISolidCopyPluginConfig> = {
 export class SolidCopyPlugin extends SolidPlugin <ISolidCopyPluginConfig>
 {
 	static init ( config:ISolidCopyPluginConfig ) {
-		return new SolidCopyPlugin('copy', { ..._defaultConfig, ...config })
+		return new SolidCopyPlugin({ name: 'copy', ..._defaultConfig, ...config })
 	}
 
 	beforeBuild ()
