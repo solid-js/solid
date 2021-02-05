@@ -16,6 +16,7 @@
     "clean": "node scripts/clean",
     "dev": "node scripts/dev",
     "link": "node scripts/link",
+    "relink": "node scripts/relink",
     "test": "node scripts/test",
     "prune": "node scripts/prune",
     "publish": "node scripts/publish",

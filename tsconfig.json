@@ -66,6 +66,10 @@
     //"noEmitHelpers" : true,
   },
 
+  "include": [
+    "libraries/**/*.{ts,tsx}"
+  ],
+
   // Files to includes and exclude from typescript builds
   "exclude": ["./node_modules/**", "**/_/**", "./wip/**"],
 
