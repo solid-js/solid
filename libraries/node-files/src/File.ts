@@ -23,7 +23,7 @@ export class File extends FileEntity
 	/**
 	 * File content as string.
 	 */
-	protected _data			:string = '';
+	protected _data			:string = null;
 	get data ():string { return this._data; }
 
 	/**
@@ -70,6 +70,13 @@ export class File extends FileEntity
         }
 	}
 
+	// ------------------------------------------------------------------------- CHECK LOAD
+
+	protected checkLoadSync () {
+		if ( this._data === null )
+			this.load();
+	}
+
 	// ------------------------------------------------------------------------- CREATE EMPTY FILE
 
 	/**
@@ -85,7 +92,7 @@ export class File extends FileEntity
 		if ( this.exists() && !force ) return;
 
 		// Create empty file and mark data as loaded
-		this._data = "";
+		this._data = '';
 		this.save();
 	}
 
@@ -102,7 +109,7 @@ export class File extends FileEntity
 		if ( await this.existsAsync() && !force ) return;
 
 		// Create empty file and mark data as loaded
-		this._data = "";
+		this._data = '';
 		await this.saveAsync();
 	}
 
@@ -168,6 +175,8 @@ export class File extends FileEntity
 
 	protected processData <G> ( content : null|G|TFunctionalFilter<G>, decode:(source:string) => G, encode:(data:G) => string ) : G|File
 	{
+		this.checkLoadSync();
+
 		const type = typeof content;
 		let dataToStore:string;
 
@@ -180,7 +189,7 @@ export class File extends FileEntity
 		// Call handler, pass it current file data, get back file data
 		else if ( type === 'function' )
 			dataToStore = encode(
-				(content as TFunctionalFilter<G>)( decode(this._data) )
+				(content as any)( decode(this._data) )
 			);
 
 		// We have data to save so we encode
@@ -202,6 +211,7 @@ export class File extends FileEntity
 	 * @param newLine New line character to add before content. Set as empty string to append without new line.
 	 */
 	append ( content ?: TRawWritableContent, newLine = '\n' ) {
+		this.checkLoadSync();
 		this._data += newLine + content;
 	}
 
@@ -366,6 +376,7 @@ export class File extends FileEntity
 	 */
 	replace ( search:string|RegExp, replace:ScalarValue )
 	{
+		this.checkLoadSync();
 		this._data = this._data.replace( search, replace + '' );
 		return this;
 	}
@@ -377,6 +388,7 @@ export class File extends FileEntity
 	 */
 	template ( values:ScalarObject )
 	{
+		this.checkLoadSync();
         this._data = require('@solid-js/nanostache').Nanostache( this._data, values );
         return this;
 	}
