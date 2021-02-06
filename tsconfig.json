@@ -67,11 +67,12 @@
   },
 
   "include": [
-    "libraries/**/*.{ts,tsx}"
+    "libraries/*/src/**/*.ts",
+    "libraries/*/src/**/*.tsx"
   ],
 
   // Files to includes and exclude from typescript builds
-  "exclude": ["./node_modules/**", "**/_/**", "./wip/**"],
+  "exclude": ["./node_modules/", "**/_/**", "./wip/**"],
 
   // Configure IDE to not compile typescript
   "compileOnSave": false,
