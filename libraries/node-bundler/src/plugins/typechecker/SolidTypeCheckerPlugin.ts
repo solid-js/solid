@@ -40,18 +40,8 @@ export class SolidTypeCheckerPlugin extends SolidPlugin <ISolidTypeCheckerPlugin
 
 	protected initProjectRoot ( appOptions:IExtendedAppOptions )
 	{
-		// Get project's root directory from inputs globs
-		( Array.isArray( appOptions.input ) ? appOptions.input : [appOptions.input] ).map( input => {
-			FileFinder.list( input ).map( filePath => {
-				const fileRoot = path.dirname( filePath );
-				// Take shorted project path root as project root
-				if ( this._projectRoot == null || fileRoot.length < this._projectRoot.length )
-					this._projectRoot = fileRoot;
-			});
-		});
-
 		// Target tsconfig.json at project's root
-		this._projectRoot = path.join(this._projectRoot, 'tsconfig.json');
+		this._projectRoot = path.join(appOptions.packageRoot, 'tsconfig.json');
 
 		// Check is file exists
 		const projectTsConfigFile = new File( this._projectRoot );

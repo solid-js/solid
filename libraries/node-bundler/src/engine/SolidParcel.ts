@@ -1,10 +1,21 @@
 import { SolidPlugin, SolidPluginException } from "./SolidPlugin";
 import Parcel from "@parcel/core";
-import { nicePrint, printLine, newLine, clearPrintedLoaderLines, printLoaderLine, setLoaderScope } from "@solid-js/cli";
-import { File } from "@solid-js/files"
+import {
+	nicePrint,
+	newLine,
+	clearPrintedLoaderLines,
+	printLoaderLine,
+	setLoaderScope,
+	execAsync
+} from "@solid-js/cli";
+import { Directory, File, FileFinder } from "@solid-js/files"
 import { delay, noop } from "@solid-js/core"
 import path from "path";
 import * as logger from "@parcel/logger"
+
+// ----------------------------------------------------------------------------- CONFIG
+
+const parcelCacheDirectoryName = '.parcel-cache';
 
 // ----------------------------------------------------------------------------- STRUCT
 
@@ -32,10 +43,20 @@ export interface IAppOptions
 	output				?:string
 
 	/**
-	 * Optional, sources root.
-	 * Default is 'src/'
+	 * Optional, application package root is where should be the package.json file and it's node_modules.
+	 * If not defined, will use the higher directory hosting entries.
+	 *
+	 * Ex : entries: ['src/app/index.ts', 'src/app/sub-folder/sub-app.tsx']
+	 *      packageRoot will be 'src/app/' and package.json should be here.
 	 */
-	root				?:string
+	packageRoot			?:string
+
+	/**
+	 * Optional, sources root (= entryRoot option in Parcel).
+	 * Can be outside application directory, if you need to share some files between apps.
+	 * Default is same as packageRoot.
+	 */
+	sourcesRoot			?:string
 
 	/**
 	 * Public URL is where assets are loaded from source of execution.
@@ -66,10 +87,9 @@ export interface IAppOptions
 	/**
 	 * In hard watch mode, watch will and restarted each time a file changes.
 	 * This allow Solid Plugins to have correct before and after, even in watch mode.
-	 * Default is true, if you disable it you will only have after middlewares.
+	 * Default is false.
 	 */
 	hardWatch			?:boolean
-
 
 	/**
 	 * Engines object passed to main app target.
@@ -82,7 +102,8 @@ export interface IAppOptions
 	}
 
 	/**
-	 * Parcel log level. Default is null to keep Parcel's default.
+	 * Parcel log level.
+	 * Default is null to keep Parcel's default for web apps and "none" for node apps.
 	 */
 	parcelLogLevel		?:"none"|"error"|"warn"|"info"|"verbose"|null
 }
@@ -102,10 +123,12 @@ export interface ISolidMiddleware {
 
 export class SolidParcel
 {
+	protected static _isFirstBuildingApp = true;
+
 	// ------------------------------------------------------------------------- APP SETUP
 
 	// List of all registered apps configurations
-	protected static _apps : { [appName:string] : IAppOptions } = {};
+	protected static _apps : { [appName:string] : IExtendedAppOptions } = {};
 
 	/**
 	 * Declare a new app Config.
@@ -120,7 +143,7 @@ export class SolidParcel
 				code: 1
 			});
 
-		SolidParcel._apps[ appName ] = config;
+		SolidParcel._apps[ appName ] = SolidParcel.extendAppOptions( appName, config );
 	}
 
 	/**
@@ -135,6 +158,9 @@ export class SolidParcel
 	 * @param appName Application name to build in dev mode. Have to be declared with SolidParcel.app()
 	 * @param envName Dot env file to load. If envName is empty or null, will load '.env'.
 	 * 				  Ex : If envName is 'production', it will load '.env.production'.
+	 * @param disabledPlugins Disable plugins by name.
+	 * 			              All plugins have a default name, and you can add a name property into plugin's config if
+	 * 			              you have several of the same type.
 	 */
 	static async dev ( appName:string, envName?:string, disabledPlugins?:string[] ) {
 		return await SolidParcel.internalBuild( appName, 'dev', envName);
@@ -145,9 +171,64 @@ export class SolidParcel
 	 * @param appName Application name to build in production mode. Have to be declared with SolidParcel.app()
 	 * @param envName Dot env file to load. If envName is empty or null, will load '.env'.
 	 * 				  Ex : If envName is 'production', it will load '.env.production'.
+	 * @param disabledPlugins Disable plugins by name.
+	 * 			              All plugins have a default name, and you can add a name property into plugin's config if
+	 * 			              you have several of the same type.
 	 */
 	static async build ( appName:string, envName?:string, disabledPlugins?:string[] ) {
 		return await SolidParcel.internalBuild( appName, 'production', envName);
+	}
+
+	// ------------------------------------------------------------------------- EXTEND APP OPTIONS
+
+	protected static extendAppOptions ( appName:string, rawAppOptions:IAppOptions):IExtendedAppOptions
+	{
+		// Get default parameters
+		const defaultOutput = `dist/public/static/${appName}/`;
+		const appOptions:IExtendedAppOptions = {
+			name: appName,
+
+			input: `src/${appName}/*.{ts,tsx}`,
+			output: defaultOutput,
+
+			appType: "web",
+
+			publicUrl: path.dirname( rawAppOptions.output ?? defaultOutput ),
+
+			hardWatch: false,
+
+			parcelLogLevel: null,
+
+			engines: {
+				browsers: "> 5%",
+				...rawAppOptions.engines
+			},
+
+			...rawAppOptions
+		};
+
+		// No parcel logs for node apps by default
+		if ( appOptions.appType === 'node' )
+			appOptions.parcelLogLevel = "none";
+
+		// Default package root (@see IAppOptions documentation)
+		if ( !appOptions.packageRoot ) {
+			// Get project's root directory from inputs globs
+			( Array.isArray( appOptions.input ) ? appOptions.input : [appOptions.input] ).map( input => {
+				FileFinder.list( input ).map( filePath => {
+					const fileRoot = path.dirname( filePath );
+					// Take shorted project path root as project root
+					if ( appOptions.packageRoot == null || fileRoot.length < appOptions.packageRoot.length )
+						appOptions.packageRoot = fileRoot;
+				});
+			});
+		}
+
+		// Sources root is same as package root if not defined
+		if ( !appOptions.sourcesRoot )
+			appOptions.sourcesRoot = appOptions.packageRoot;
+
+		return appOptions;
 	}
 
 	// ------------------------------------------------------------------------- INTERNAL BUILD
@@ -163,35 +244,20 @@ export class SolidParcel
 				code: 1
 			});
 
+		// Install and copy node modules of all apps before we build.
+		// We do this now to avoid triggering the watch if we have multiple apps !
+		if ( SolidParcel._isFirstBuildingApp ) {
+			for ( const subAppName of SolidParcel.appNames ) {
+				const subAppOptions = SolidParcel._apps[ subAppName ];
+				if ( subAppOptions.appType === 'node' ) {
+					setLoaderScope( subAppName );
+					await SolidParcel.copyNodePackagesToDestination( subAppOptions );
+				}
+			}
+		}
+
 		// Target current solid app for logs
-		if ( SolidParcel.appNames.length > 1 )
-			setLoaderScope( appName );
-
-		// Get default parameters
-		const appOptionsWithoutDefaults = SolidParcel._apps[ appName ];
-		const defaultOutput = `dist/public/static/${appName}/`;
-		const appOptions:IExtendedAppOptions = {
-			name: appName,
-
-			input: `src/${appName}/*.{ts,tsx}`,
-			output: defaultOutput,
-
-			appType: "web",
-
-			root: 'src/',
-			publicUrl: path.dirname( appOptionsWithoutDefaults.output ?? defaultOutput ),
-
-			hardWatch: true,
-
-			parcelLogLevel: null,
-
-			engines: {
-				browsers: "> 5%",
-				...appOptionsWithoutDefaults.engines
-			},
-
-			...appOptionsWithoutDefaults
-		};
+		setLoaderScope( SolidParcel.appNames.length > 1 ? appName : null );
 
 		// Dot env file to load
 		const dotEnvPath = '.env' + (dotEnvName ? '.'+dotEnvName : '');
@@ -209,25 +275,69 @@ export class SolidParcel
 		}
 		dotEnvLoader(`Loaded ${dotEnvPath}`);
 
+		// Target extended app options
+		const appOptions = SolidParcel._apps[ appName ];
+
 		// Inject envs from passEnvs option
 		appOptions.passEnvs && appOptions.passEnvs.map( key => {
 			if ( key in process.env )
 				envProps[ key ] = process.env[ key ]
 		});
 
+		// FIXME : For now, parcel follow logLevel only on prod ?
+		// FIXME : Or maybe because we have 2 apps ...
+		if ( buildMode === 'dev' ) //&& appOptions.appType === 'web' )
+			delete appOptions.parcelLogLevel;
+
+		// This is a bugfix for parcel logger,
+		// We need to add a line if we are after first app
+		if ( !SolidParcel._isFirstBuildingApp && appOptions.parcelLogLevel !== 'none' ) {
+			newLine();
+		}
+		SolidParcel._isFirstBuildingApp = false;
+
 		// Start parcel build
 		await SolidParcel.bundleParcel( buildMode, appOptions, envProps, disabledPlugins );
+	}
+
+	// ------------------------------------------------------------------------- NODE SPECIFIC
+
+	protected static async copyNodePackagesToDestination ( appOptions:IExtendedAppOptions )
+	{
+		// Target package.json and continue only if it exists
+		const packageFile = new File( path.join(appOptions.packageRoot, 'package.json') );
+		if ( !packageFile.exists() ) return;
+
+		// Check if we need to install dependencies and install them
+		const nodeModulesDirectory = new Directory( path.join(appOptions.packageRoot, 'node_modules') );
+		if ( !nodeModulesDirectory.exists() ) {
+			const installingLoader = printLoaderLine(`Installing dependencies ...`);
+			try {
+				await execAsync('npm i', 0, { cwd: appOptions.packageRoot });
+				installingLoader('Installed dependencies');
+			}
+			catch (e) {
+				installingLoader('Unable to install dependencies', 'error');
+				console.error(e);
+				process.exit(4);
+			}
+		}
+
+		const copyLoader = printLoaderLine(`Copying modules to output ...`);
+
+		// Ensure destination parents to avoid node_modules to be exploded into dist
+		await new Directory( appOptions.output ).ensureParentsAsync()
+
+		// Copy to destination folder
+		await packageFile.copyToAsync( appOptions.output );
+		await nodeModulesDirectory.copyToAsync( appOptions.output );
+		copyLoader(`Copied modules to output`);
 	}
 
 	// ------------------------------------------------------------------------- BUILD PARCEL
 
 	protected static bundleParcel = ( buildMode:TBuildMode, appOptions:IExtendedAppOptions, envProps?:object, disabledPlugins?:string[]  ) => new Promise<void>( async resolve =>
 	{
-		// FIXME : For now, parcel follow logLevel only on prod ?
-		// FIXME : Or maybe because we have 2 apps ...
-		if ( buildMode === 'dev' )
-			delete appOptions.parcelLogLevel;
-
 		// Config to booleans
 		const isProd = buildMode === 'production';
 		const isWeb = appOptions.appType === 'web';
@@ -255,7 +365,7 @@ export class SolidParcel
 		await delay(.05);
 		const bundler = new Parcel({
 			entries: appOptions.input,
-			entryRoot: appOptions.root,
+			entryRoot: appOptions.sourcesRoot,
 
 			targets: {
 				// https://v2.parceljs.org/plugin-system/api/#PackageTargetDescriptor
@@ -301,6 +411,7 @@ export class SolidParcel
 		});
 
 		// Unpatch console each time we setup a new parcel project
+		// @ts-ignore
 		logger.unpatchConsole(); // NOTE : Does not work ?
 
 		// Before build middleware
@@ -341,6 +452,11 @@ export class SolidParcel
 			let count = 0;
 			const watcher = await bundler.watch( async (buildError, buildEvent) =>
 			{
+				//process.stdout.write(`\nWATCHER EVENT ${appOptions.name} ${count} \n`);
+				// if (count > 0) {
+				// 	console.log(buildEvent)
+				// }
+
 				if ( count == 0 )
 					stopBuildProgress();
 
@@ -363,7 +479,7 @@ export class SolidParcel
 				// This allow to have before and after middleware correctly called
 				if ( appOptions.hardWatch && count == 2) {
 					await watcher.unsubscribe();
-					clearPrintedLoaderLines();
+					//clearPrintedLoaderLines();
 					SolidParcel.bundleParcel( buildMode, appOptions, envProps, disabledPlugins );
 				}
 			});
@@ -419,5 +535,36 @@ export class SolidParcel
 			if ( e.code > 0 )
 				process.exit( e.code );
 		}
+	}
+
+	// ------------------------------------------------------------------------- CLEAR CACHE
+
+	/**
+	 * Clear parcel caches.
+	 * @param appName null to clear all caches, or an app name to clear a specific cache.
+	 */
+	static async clearCache ( appName?:string )
+	{
+		let clearedPath = [];
+
+		// Clear root parcel cache
+		const dir = new Directory( parcelCacheDirectoryName )
+		if ( dir.exists() ) {
+			clearedPath.push( dir.path );
+			dir.remove();
+		}
+
+		// Clear path of all apps or selected app
+		SolidParcel.appNames.map( subAppName => {
+			if ( !appName || subAppName === appName ) {
+				const dirPath = path.join( SolidParcel._apps[ subAppName ].packageRoot, parcelCacheDirectoryName );
+				const dir = new Directory( dirPath );
+				if ( !dir.exists() ) return;
+				clearedPath.push( dir.path );
+				dir.remove();
+			}
+		});
+
+		return clearedPath;
 	}
 }

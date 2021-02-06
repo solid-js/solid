@@ -67,6 +67,9 @@ export class SolidNodeServerPlugin extends SolidPlugin <ISolidNodeServerPluginCo
 				cwd: this._config.cwd ?? appOptions.output
 			});*/
 			const startingServerLoader = printLoaderLine('Starting server ...');
+
+			// FIXME : Check errors : .on('exit') ? or try catch ?
+
 			this._runningServer = exec( this._config.startCommand, {
 				cwd: this._config.cwd ?? appOptions.output,
 				env: envProps as any
