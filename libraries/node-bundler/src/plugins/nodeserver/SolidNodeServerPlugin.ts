@@ -48,7 +48,7 @@ export class SolidNodeServerPlugin extends SolidPlugin <ISolidNodeServerPluginCo
 	protected async killRunningServer ()
 	{
 		if ( !this._runningServer ) return;
-		const killingServer = printLoaderLine('🔪', 'Killing node server ...');
+		const killingServer = printLoaderLine('Killing node server ...', '🔪');
 
 		this._runningServer.stdout.destroy();
 		this._runningServer.stderr.destroy();
@@ -56,7 +56,7 @@ export class SolidNodeServerPlugin extends SolidPlugin <ISolidNodeServerPluginCo
 		this._runningServer = null;
 
 		await delay( this._config.delay );
-		killingServer('💀', 'Server killed')
+		killingServer('Server killed', '💀')
 	}
 
 	async beforeBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object ) {

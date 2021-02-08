@@ -431,17 +431,14 @@ export class SolidParcel
 				}
 			},
 
-			//killWorkers: true, // ?
-
 			env: envProps,
-			hot: !isProd,
 
 			// --log-level (none/error/warn/info/verbose)
 			logLevel: appOptions.parcelLogLevel,
 
 			patchConsole: false, // NOTE : Does not seems to work
 
-			shouldAutoInstall: true,
+			shouldAutoInstall: true, // NOTE : White one ? Does not seems to work
 			autoInstall: true,
 
 			mode: isProd ? 'production' : 'development',
