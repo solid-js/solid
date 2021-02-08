@@ -11,11 +11,11 @@ export class File extends FileEntity
 	// ------------------------------------------------------------------------- FILE TYPED FIND
 
 	static find ( pattern:string, globOptions ?:TGlobOptionsArgument ):File[] {
-		return FileFinder.find<File>( "directory", pattern, globOptions );
+		return FileFinder.find<File>( "file", pattern, globOptions );
 	}
 
 	static async findAsync ( pattern:string, globOptions ?:TGlobOptionsArgument ):Promise<File[]> {
-		return await FileFinder.findAsync<File>( "directory", pattern, globOptions );
+		return await FileFinder.findAsync<File>( "file", pattern, globOptions );
 	}
 
 	// ------------------------------------------------------------------------- DATA & ENCODING

@@ -67,15 +67,16 @@ export class FileFinder
 		else return null
 	}
 
-	static createEntityFromPath ( filePath:string ):File|Directory
-	{
-		const fileStat = fs.statSync( filePath );
-		return FileFinder.createFileEntityFromStat( filePath, fileStat );
-	}
 
 	static async createEntityFromPathAsync ( filePath:string ):Promise<File|Directory>
 	{
 		const fileStat = await fs.promises.stat( filePath )
+		return FileFinder.createFileEntityFromStat( filePath, fileStat );
+	}
+
+	static createEntityFromPath ( filePath:string ):File|Directory
+	{
+		const fileStat = fs.statSync( filePath );
 		return FileFinder.createFileEntityFromStat( filePath, fileStat );
 	}
 }

@@ -69,6 +69,8 @@ export class FileEntity
 		this._path = path;
 		this._stats = stats;
 
+		this._exists = !!stats;
+
 		this.updateFileProperties();
 	}
 
@@ -103,7 +105,7 @@ export class FileEntity
 			this._stats = fs.statSync( this.path );
 			this._exists = true;
 		}
-			// Fail silently here
+		// Fail silently here
 		catch (e) {
 			// File does not exists
 			if ( e.code === 'ENOENT')
