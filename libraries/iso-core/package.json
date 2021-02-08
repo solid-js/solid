@@ -21,5 +21,8 @@
   "bugs": {
     "url": "https://github.com/solid-js/files/issues"
   },
-  "homepage": "https://github.com/solid-js/solid/tree/master/libraries/iso-core"
+  "homepage": "https://github.com/solid-js/solid/tree/master/libraries/iso-core",
+  "devDependencies": {
+    "@babel/core": "^7.12.13"
+  }
 }
