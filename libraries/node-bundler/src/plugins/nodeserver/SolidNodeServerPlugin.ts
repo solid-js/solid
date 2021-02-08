@@ -2,7 +2,7 @@ import { IBaseSolidPluginConfig, SolidPlugin } from "../../engine/SolidPlugin";
 import { IExtendedAppOptions, TBuildMode } from "../../engine/SolidParcel";
 import { ChildProcess, exec } from 'child_process'
 import { delay } from '@solid-js/core'
-import { generateLoaderLineTemplate, printLine, printLoaderLine } from '@solid-js/cli'
+import { generateLoaderLineTemplate, onProcessKilled, printLine, printLoaderLine } from '@solid-js/cli'
 
 // -----------------------------------------------------------------------------
 
@@ -39,21 +39,29 @@ export class SolidNodeServerPlugin extends SolidPlugin <ISolidNodeServerPluginCo
 
 	protected _runningServer:ChildProcess;
 
-	init () { }
+	init ()
+	{
+		// Kill running process when exiting parent
+		onProcessKilled( () => this.killRunningServer() );
+	}
+
+	protected async killRunningServer ()
+	{
+		if ( !this._runningServer ) return;
+		const killingServer = printLoaderLine('🔪', 'Killing node server ...');
+
+		this._runningServer.stdout.destroy();
+		this._runningServer.stderr.destroy();
+		this._runningServer.kill("SIGKILL");
+		this._runningServer = null;
+
+		await delay( this._config.delay );
+		killingServer('💀', 'Server killed')
+	}
 
 	async beforeBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object ) {
-		if ( buildMode === 'dev' && this._runningServer ) {
-
-			// newLine();
-			const killingServer = printLoaderLine('🔪', 'Killing node server ...');
-			this._runningServer.stdout.destroy();
-			this._runningServer.stderr.destroy();
-			this._runningServer.kill("SIGKILL");
-			this._runningServer = null;
-
-			await delay( this._config.delay );
-			killingServer('💀', 'Server killed')
-		}
+		if ( buildMode === 'dev' && this._runningServer )
+			await this.killRunningServer();
 	}
 
 	async afterBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object ) {

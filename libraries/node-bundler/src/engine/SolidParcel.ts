@@ -13,6 +13,23 @@ import { delay, noop } from "@solid-js/core"
 import path from "path";
 import * as logger from "@parcel/logger"
 
+// ----------------------------------------------------------------------------- CONSOLE UNPATCHER
+
+const originalConsole = {
+	log: console.log,
+	info: console.info,
+	error: console.error,
+	debug: console.debug,
+	warn: console.warn,
+}
+const revertPatchedConsole = () => {
+	console.log = originalConsole.log;
+	console.info = originalConsole.info;
+	console.error = originalConsole.error;
+	console.debug = originalConsole.debug;
+	console.warn = originalConsole.warn;
+}
+
 // ----------------------------------------------------------------------------- CONFIG
 
 const parcelCacheDirectoryName = '.parcel-cache';
@@ -166,7 +183,13 @@ export class SolidParcel
 	 * 			              you have several of the same type.
 	 */
 	static async dev ( appName:string, envName?:string, disabledPlugins?:string[] ) {
-		return await SolidParcel.internalBuild( appName, 'dev', envName);
+
+		// Break default listeners limit to avoid warning in watch mode
+		const globalEventEmitter = require('events').EventEmitter;
+		if ( globalEventEmitter.defaultMaxListeners < 100 && globalEventEmitter.defaultMaxListeners != 0 )
+			globalEventEmitter.defaultMaxListeners = 100;
+
+		return await SolidParcel.internalBuild( appName, 'dev', envName, disabledPlugins );
 	}
 
 	/**
@@ -179,7 +202,7 @@ export class SolidParcel
 	 * 			              you have several of the same type.
 	 */
 	static async build ( appName:string, envName?:string, disabledPlugins?:string[] ) {
-		return await SolidParcel.internalBuild( appName, 'production', envName);
+		return await SolidParcel.internalBuild( appName, 'production', envName, disabledPlugins );
 	}
 
 	// ------------------------------------------------------------------------- EXTEND APP OPTIONS
@@ -256,7 +279,7 @@ export class SolidParcel
 					setLoaderScope( subAppName );
 					await SolidParcel.copyNodePackagesToDestination( subAppOptions );
 				}
-				await SolidParcel.callMiddleware('prepare', buildMode, subAppOptions);
+				await SolidParcel.callMiddleware('prepare', buildMode, subAppOptions, null, null, disabledPlugins);
 			}
 		}
 
@@ -429,6 +452,7 @@ export class SolidParcel
 		// Unpatch console each time we setup a new parcel project
 		// @ts-ignore
 		logger.unpatchConsole(); // NOTE : Does not work ?
+		revertPatchedConsole();
 
 		// Before build middleware
 		await SolidParcel.callMiddleware( "beforeBuild", buildMode, appOptions, envProps, null, null, disabledPlugins );
@@ -624,7 +648,7 @@ export class SolidParcel
 					dir.clean();
 				}
 				// Call clean middleware
-				await SolidParcel.callMiddleware('clean', null, subAppOptions);
+				await SolidParcel.callMiddleware( 'clean', null, subAppOptions );
 			}
 		}
 		return clearedPath;
