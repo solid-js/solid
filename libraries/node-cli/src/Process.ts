@@ -1,5 +1,6 @@
 import * as child_process from "child_process";
 import { ExecSyncOptions } from "child_process";
+import { AnyHandler } from "@solid-js/core";
 
 type TVerboseLevel = boolean|number|"out"|"err";
 
@@ -22,8 +23,8 @@ export const execAsync = ( command:string, verboseLevel:TVerboseLevel = 0, optio
 		command, options,
 		( error, stdout, stderr) => {
 			error
-			? reject( (stderr ?? '').toString() )
-			: resolve( (stdout ?? '').toString() )
+				? reject( (stderr ?? '').toString() )
+				: resolve( (stdout ?? '').toString() )
 		}
 	);
 
@@ -80,3 +81,25 @@ export function execSync ( command:string, verboseLevel:TVerboseLevel = 0, optio
 	}
 }
 
+// ----------------------------------------------------------------------------- LIFECYCLE UTILISES
+
+/**
+ * Listen all events when parent process is killed.
+ * @param handler Called with event name as first argument
+ * @param exitAfterCode If not false, will exit with provided code.
+ * @param eventsToListen All codes to listen on process.
+ */
+export function onProcessKilled (
+	handler: (eventType:string, ...rest) => any,
+	exitAfterCode:number|false = 0,
+	eventsToListen = [`exit`, `SIGINT`, `SIGUSR1`, `SIGUSR2`, `uncaughtException`, `SIGTERM`]
+) {
+	// Adapted from https://stackoverflow.com/questions/14031763/doing-a-cleanup-action-just-before-node-js-exits
+	eventsToListen.forEach( eventType => {
+		process.on(eventType, async () => {
+			await handler( eventType );
+			if ( eventType != 'exit' && exitAfterCode !== false )
+				process.exit( exitAfterCode )
+		});
+	})
+}

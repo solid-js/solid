@@ -1,6 +1,6 @@
 
 export * from "./Command";
-export * from "./Exec";
+export * from "./Process";
 export * from "./Input";
 export * from "./Output";
 export * from "./Task";
