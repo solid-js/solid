@@ -1,5 +1,5 @@
 import { IBaseSolidPluginConfig, SolidPlugin } from "../../engine/SolidPlugin";
-import { IAppOptions, TBuildMode } from "../../engine/SolidParcel";
+import { IAppOptions, IExtendedAppOptions, TBuildMode } from "../../engine/SolidParcel";
 import * as path from "path";
 
 // -----------------------------------------------------------------------------
@@ -58,7 +58,7 @@ export class SolidManifestPlugin extends SolidPlugin <ISolidManifestPluginConfig
 
 	}
 
-	afterBuild ( appOptions?:IAppOptions, buildMode?:TBuildMode, envProps?:object )
+	afterBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object )
 	{
 		// // TODO : Read output folder structure
 		//

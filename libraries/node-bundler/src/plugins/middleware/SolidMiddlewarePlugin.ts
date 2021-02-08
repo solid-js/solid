@@ -6,8 +6,10 @@ import { IExtendedAppOptions, ISolidMiddleware, TBuildMode } from "../../engine/
 interface ISolidMiddlewarePluginConfig extends Partial<ISolidMiddleware>, IBaseSolidPluginConfig { }
 
 const _defaultConfig:Partial<ISolidMiddlewarePluginConfig> = {
-	beforeBuild : () => {},
-	afterBuild : () => {},
+	prepare: ( buildMode, appOptions ) => { },
+	beforeBuild: ( buildMode, appOptions, envProps, buildEvent, buildError ) => { },
+	afterBuild: ( buildMode, appOptions, envProps, buildEvent, buildError ) => { },
+	clean: ( appOptions ) => { },
 }
 
 // -----------------------------------------------------------------------------
@@ -18,11 +20,19 @@ export class SolidMiddlewarePlugin extends SolidPlugin <ISolidMiddlewarePluginCo
 		return new SolidMiddlewarePlugin({ name: 'middleware', ..._defaultConfig, ...config })
 	}
 
-	async beforeBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object ) {
-		return this._config.beforeBuild( buildMode, appOptions, envProps );
+	async prepare ( buildMode:TBuildMode, appOptions?:IExtendedAppOptions ) {
+		return this._config.prepare( buildMode, appOptions );
 	}
 
-	async afterBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object ) {
-		return this._config.afterBuild( buildMode, appOptions, envProps )
+	async beforeBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) {
+		return this._config.beforeBuild( buildMode, appOptions, envProps, buildEvent, buildError );
+	}
+
+	async afterBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) {
+		return this._config.afterBuild( buildMode, appOptions, envProps, buildEvent, buildError )
+	}
+
+	async clean ( appOptions?:IExtendedAppOptions ) {
+		return this._config.clean( appOptions );
 	}
 }

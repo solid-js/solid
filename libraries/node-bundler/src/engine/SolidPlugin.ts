@@ -1,4 +1,4 @@
-import { ISolidMiddleware } from "./SolidParcel";
+import { IExtendedAppOptions, ISolidMiddleware, TBuildMode } from "./SolidParcel";
 
 
 export interface IBaseSolidPluginConfig
@@ -37,11 +37,10 @@ export class SolidPlugin <C extends IBaseSolidPluginConfig = any> implements ISo
 		this.init();
 	}
 
-	//registerActions () { }
-
 	init () { }
 
-	beforeBuild () { }
-
-	afterBuild () { }
+	prepare ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions ) { }
+	beforeBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) {}
+	afterBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) { }
+	clean ( appOptions?:IExtendedAppOptions ) {}
 }

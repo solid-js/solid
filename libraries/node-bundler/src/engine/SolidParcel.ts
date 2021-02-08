@@ -16,12 +16,13 @@ import * as logger from "@parcel/logger"
 // ----------------------------------------------------------------------------- CONFIG
 
 const parcelCacheDirectoryName = '.parcel-cache';
+const solidCacheDirectoryName = path.join(parcelCacheDirectoryName, '.solid-cache');
 
 // ----------------------------------------------------------------------------- STRUCT
 
 export type TBuildMode = "production"|"dev"
 
-export type TMiddlewareType = "before"|"after";
+export type TMiddlewareType = "prepare"|"beforeBuild"|"afterBuild"|"clean";
 
 export interface IAppOptions
 {
@@ -115,8 +116,10 @@ export interface IExtendedAppOptions extends IAppOptions {
 
 // Solid build middleware
 export interface ISolidMiddleware {
+	prepare ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions ) : Promise<any>|void|null
 	beforeBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) : Promise<any>|void|null
 	afterBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) : Promise<any>|void|null
+	clean ( appOptions?:IExtendedAppOptions ) : Promise<any>|void|null
 }
 
 // ----------------------------------------------------------------------------- ENGINE CLASS
@@ -253,6 +256,7 @@ export class SolidParcel
 					setLoaderScope( subAppName );
 					await SolidParcel.copyNodePackagesToDestination( subAppOptions );
 				}
+				await SolidParcel.callMiddleware('prepare', buildMode, subAppOptions);
 			}
 		}
 
@@ -308,6 +312,13 @@ export class SolidParcel
 		const packageFile = new File( path.join(appOptions.packageRoot, 'package.json') );
 		if ( !packageFile.exists() ) return;
 
+		// Copy package.json
+		const copyLoader = printLoaderLine(`Copying modules to output ...`);
+
+		// Ensure destination parents to avoid node_modules to be exploded into dist
+		await new Directory( appOptions.output ).ensureParentsAsync()
+		await packageFile.copyToAsync( appOptions.output );
+
 		// Check if we need to install dependencies and install them
 		const nodeModulesDirectory = new Directory( path.join(appOptions.packageRoot, 'node_modules') );
 		if ( !nodeModulesDirectory.exists() ) {
@@ -321,16 +332,21 @@ export class SolidParcel
 				console.error(e);
 				process.exit(4);
 			}
+
+			// Copy to destination folder
+			await nodeModulesDirectory.copyToAsync( appOptions.output );
+		}
+		// No need to install dependencies
+		else
+		{
+			// Move from cache if available
+			const appCacheDirectory = new Directory( path.join(solidCacheDirectoryName, appOptions.name, 'node_modules') );
+			appCacheDirectory.exists()
+			? await appCacheDirectory.moveToAsync( appOptions.output )
+			// Copy from src
+			: await nodeModulesDirectory.copyToAsync( appOptions.output );
 		}
 
-		const copyLoader = printLoaderLine(`Copying modules to output ...`);
-
-		// Ensure destination parents to avoid node_modules to be exploded into dist
-		await new Directory( appOptions.output ).ensureParentsAsync()
-
-		// Copy to destination folder
-		await packageFile.copyToAsync( appOptions.output );
-		await nodeModulesDirectory.copyToAsync( appOptions.output );
 		copyLoader(`Copied modules to output`);
 	}
 
@@ -415,7 +431,7 @@ export class SolidParcel
 		logger.unpatchConsole(); // NOTE : Does not work ?
 
 		// Before build middleware
-		await SolidParcel.callMiddleware( "before", buildMode, appOptions, envProps, null, null, disabledPlugins );
+		await SolidParcel.callMiddleware( "beforeBuild", buildMode, appOptions, envProps, null, null, disabledPlugins );
 
 		// Build log
 		startBuildProgress();
@@ -437,7 +453,7 @@ export class SolidParcel
 			}
 
 			// After middleware
-			await SolidParcel.callMiddleware( "after", buildMode, appOptions, envProps, buildEvent, buildError, disabledPlugins );
+			await SolidParcel.callMiddleware( "afterBuild", buildMode, appOptions, envProps, buildEvent, buildError, disabledPlugins );
 
 			// We can now resolve. We need this resolve because the bundler.run does not wait
 			resolve();
@@ -465,11 +481,11 @@ export class SolidParcel
 				// FIXME : Sure about that ? Maybe an option ? watchMode = 'classic'|'complete'|'hard'
 				// In regular watch mode, do before middleware now
 				if ( !appOptions.hardWatch && count > 1 )
-					await SolidParcel.callMiddleware( "before", buildMode, appOptions, envProps, buildEvent, buildError, disabledPlugins );
+					await SolidParcel.callMiddleware( "beforeBuild", buildMode, appOptions, envProps, buildEvent, buildError, disabledPlugins );
 
 				// After middleware, only at first build in hardWatch mode because we will restart bundler
 				if ( (appOptions.hardWatch && count == 1) || !appOptions.hardWatch )
-					await SolidParcel.callMiddleware( "after", buildMode, appOptions, envProps, buildEvent, buildError, disabledPlugins );
+					await SolidParcel.callMiddleware( "afterBuild", buildMode, appOptions, envProps, buildEvent, buildError, disabledPlugins );
 
 				// First build, this is not a file change trigger
 				if ( count == 1 )
@@ -488,7 +504,7 @@ export class SolidParcel
 
 	// ------------------------------------------------------------------------- MIDDLEWARES & PLUGINS
 
-	protected static async callMiddleware ( event:TMiddlewareType, buildMode:TBuildMode, appOptions:IExtendedAppOptions, envProps:object, buildEvent?, buildError?, disabledPlugins = [] )
+	protected static async callMiddleware ( middlewareName:TMiddlewareType, buildMode:TBuildMode, appOptions:IExtendedAppOptions, envProps?:object, buildEvent?, buildError?, disabledPlugins = [] )
 	{
 		// Target current solid app building for logs
 		if ( SolidParcel.appNames.length > 1 )
@@ -497,14 +513,12 @@ export class SolidParcel
 		// If there are no plugins, do not continue
 		if ( !appOptions.plugins ) return;
 
-		// Method name, beforeBuild or afterBuild
-		const middlewareName = event+'Build';
-
 		// Call each middleware sequentially
 		let currentPlugin
 		try {
 			for ( currentPlugin of appOptions.plugins ) {
 				if ( disabledPlugins.indexOf(currentPlugin.name) !== -1 ) continue;
+				if ( !(middlewareName in currentPlugin ) ) continue;
 				await currentPlugin[ middlewareName ]( buildMode, appOptions, envProps, buildEvent, buildError );
 			}
 		}
@@ -540,31 +554,79 @@ export class SolidParcel
 	// ------------------------------------------------------------------------- CLEAR CACHE
 
 	/**
-	 * Clear parcel caches.
+	 * Clear parcel and solid caches.
+	 * Will browse every app package roots and delete .parcel-cache directoris.
+	 * Will delete root .solid-cache directory.
 	 * @param appName null to clear all caches, or an app name to clear a specific cache.
 	 */
 	static async clearCache ( appName?:string )
 	{
+		setLoaderScope( null );
 		let clearedPath = [];
 
-		// Clear root parcel cache
-		const dir = new Directory( parcelCacheDirectoryName )
+		// Clear root solid cache
+		let dir = new Directory( solidCacheDirectoryName )
 		if ( dir.exists() ) {
 			clearedPath.push( dir.path );
 			dir.remove();
 		}
 
-		// Clear path of all apps or selected app
+		// Clear root parcel cache
+		dir = new Directory( parcelCacheDirectoryName )
+		if ( dir.exists() ) {
+			clearedPath.push( dir.path );
+			dir.remove();
+		}
+
+		// Clear caches of all apps or selected app
 		SolidParcel.appNames.map( subAppName => {
 			if ( !appName || subAppName === appName ) {
+				setLoaderScope( SolidParcel.appNames.length > 1 ? subAppName : null );
 				const dirPath = path.join( SolidParcel._apps[ subAppName ].packageRoot, parcelCacheDirectoryName );
-				const dir = new Directory( dirPath );
+				dir = new Directory( dirPath );
 				if ( !dir.exists() ) return;
 				clearedPath.push( dir.path );
 				dir.remove();
 			}
 		});
 
+		return clearedPath;
+	}
+
+	// ------------------------------------------------------------------------- CLEAN
+
+	/**
+	 * Remove every generated files.
+	 * Will delete all output directories and call "clean" middleware.
+	 * @param appName null to clean all app outputs, or an app name to clean a specific app output.
+	 */
+	static async clean ( appName ?:string )
+	{
+		setLoaderScope( null );
+		let clearedPath = [];
+
+		for ( const subAppName of SolidParcel.appNames ) {
+			if ( !appName || subAppName === appName ) {
+				// Target app
+				setLoaderScope( SolidParcel.appNames.length > 1 ? subAppName : null );
+				const subAppOptions = SolidParcel._apps[ subAppName ];
+				// Move output node_modules to solid cache to avoid copying it at every build
+				let dir = new Directory( path.join(subAppOptions.output, 'node_modules') );
+				if ( dir.exists() ) {
+					const appCacheDirectory = new Directory( path.join(solidCacheDirectoryName, subAppName) );
+					await appCacheDirectory.ensureParentsAsync();
+					await dir.moveToAsync( appCacheDirectory.path );
+				}
+				// Target app output and empty it if it exists
+				dir = new Directory( SolidParcel._apps[ subAppName ].output );
+				if ( dir.exists() ) {
+					clearedPath.push( dir.path );
+					dir.clean();
+				}
+				// Call clean middleware
+				await SolidParcel.callMiddleware('clean', null, subAppOptions);
+			}
+		}
 		return clearedPath;
 	}
 }
