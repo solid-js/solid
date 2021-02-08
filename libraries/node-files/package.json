@@ -1,6 +1,6 @@
 {
   "name": "@solid-js/files",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "File is a NodeJS file operations helper with a super simple API to make build scripts easy and readable.",
   "main": "dist/_index",
   "module": "dist/_index.js",
@@ -39,5 +39,8 @@
   "homepage": "https://github.com/solid-js/solid/tree/master/libraries/node-files",
   "scripts": {
     "test": "node test"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.12.13"
   }
 }

@@ -1,7 +1,7 @@
 import { FileEntity } from './FileEntity'
 import { File, FileFinder } from "./_index";
 import { TFileType, TGlobOptionsArgument } from "./Struct";
-import { type } from "os";
+import path from "path";
 
 
 export class Directory extends FileEntity
@@ -50,11 +50,11 @@ export class Directory extends FileEntity
 	// ------------------------------------------------------------------------- LIST
 
 	list ( showDotFiles = true, globOptions?:TGlobOptionsArgument ) : string[] {
-		return FileFinder.list( '*', { ...globOptions, dot: showDotFiles } );
+		return FileFinder.list( path.join(this._path, '*'), { ...globOptions, dot: showDotFiles } );
 	}
 
 	async listAsync ( showDotFiles = true, globOptions?:TGlobOptionsArgument ) : Promise<string[]> {
-		return await FileFinder.listAsync( '*', { ...globOptions, dot: showDotFiles } );
+		return await FileFinder.listAsync( path.join(this._path, '*'), { ...globOptions, dot: showDotFiles } );
 	}
 
 	// ------------------------------------------------------------------------- CHILDREN
@@ -66,7 +66,7 @@ export class Directory extends FileEntity
 	 * @param globOptions Options passed to glob @see https://www.npmjs.com/package/glob
 	 */
 	children <G extends FileEntity = (File|Directory)> ( type:TFileType = 'all', showDotFiles = true, globOptions:TGlobOptionsArgument = {} ) : G[] {
-		return FileFinder.find( type, '*', { ...globOptions, dot: showDotFiles });
+		return FileFinder.find( type, path.join(this._path, '*'), { ...globOptions, dot: showDotFiles });
 	}
 
 	/**
