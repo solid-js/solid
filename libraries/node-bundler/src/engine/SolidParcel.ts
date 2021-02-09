@@ -296,11 +296,16 @@ export class SolidParcel
 
 		// This specific dot env does not exists
 		// Do not crash if .env does not exists
-		if ( !dotEnvFile.exists() && dotEnvName) {
-			dotEnvLoader(`Env file ${dotEnvPath} not found.`, 'error');
-			process.exit(2);
+		if ( !dotEnvFile.exists() ) {
+			if ( dotEnvName ) {
+				dotEnvLoader(`Env file ${dotEnvPath} not found`, 'error');
+				process.exit(2);
+			}
+			// .env not found, just raise a warning
+			else dotEnvLoader(`Env file not found`, 'warning');
 		}
-		dotEnvLoader(`Loaded ${dotEnvPath}`);
+		// Env file found and loaded
+		else dotEnvLoader(`Loaded ${dotEnvPath}`);
 
 		// Target extended app options
 		const appOptions = SolidParcel._apps[ appName ];
