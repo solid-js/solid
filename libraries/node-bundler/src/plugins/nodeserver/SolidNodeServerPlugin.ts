@@ -34,7 +34,7 @@ const _defaultConfig:Partial<ISolidNodeServerPluginConfig> = {
 export class SolidNodeServerPlugin extends SolidPlugin <ISolidNodeServerPluginConfig>
 {
 	static init ( config:ISolidNodeServerPluginConfig) {
-		return new SolidNodeServerPlugin({ name:'nodeserver', ..._defaultConfig, ...config })
+		return new SolidNodeServerPlugin({ name:'node server', ..._defaultConfig, ...config })
 	}
 
 	protected _runningServer:ChildProcess;
@@ -45,18 +45,24 @@ export class SolidNodeServerPlugin extends SolidPlugin <ISolidNodeServerPluginCo
 		onProcessKilled( () => this.killRunningServer() );
 	}
 
-	protected async killRunningServer ()
+	protected _restartServerIfCrashed = false;
+
+	protected _isRecovering = true;
+
+	protected async killRunningServer ( force = false )
 	{
 		if ( !this._runningServer ) return;
-		const killingServer = printLoaderLine('Killing node server ...', '🔪');
+		const killingServer = this._isRecovering && printLoaderLine(`Killing ${this._config.name} ...`);
 
+		this._restartServerIfCrashed = false;
 		this._runningServer.stdout.destroy();
 		this._runningServer.stderr.destroy();
-		this._runningServer.kill("SIGKILL");
+		this._runningServer.removeAllListeners();
+		this._runningServer.kill( force ? "SIGKILL" : "SIGTERM" );
 		this._runningServer = null;
 
 		await delay( this._config.delay );
-		killingServer('Server killed', '💀')
+		this._isRecovering && killingServer(`${this._config.name} killed`, '💀')
 	}
 
 	async beforeBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object ) {
@@ -74,16 +80,14 @@ export class SolidNodeServerPlugin extends SolidPlugin <ISolidNodeServerPluginCo
 				command: this._config.startCommand,
 				cwd: this._config.cwd ?? appOptions.output
 			});*/
-			const startingServerLoader = printLoaderLine('Starting server ...');
 
-			// FIXME : Check errors : .on('exit') ? or try catch ?
-
+			const startingServerLoader = this._isRecovering && printLoaderLine(`Starting ${this._config.name} ...`);
 			this._runningServer = exec( this._config.startCommand, {
 				cwd: this._config.cwd ?? appOptions.output,
 				env: envProps as any
 			})
 			await delay( this._config.delay );
-			startingServerLoader('Server started', '🥳');
+			this._isRecovering && startingServerLoader(`${this._config.name} started`, '🥳');
 
 			// Nice stream piping
 			if ( this.config.stdout === 'nice' )
@@ -96,6 +100,21 @@ export class SolidNodeServerPlugin extends SolidPlugin <ISolidNodeServerPluginCo
 			this.config.stdout === 'pipe' && this._runningServer.stdout.pipe( process.stdout );
 			// @ts-ignore
 			this.config.stderr === 'pipe' && this._runningServer.stderr.pipe( process.stderr );
+
+			this._restartServerIfCrashed = true;
+
+			this._runningServer.once('exit', async () => {
+				if (!this._restartServerIfCrashed) return;
+
+				this._isRecovering = false;
+				await this.killRunningServer();
+
+				const restartServer = printLoaderLine(`${this._config.name} has crashed, restarting ...`);
+				await delay(2);
+				await this.afterBuild( buildMode, appOptions, envProps );
+				restartServer(`${this._config.name} restarted`, '🥳');
+				this._isRecovering = true;
+			})
 		}
 	}
 }
