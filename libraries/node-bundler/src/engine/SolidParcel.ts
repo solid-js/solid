@@ -123,7 +123,19 @@ export interface IAppOptions
 	 * Parcel log level.
 	 * Default is null to keep Parcel's default for web apps and "none" for node apps.
 	 */
-	parcelLogLevel		?:"none"|"error"|"warn"|"info"|"verbose"|null
+	parcelLogLevel		?:"none"|"error"|"warn"|"info"|"verbose"|null,
+
+	/**
+	 * HMR port for this app.
+	 * Will use 3456 if not defined.
+	 */
+	hmrPort				?:number|null
+
+	/**
+	 * HMR host for this app. (no scheme prefix, no slashes)
+	 * Will use hostname if not defined, so HMR should work across internal network.
+	 */
+	hmrHost				?:string|null
 }
 
 // Options after setup, we injected the name so plugins know which app it is
@@ -405,6 +417,14 @@ export class SolidParcel
 				_buildingLoader(`Built for ${buildMode}`, '🎉');
 		}
 
+		// Enable HMR options with defaults if web app in dev mode
+		let hmrOptions = null;
+		if ( appOptions.appType === 'web' && buildMode === 'dev' )
+			hmrOptions = {
+				port: appOptions.hmrPort ?? 3456,
+				host: appOptions.hmrHost ?? require("os").hostname()
+			};
+
 		// Init parcel config
 		await delay(.05);
 		const bundler = new Parcel({
@@ -438,13 +458,19 @@ export class SolidParcel
 
 			env: envProps,
 
+			disableCache: false,
+			shouldDisableCache: false,
+
+			hmrOptions,
+
 			// --log-level (none/error/warn/info/verbose)
 			logLevel: appOptions.parcelLogLevel,
 
 			patchConsole: false, // NOTE : Does not seems to work
+			shouldPatchConsole: false,
 
-			shouldAutoInstall: true, // NOTE : White one ? Does not seems to work
 			autoInstall: true,
+			shouldAutoInstall: true, // NOTE : This one ? Does not seems to work
 
 			mode: isProd ? 'production' : 'development',
 			minify: isProd && isWeb,
