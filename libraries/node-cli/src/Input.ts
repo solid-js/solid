@@ -2,6 +2,7 @@ import { getCLIArguments } from "./Command";
 import { nicePrint } from "./Output";
 import { AnyHandler, ScalarObject } from "@solid-js/core";
 
+// ----------------------------------------------------------------------------- STRUCT
 
 type TShortcutOptions = {
 	argumentIndex	:number
@@ -16,12 +17,6 @@ type TAskInputOptions = TShortcutOptions &  {
 	defaultValue	:any
 	isNumber		:boolean
 	notEmpty		:boolean
-}
-
-interface IAskMenuEntry
-{
-	title	: string
-	handler	: AnyHandler
 }
 
 // ----------------------------------------------------------------------------- CLI COMMANDS

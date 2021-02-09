@@ -21,22 +21,23 @@ export function repeat ( total:number, char:string = ' ' ) {
 }
 
 /**
- * TODO
- * @param total
- * @param content
+ * Indent tab like. Will repeat a space char.
+ * Control tab size with cliTabSize (default is 3 spaces for 1 tab)
+ * @param total Number of tab to indent
+ * @param content Content to add after indentation
  */
 export function indent ( total:number, content = '' ) {
 	return repeat( total * cliTabSize, " " ) + content;
 }
 
 /**
- * TODO
- * @param content
- * @param newLine
+ * Print to output with process.stdout, without using console log.
+ * @param content Content to print
+ * @param newLine New line, default is \n\r, can be false to disable new line.
  */
-export function print ( content:string, newLine:string = "\n\r" ) {
+export function print ( content:string, newLine:string|boolean = "\n\r" ) {
 	process.stdout.write( content );
-	newLine && process.stdout.write( newLine );
+	newLine && process.stdout.write( newLine as string );
 }
 
 /**
@@ -48,26 +49,38 @@ export function newLine () { process.stdout.write('\r\n'); }
 // ----------------------------------------------------------------------------- PRINT REMOVABLE LINE
 
 /**
- * TODO
- * @param content
+ * Print a removable line.
+ * Will return a handler to change content of printed line.
+ * Ex : let line = printLine('Hello, I will be removed')
+ *      line = line('This text replace previous text')
+ *      line = line('And again')
+ *      line('And again ...', true) // will erase and go next line
+ * @param content Content to print. Nice printed with nicePrint.
+ * @returns a handler to re-print the line, recursively.
  */
 export function printLine ( content:string )
 {
+	// Nicely print and measure how many chars without ansi markers
 	const niceContent = nicePrint( content, { output:'return', newLine: false } );
 	const strLen = stripAnsi( niceContent ).length;
 
 	print( niceContent, null );
 
+	// Return handler to remove previously printed line
 	return ( newContent:string, last = true ) => {
+		// Remove previous line by repeating space all over previous chars
 		process.stdout.cursorTo( 0 );
 		print( repeat( strLen ), null );
 		process.stdout.cursorTo( 0 );
 
+		// Last line, line jump
 		if ( last ) {
 			printLine( newContent )
 			newLine();
 			return null;
 		}
+
+		// Print new line and return handler recursively
 		return printLine( newContent );
 	}
 }
@@ -76,7 +89,7 @@ export function printLine ( content:string )
 
 export type TNicePrintOutput = 'stdout'|'stderr'|'return';
 
-interface INicePrintOptions
+export interface INicePrintOptions
 {
 	newLine		:string|null|boolean
 	output		:TNicePrintOutput,
@@ -87,23 +100,26 @@ interface INicePrintOptions
 
 const _nicePrintStyleReplacerRegex = /\{([a-z]*\/?[a-z]+)\}([^{]*)(\{\/\})?/gi;
 
-const _formatters = {
+export const nicePrintFormatters = {
+	// Style formatters
 	'bold'		: chalk.bold,
 	'underline'	: chalk.underline,
 	'strike'	: chalk.strikethrough,
 	'italic'	: chalk.italic,
 
+	// Color formatters
 	'red'		: chalk.red,
 	'yellow'	: chalk.yellow,
 	'cyan'		: chalk.cyan,
 	'blue'		: chalk.blue,
 	'green' 	: chalk.greenBright,
-	'purple'	: () => chalk.keyword('purple'),
-	'orange'	: () => chalk.keyword('orange'),
+	'purple'	: chalk.keyword('purple'),
+	'orange'	: chalk.keyword('orange'),
 	'grey'		: chalk.gray,
 	'lite'		: chalk.gray,
 	'white'		: chalk.white,
 
+	// Special formatters
 	'invert' 	: chalk.inverse,
 };
 
@@ -121,9 +137,9 @@ function styleReplacer ( from:string, identifier:string, content )
 	// Get chained list of formatters from identifier
 	let formattersChain = [];
 	split.map( marker => {
-		for ( const key of Object.keys(_formatters) ) {
+		for ( const key of Object.keys(nicePrintFormatters) ) {
 			if ( key.indexOf( marker ) !== 0 ) continue;
-			formattersChain.push(  _formatters[ key ] );
+			formattersChain.push(  nicePrintFormatters[ key ] );
 			break;
 		}
 	})
@@ -134,9 +150,22 @@ function styleReplacer ( from:string, identifier:string, content )
 }
 
 /**
- * TODO DOC
- * @param template
- * @param options
+ * Print nice templated string to CLI.
+ * See example to understand how to mark your text to format it :
+ *
+ * Ex : nicePrint(`
+ * 		{bold}I'm a text in bold
+ * 		Regular text
+ * 		{italic}Text in italic{/} and regular text
+ * 		{red/bold}Red and bold {orange}Orange and bold
+ * 		{y/b}Yellow and bold
+ * `)
+ *
+ * See nicePrintFormatters to check all available keys. You can add yours like so :
+ * Ex : nicePrintFormatters['fushia'] = chalk.keywork('fushia')
+ *
+ * @param template Template string to print or return nicely.
+ * @param options See @INicePrintOptions
  */
 export function nicePrint ( template:string, options:Partial<INicePrintOptions> = {} )
 {
@@ -214,7 +243,6 @@ export const generateLoaderLineTemplate = ( c, i = '' ) => {
 	})
 }
 
-//
 /**
  * Clear all printed solid lines for current loader scope
  * @param linesToClear Override total lines to clear. Let null for automatic.
@@ -252,24 +280,26 @@ export function printLoaderLine ( content:string, oraOptions? )
 	const loader = ora( renderedTemplate ).start( oraOptions );
 
 	// Return clear function to override previous line
-	return ( content?:string, statusOrIcon:"success"|"error"|"warning"|"info"|string = "success" ) => {
-
+	return ( content?:string, statusOrIcon:"ok"|"success"|"error"|"warning"|"info"|string = "ok" ) => {
+		// No content, just stop loader
 		if (!content) {
 			loader.stop();
 			return;
 		}
 
-		//process.stdout.cursorTo( 0 );
-		//print( repeat( strLen ), null );
-		//process.stdout.cursorTo( 0 );
-		if ( statusOrIcon == 'success' )
+		// Ora loader icon
+		if ( statusOrIcon == 'ok' )
 			loader.succeed( generateLoaderLineTemplate(content) )
+		else if ( statusOrIcon == 'success' )
+			loader.succeed( generateLoaderLineTemplate(chalk.bold.green(content)) )
 		else if ( statusOrIcon == 'error' )
-			loader.fail( generateLoaderLineTemplate(content) )
+			loader.fail( generateLoaderLineTemplate(chalk.bold.red(content)) )
 		else if ( statusOrIcon == 'warning' )
-			loader.warn( generateLoaderLineTemplate(content) )
+			loader.warn( generateLoaderLineTemplate(chalk.bold.keyword('orange')(content)) )
 		else if ( statusOrIcon == 'info' )
-			loader.info( generateLoaderLineTemplate(content) )
+			loader.info( generateLoaderLineTemplate(chalk.grey.content) )
+
+		// Show custom icon
 		else {
 			loader.stop();
 			printLine( generateLoaderLineTemplate(content, statusOrIcon) );
@@ -283,10 +313,6 @@ export function printLoaderLine ( content:string, oraOptions? )
 
 /**
  * Show a big old banner
- * @param title
- * @param width
- * @param margin
- * @param padding
  */
 export function banner ( title:string, width = 78, margin = 1, padding = 2 )
 {

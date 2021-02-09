@@ -1,6 +1,8 @@
 import * as child_process from "child_process";
 import { ExecSyncOptions } from "child_process";
-import { AnyHandler } from "@solid-js/core";
+
+
+// ----------------------------------------------------------------------------- STRUCT
 
 type TVerboseLevel = boolean|number|"out"|"err";
 

@@ -1,6 +1,7 @@
 import { ScalarObject } from "@solid-js/core";
 const path = require('path');
 
+// ----------------------------------------------------------------------------- STRUCT
 
 export type TCommandHandler<G extends object> = ( cliArguments?:string[], cliOptions?:G, commandName?:string ) => any|Promise<any>
 
@@ -8,7 +9,6 @@ export type TCommandDefaultHandler = ( commandName:string, error:CommandError, c
 
 // Custom CommandError to be able to detect commands not found
 class CommandError extends Error { }
-
 
 // ----------------------------------------------------------------------------- ARGV
 
@@ -98,28 +98,20 @@ export const CLICommands = {
 		})
 	},
 
-	/**
-	 * TODO DOC
-	 * @param name
-	 * @param group
-	 * @param message
-	 * @param options
-	 */
-	addHelp ( name:string|string[], group:string, message:string, options : {[index:string] : string} = {})
-	{
-		( typeof name === "string" ? [name] : name ).map( n => {
-			n = n.toLowerCase();
-			if ( !( n in _registeredCommands) ) return; // fixme : error ?
-			_registeredCommands[ n ].help = { group, message, options };
-		});
-	},
+	// TODO
+	// addHelp ( name:string|string[], group:string, message:string, options : {[index:string] : string} = {})
+	// {
+	// 	( typeof name === "string" ? [name] : name ).map( n => {
+	// 		n = n.toLowerCase();
+	// 		if ( !( n in _registeredCommands) ) return; // fixme : error ?
+	// 		_registeredCommands[ n ].help = { group, message, options };
+	// 	});
+	// },
 
 	/**
 	 * Get registered commands list
 	 */
-	list () {
-		return Object.keys( _registeredCommands );
-	},
+	list () { return Object.keys( _registeredCommands ); },
 
 	/**
 	 * Check if a command exists
@@ -217,14 +209,15 @@ export const CLICommands = {
 		return results;
 	},
 
-	showHelp ()
-	{
-		// TODO : Show nice help
-	},
-
-	promptAvailableCommands ()
-	{
-		// TODO : Show all available commands in a selectable list
-	}
+	// TODO
+	// showHelp ()
+	// {
+	// 	// TODO : Show nice help
+	// },
+	//
+	// promptAvailableCommands ()
+	// {
+	// 	// TODO : Show all available commands in a selectable list
+	// }
 };
 

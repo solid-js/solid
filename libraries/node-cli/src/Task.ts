@@ -48,9 +48,10 @@ export function runTask <G> ( configOrMessage:ITaskConfig|string, taskHandler?:I
 // ----------------------------------------------------------------------------- TRY TASK
 
 /**
- * TODO DOC
- * @param configOrMessage
- * @param taskHandler
+ * Try catch an async function wrapped in a task.
+ * Will fail or succeed automatically depending of promise resolve or reject.
+ * @param configOrMessage Message as string or task config (ITaskConfig)
+ * @param taskHandler Async Handler to test.
  */
 export async function tryTask <G> ( configOrMessage:ITaskConfig|string, taskHandler?:ITaskHandler<G> ) : Promise<G|void>
 {
