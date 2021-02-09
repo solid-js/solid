@@ -54,16 +54,19 @@ export class SolidNodeServerPlugin extends SolidPlugin <ISolidNodeServerPluginCo
 
 	init () {
 		// Kill running process when exiting parent
-		onProcessKilled( () => this.killRunningServer() );
+		onProcessKilled( async () => {
+			await this.killRunningServer();
+			process.exit();
+		});
 	}
 
 	// ------------------------------------------------------------------------- PROPERTIES
 
-	protected _runningServer:ChildProcess;
+	protected _runningServer			:ChildProcess;
 
-	protected _restartServerIfCrashed = false;
+	protected _restartServerIfCrashed 	= false;
 
-	protected _showLogs = true;
+	protected _showLogs 				= true;
 
 	// ------------------------------------------------------------------------- START & KILL SERVER
 
