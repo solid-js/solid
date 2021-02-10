@@ -68,6 +68,8 @@ export class SolidNodeServerPlugin extends SolidPlugin <ISolidNodeServerPluginCo
 
 	protected _showLogs 				= true;
 
+	protected _recoveryMode 			= false;
+
 	// ------------------------------------------------------------------------- START & KILL SERVER
 
 	protected async killRunningServer ( force = false ) {
@@ -90,7 +92,7 @@ export class SolidNodeServerPlugin extends SolidPlugin <ISolidNodeServerPluginCo
 
 		// Safe wait
 		await delay( this._config.delay );
-		this._showLogs && killingServer(`${this._config.name} killed`, '💀')
+		killingServer && killingServer(`${this._config.name} killed`, '💀')
 	}
 
 	protected async startServer ( appOptions?:IExtendedAppOptions, envProps?:object ) {
@@ -101,7 +103,7 @@ export class SolidNodeServerPlugin extends SolidPlugin <ISolidNodeServerPluginCo
 			env: envProps as any
 		})
 		await delay( this._config.delay );
-		this._showLogs && startingServerLoader(`${this._config.name} started`, '🥳');
+		startingServerLoader && startingServerLoader(`${this._config.name} started`, '🥳');
 
 		// Nice stream piping
 		if ( this.config.stdout === 'nice' )
@@ -121,6 +123,7 @@ export class SolidNodeServerPlugin extends SolidPlugin <ISolidNodeServerPluginCo
 
 			// We are in recovery mode, no logs please
 			this._showLogs = false;
+			this._recoveryMode = true;
 
 			// Kill server cleanly and wait
 			await this.killRunningServer();
@@ -133,13 +136,14 @@ export class SolidNodeServerPlugin extends SolidPlugin <ISolidNodeServerPluginCo
 
 			// We can show logs
 			this._showLogs = true;
+			this._recoveryMode = false;
 		})
 	}
 
 	// ------------------------------------------------------------------------- BUILD LIFECYCLE
 
 	async beforeBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object ) {
-		if ( buildMode === 'dev' )
+		if ( buildMode === 'dev' && !this._recoveryMode )
 			await this.killRunningServer();
 	}
 

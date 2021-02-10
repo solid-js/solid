@@ -651,8 +651,9 @@ export class SolidParcel
 	 * Remove every generated files.
 	 * Will delete all output directories and call "clean" middleware.
 	 * @param appName null to clean all app outputs, or an app name to clean a specific app output.
+	 * @param keepNodeModules Will move node_modules to parcel cache directory, to allow faster next build.
 	 */
-	static async clean ( appName ?:string )
+	static async clean ( appName ?:string, keepNodeModules = false )
 	{
 		setLoaderScope( null );
 		let clearedPath = [];
@@ -662,19 +663,24 @@ export class SolidParcel
 				// Target app
 				setLoaderScope( SolidParcel.appNames.length > 1 ? subAppName : null );
 				const subAppOptions = SolidParcel._apps[ subAppName ];
+
 				// Move output node_modules to solid cache to avoid copying it at every build
-				let dir = new Directory( path.join(subAppOptions.output, 'node_modules') );
-				if ( dir.exists() ) {
-					const appCacheDirectory = new Directory( path.join(solidCacheDirectoryName, subAppName) );
-					await appCacheDirectory.ensureParentsAsync();
-					await dir.moveToAsync( appCacheDirectory.path );
+				if ( keepNodeModules ) {
+					const dir = new Directory( path.join(subAppOptions.output, 'node_modules') );
+					if ( dir.exists() ) {
+						const appCacheDirectory = new Directory( path.join(solidCacheDirectoryName, subAppName) );
+						await appCacheDirectory.ensureParentsAsync();
+						await dir.moveToAsync( appCacheDirectory.path );
+					}
 				}
+
 				// Target app output and empty it if it exists
-				dir = new Directory( SolidParcel._apps[ subAppName ].output );
+				const dir = new Directory( SolidParcel._apps[ subAppName ].output );
 				if ( dir.exists() ) {
 					clearedPath.push( dir.path );
 					dir.clean();
 				}
+
 				// Call clean middleware
 				await SolidParcel.callMiddleware( 'clean', null, subAppOptions );
 			}
