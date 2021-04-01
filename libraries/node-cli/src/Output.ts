@@ -106,6 +106,7 @@ export const nicePrintFormatters = {
 	'underline'	: chalk.underline,
 	'strike'	: chalk.strikethrough,
 	'italic'	: chalk.italic,
+	'dim'		: chalk.dim,
 
 	// Color formatters
 	'red'		: chalk.red,

@@ -23,13 +23,12 @@ type TAskInputOptions = TShortcutOptions &  {
 
 /**
  * Ask list of choices to CLI.
- * @param message Question asked to CLI
+ * @param message Question asked to CLI. Can be nice printed (@see nicePrint)
  * @param choices List of available choices as an object with named keys. Value as "---" to add a separator.
  * @param options
  * 		  | argumentIndex : Index of argument to catch value from.
  * 		  | shortcuts : Accepted shortcuts for arguments. ex: ['type', 't'] for --type / -t
  * 		  | defaultIndex : Default choice index (number if choices is an array, key as string otherwise)
- * @returns {Promise<string|number>}
  */
 export async function askList ( message:string, choices:ScalarObject|string[], options:Partial<TAskListOptions> = {} )
 {
@@ -99,7 +98,11 @@ export async function askList ( message:string, choices:ScalarObject|string[], o
 
 	// No choice found in arguments, ask CLI
 	const question = await Inquirer.prompt({
-		message,
+		message: nicePrint(message, {
+			// untab: false,
+			newLine: false,
+			output: 'return'
+		}),
 		type: 'list', // fixme : allow config
 		pageSize: 12, // fixme : allow config
 		name: 'answer',
@@ -110,13 +113,13 @@ export async function askList ( message:string, choices:ScalarObject|string[], o
 	// Get answer and its index
 	const {answer} = question;
 	selectedIndex = choicesValues.filter( isNotSep ).indexOf( answer );
-	return [ selectedIndex, answer ];
+	return [ selectedIndex, answer, choicesKeys[selectedIndex] ];
 }
 
 /**
  * Ask a free input to CLI.
  * Input can be string or number
- * @param message Question asked to CLI
+ * @param message Question asked to CLI. Can be nice printed (@see nicePrint)
  * @param options
  * 		  | argumentIndex : Index of argument to catch value from.
  * 		  | shortcuts : Accepted shortcuts for arguments. ex: ['type', 't'] for --type / -t
@@ -168,7 +171,11 @@ export async function askInput ( message, options:Partial<TAskInputOptions> = {}
 				type: options.isNumber ? 'number' : 'input',
 				name: 'answer',
 				default: options.defaultValue,
-				message
+				message: nicePrint(message, {
+					// untab: false,
+					newLine: false,
+					output: 'return'
+				})
 			});
 
 			// Convert type
