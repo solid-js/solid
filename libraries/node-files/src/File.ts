@@ -386,7 +386,7 @@ export class File extends FileEntity
 	 * TODO TEST
 	 * @param values
 	 */
-	template ( values:ScalarObject )
+	template ( values:object|ScalarObject )
 	{
 		this.checkLoadSync();
         this._data = require('@solid-js/nanostache').Nanostache( this._data, values );
