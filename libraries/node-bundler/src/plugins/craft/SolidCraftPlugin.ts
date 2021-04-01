@@ -139,7 +139,7 @@ export class SolidCraftPlugin extends SolidPlugin <ISolidCraftPluginConfig>
 
 		// Save app options in instance so crafter does not need to handle it
 		this._appOptions = appOptions
-		selectedCrafter[ craftEntity[2] ]( this.craft, appOptions )
+		await selectedCrafter[ craftEntity[2] ]( this.craft, appOptions )
 		this._appOptions = null
 	}
 
@@ -151,7 +151,7 @@ export class SolidCraftPlugin extends SolidPlugin <ISolidCraftPluginConfig>
 	 * 				File destination starts from app packageRoot (@see IAppOptions doc)
 	 * @param appOptions App options of current crafted app.
 	 */
-	async craft <G extends object> ( properties:G, files:( (p:G) => string[])[], appOptions?:IExtendedAppOptions )
+	craft = async <G extends object> ( properties:G, files:( (p:G) => string[])[], appOptions?:IExtendedAppOptions ) =>
 	{
 		const generateLoader = printLoaderLine(`Generating files ...`)
 
