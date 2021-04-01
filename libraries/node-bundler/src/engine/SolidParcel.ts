@@ -1,4 +1,4 @@
-import { SolidPlugin, SolidPluginException } from "./SolidPlugin";
+import { ICommand, SolidPlugin, SolidPluginException, TMiddlewareType } from "./SolidPlugin";
 import Parcel from "@parcel/core";
 import {
 	nicePrint,
@@ -38,8 +38,6 @@ const solidCacheDirectoryName = path.join(parcelCacheDirectoryName, '.solid-cach
 // ----------------------------------------------------------------------------- STRUCT
 
 export type TBuildMode = "production"|"dev"
-
-export type TMiddlewareType = "prepare"|"beforeBuild"|"afterBuild"|"clean";
 
 export interface IAppOptions
 {
@@ -143,14 +141,6 @@ export interface IExtendedAppOptions extends IAppOptions {
 	name		:string;
 }
 
-// Solid build middleware
-export interface ISolidMiddleware {
-	prepare ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions ) : Promise<any>|void|null
-	beforeBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) : Promise<any>|void|null
-	afterBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) : Promise<any>|void|null
-	clean ( appOptions?:IExtendedAppOptions ) : Promise<any>|void|null
-}
-
 // ----------------------------------------------------------------------------- ENGINE CLASS
 
 export class SolidParcel
@@ -190,18 +180,18 @@ export class SolidParcel
 	 * @param appName Application name to build in dev mode. Have to be declared with SolidParcel.app()
 	 * @param envName Dot env file to load. If envName is empty or null, will load '.env'.
 	 * 				  Ex : If envName is 'production', it will load '.env.production'.
-	 * @param disabledPlugins Disable plugins by name.
-	 * 			              All plugins have a default name, and you can add a name property into plugin's config if
-	 * 			              you have several of the same type.
+	 * @param bypassPlugins Bypass plugins by name.
+	 * 			            All plugins have a default name, and you can add a name property into plugin's config if
+	 * 			            you have several of the same type.
 	 */
-	static async dev ( appName:string, envName?:string, disabledPlugins?:string[] ) {
+	static async dev ( appName:string, envName?:string, bypassPlugins?:string[] ) {
 
 		// Break default listeners limit to avoid warning in watch mode
 		const globalEventEmitter = require('events').EventEmitter;
 		if ( globalEventEmitter.defaultMaxListeners < 100 && globalEventEmitter.defaultMaxListeners != 0 )
 			globalEventEmitter.defaultMaxListeners = 100;
 
-		return await SolidParcel.internalBuild( appName, 'dev', envName, disabledPlugins );
+		return await SolidParcel.internalBuild( appName, 'dev', envName, bypassPlugins );
 	}
 
 	/**
@@ -209,12 +199,12 @@ export class SolidParcel
 	 * @param appName Application name to build in production mode. Have to be declared with SolidParcel.app()
 	 * @param envName Dot env file to load. If envName is empty or null, will load '.env'.
 	 * 				  Ex : If envName is 'production', it will load '.env.production'.
-	 * @param disabledPlugins Disable plugins by name.
-	 * 			              All plugins have a default name, and you can add a name property into plugin's config if
-	 * 			              you have several of the same type.
+	 * @param bypassPlugins Bypass plugins by name.
+	 * 			            All plugins have a default name, and you can add a name property into plugin's config if
+	 * 			            you have several of the same type.
 	 */
-	static async build ( appName:string, envName?:string, disabledPlugins?:string[] ) {
-		return await SolidParcel.internalBuild( appName, 'production', envName, disabledPlugins );
+	static async build ( appName:string, envName?:string, bypassPlugins?:string[] ) {
+		return await SolidParcel.internalBuild( appName, 'production', envName, bypassPlugins );
 	}
 
 	// ------------------------------------------------------------------------- EXTEND APP OPTIONS
@@ -271,7 +261,7 @@ export class SolidParcel
 
 	// ------------------------------------------------------------------------- INTERNAL BUILD
 
-	protected static async internalBuild ( appName:string, buildMode:TBuildMode, dotEnvName?:string, disabledPlugins?:string[] )
+	protected static async internalBuild ( appName:string, buildMode:TBuildMode, dotEnvName?:string, bypassPlugins?:string[] )
 	{
 		// Check if this app exists
 		if ( !SolidParcel._apps[ appName ] )
@@ -291,7 +281,7 @@ export class SolidParcel
 					setLoaderScope( subAppName );
 					await SolidParcel.copyNodePackagesToDestination( subAppOptions );
 				}
-				await SolidParcel.callMiddleware('prepare', buildMode, subAppOptions, null, null, disabledPlugins);
+				await SolidParcel.callMiddleware('prepare', buildMode, subAppOptions, null, null, bypassPlugins);
 			}
 		}
 
@@ -341,7 +331,7 @@ export class SolidParcel
 		SolidParcel._isFirstBuildingApp = false;
 
 		// Start parcel build
-		await SolidParcel.bundleParcel( buildMode, appOptions, envProps, disabledPlugins );
+		await SolidParcel.bundleParcel( buildMode, appOptions, envProps, bypassPlugins );
 	}
 
 	// ------------------------------------------------------------------------- NODE SPECIFIC
@@ -392,7 +382,7 @@ export class SolidParcel
 
 	// ------------------------------------------------------------------------- BUILD PARCEL
 
-	protected static bundleParcel = ( buildMode:TBuildMode, appOptions:IExtendedAppOptions, envProps?:object, disabledPlugins?:string[]  ) => new Promise<void>( async resolve =>
+	protected static bundleParcel = ( buildMode:TBuildMode, appOptions:IExtendedAppOptions, envProps?:object, bypassPlugins?:string[]  ) => new Promise<void>( async resolve =>
 	{
 		// Config to booleans
 		const isProd = buildMode === 'production';
@@ -483,7 +473,7 @@ export class SolidParcel
 		revertPatchedConsole();
 
 		// Before build middleware
-		await SolidParcel.callMiddleware( "beforeBuild", buildMode, appOptions, envProps, null, null, disabledPlugins );
+		await SolidParcel.callMiddleware( "beforeBuild", buildMode, appOptions, envProps, null, null, bypassPlugins );
 
 		// Build log
 		startBuildProgress();
@@ -505,7 +495,7 @@ export class SolidParcel
 			}
 
 			// After middleware
-			await SolidParcel.callMiddleware( "afterBuild", buildMode, appOptions, envProps, buildEvent, buildError, disabledPlugins );
+			await SolidParcel.callMiddleware( "afterBuild", buildMode, appOptions, envProps, buildEvent, buildError, bypassPlugins );
 
 			// We can now resolve. We need this resolve because the bundler.run does not wait
 			resolve();
@@ -533,11 +523,11 @@ export class SolidParcel
 				// FIXME : Sure about that ? Maybe an option ? watchMode = 'classic'|'complete'|'hard'
 				// In regular watch mode, do before middleware now
 				if ( !appOptions.hardWatch && count > 1 )
-					await SolidParcel.callMiddleware( "beforeBuild", buildMode, appOptions, envProps, buildEvent, buildError, disabledPlugins );
+					await SolidParcel.callMiddleware( "beforeBuild", buildMode, appOptions, envProps, buildEvent, buildError, bypassPlugins );
 
 				// After middleware, only at first build in hardWatch mode because we will restart bundler
 				if ( (appOptions.hardWatch && count == 1) || !appOptions.hardWatch )
-					await SolidParcel.callMiddleware( "afterBuild", buildMode, appOptions, envProps, buildEvent, buildError, disabledPlugins );
+					await SolidParcel.callMiddleware( "afterBuild", buildMode, appOptions, envProps, buildEvent, buildError, bypassPlugins );
 
 				// First build, this is not a file change trigger
 				if ( count == 1 )
@@ -548,7 +538,7 @@ export class SolidParcel
 				if ( appOptions.hardWatch && count == 2) {
 					await watcher.unsubscribe();
 					//clearPrintedLoaderLines();
-					SolidParcel.bundleParcel( buildMode, appOptions, envProps, disabledPlugins );
+					SolidParcel.bundleParcel( buildMode, appOptions, envProps, bypassPlugins );
 				}
 			});
 		}
@@ -556,7 +546,7 @@ export class SolidParcel
 
 	// ------------------------------------------------------------------------- MIDDLEWARES & PLUGINS
 
-	protected static async callMiddleware ( middlewareName:TMiddlewareType, buildMode:TBuildMode, appOptions:IExtendedAppOptions, envProps?:object, buildEvent?, buildError?, disabledPlugins = [] )
+	protected static async callMiddleware ( middlewareName:TMiddlewareType, buildModeOrCommand:TBuildMode|ICommand, appOptions:IExtendedAppOptions, envProps?:object, buildEvent?, buildError?, bypassPlugins = [] )
 	{
 		// Target current solid app building for logs
 		if ( SolidParcel.appNames.length > 1 )
@@ -569,9 +559,9 @@ export class SolidParcel
 		let currentPlugin
 		try {
 			for ( currentPlugin of appOptions.plugins ) {
-				if ( disabledPlugins.indexOf(currentPlugin.name) !== -1 ) continue;
+				if ( bypassPlugins.indexOf(currentPlugin.name) !== -1 ) continue;
 				if ( !(middlewareName in currentPlugin ) ) continue;
-				await currentPlugin[ middlewareName ]( buildMode, appOptions, envProps, buildEvent, buildError );
+				await currentPlugin[ middlewareName ]( buildModeOrCommand, appOptions, envProps, buildEvent, buildError );
 			}
 		}
 
@@ -607,26 +597,27 @@ export class SolidParcel
 
 	/**
 	 * Clear parcel and solid caches.
-	 * Will browse every app package roots and delete .parcel-cache directoris.
-	 * Will delete root .solid-cache directory.
+	 * Will browse every app package roots and delete .parcel-cache and .solid-cache directories.
+	 * No command called, plugins must use parcel cache.
 	 * @param appName null to clear all caches, or an app name to clear a specific cache.
 	 */
 	static async clearCache ( appName?:string )
 	{
+		const clearLoader = printLoaderLine(`Clearing cache ...`);
 		setLoaderScope( null );
-		let clearedPath = [];
+		let clearedPaths = [];
 
 		// Clear root solid cache
 		let dir = new Directory( solidCacheDirectoryName )
 		if ( dir.exists() ) {
-			clearedPath.push( dir.path );
+			clearedPaths.push( dir.path );
 			dir.remove();
 		}
 
 		// Clear root parcel cache
 		dir = new Directory( parcelCacheDirectoryName )
 		if ( dir.exists() ) {
-			clearedPath.push( dir.path );
+			clearedPaths.push( dir.path );
 			dir.remove();
 		}
 
@@ -637,26 +628,32 @@ export class SolidParcel
 				const dirPath = path.join( SolidParcel._apps[ subAppName ].packageRoot, parcelCacheDirectoryName );
 				dir = new Directory( dirPath );
 				if ( !dir.exists() ) return;
-				clearedPath.push( dir.path );
+				clearedPaths.push( dir.path );
 				dir.remove();
 			}
 		});
 
-		return clearedPath;
+		clearLoader(`${clearedPaths.length} cache${clearedPaths.length > 1 ? 's' : ''} cleared`, '🧹');
+		return clearedPaths;
 	}
 
 	// ------------------------------------------------------------------------- CLEAN
 
 	/**
-	 * Remove every generated files.
-	 * Will delete all output directories and call "clean" middleware.
+	 * Remove every generated files, on a specific app or on all apps.
+	 * Will delete all output directories and call "clean" action.
 	 * @param appName null to clean all app outputs, or an app name to clean a specific app output.
 	 * @param keepNodeModules Will move node_modules to parcel cache directory, to allow faster next build.
+	 * @param commandParameters Parameters given to clean action in plugin middlewares
+	 * @param bypassPlugins Bypass plugins by name.
+	 * 			              All plugins have a default name, and you can add a name property into plugin's config if
+	 * 			              you have several of the same type.
 	 */
-	static async clean ( appName ?:string, keepNodeModules = false )
+	static async clean ( appName ?:string, keepNodeModules = false, commandParameters = {}, bypassPlugins?:string[] )
 	{
+		const cleanLoader = printLoaderLine(`Cleaning outputs ...`);
 		setLoaderScope( null );
-		let clearedPath = [];
+		let clearedPaths = [];
 
 		for ( const subAppName of SolidParcel.appNames ) {
 			if ( !appName || subAppName === appName ) {
@@ -677,14 +674,39 @@ export class SolidParcel
 				// Target app output and empty it if it exists
 				const dir = new Directory( SolidParcel._apps[ subAppName ].output );
 				if ( dir.exists() ) {
-					clearedPath.push( dir.path );
+					clearedPaths.push( dir.path );
 					dir.clean();
 				}
 
-				// Call clean middleware
-				await SolidParcel.callMiddleware( 'clean', null, subAppOptions );
+				// Call clean action
+				const command = { command: 'clean', parameters: commandParameters }
+				await SolidParcel.callMiddleware( 'action', command, subAppOptions, null, null, null, bypassPlugins );
 			}
 		}
-		return clearedPath;
+
+		cleanLoader(`Cleaned ${clearedPaths.length} director${clearedPaths.length > 1 ? 'ies' : 'y'}`, '🧹')
+		return clearedPaths;
+	}
+
+	// ------------------------------------------------------------------------- ACTIONS
+
+	/**
+	 * Call a plugin action on a specific app or on all apps.
+	 * @param commandName Command name of action. See command available in used plugins.
+	 * @param commandParameters Parameters given to this command.
+	 * @param appName null to call all app plugins, or an app name to cal a specific app plugins.
+	 * @param bypassPlugins Bypass plugins by name.
+	 * 			            All plugins have a default name, and you can add a name property into plugin's config if
+	 * 			            you have several of the same type.
+	 */
+	static async action ( commandName:string, commandParameters:object, appName:string, bypassPlugins?:string[] )
+	{
+		for ( const subAppName of SolidParcel.appNames ) {
+			if ( !appName || subAppName === appName ) {
+				const subAppOptions = SolidParcel._apps[ subAppName ];
+				const command = { command: commandName, parameters: commandParameters }
+				await SolidParcel.callMiddleware( 'action', command, subAppOptions, null, null, null, bypassPlugins );
+			}
+		}
 	}
 }

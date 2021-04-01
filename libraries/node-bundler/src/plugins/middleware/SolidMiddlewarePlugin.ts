@@ -1,5 +1,5 @@
-import { IBaseSolidPluginConfig, SolidPlugin } from "../../engine/SolidPlugin";
-import { IExtendedAppOptions, ISolidMiddleware, TBuildMode } from "../../engine/SolidParcel";
+import { IBaseSolidPluginConfig, ICommand, ISolidMiddleware, SolidPlugin } from "../../engine/SolidPlugin";
+import { IExtendedAppOptions, TBuildMode } from "../../engine/SolidParcel";
 
 // -----------------------------------------------------------------------------
 
@@ -9,7 +9,7 @@ const _defaultConfig:Partial<ISolidMiddlewarePluginConfig> = {
 	prepare: ( buildMode, appOptions ) => { },
 	beforeBuild: ( buildMode, appOptions, envProps, buildEvent, buildError ) => { },
 	afterBuild: ( buildMode, appOptions, envProps, buildEvent, buildError ) => { },
-	clean: ( appOptions ) => { },
+	action: ( command, appOptions ) => { },
 }
 
 // -----------------------------------------------------------------------------
@@ -32,7 +32,7 @@ export class SolidMiddlewarePlugin extends SolidPlugin <ISolidMiddlewarePluginCo
 		return this._config.afterBuild( buildMode, appOptions, envProps, buildEvent, buildError )
 	}
 
-	async clean ( appOptions?:IExtendedAppOptions ) {
-		return this._config.clean( appOptions );
+	async action ( command:ICommand, appOptions?:IExtendedAppOptions ) {
+		return this._config.action( command, appOptions );
 	}
 }

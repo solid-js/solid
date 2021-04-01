@@ -1,11 +1,30 @@
-import { IExtendedAppOptions, ISolidMiddleware, TBuildMode } from "./SolidParcel";
+import { IExtendedAppOptions, TBuildMode } from "./SolidParcel";
 
+// ----------------------------------------------------------------------------- STRUCT
+
+export type TMiddlewareType = "prepare"|"beforeBuild"|"afterBuild"|"action";
+
+export interface ICommand
+{
+	command   	:string
+	parameters 	:object
+}
+
+export interface ISolidMiddleware
+{
+	prepare ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions ) : Promise<any>|void|null
+	beforeBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) : Promise<any>|void|null
+	afterBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) : Promise<any>|void|null
+	action ( command:ICommand, appOptions?:IExtendedAppOptions ) : Promise<any>|void|null
+}
 
 export interface IBaseSolidPluginConfig
 {
 	// Custom plugin name
 	name	?:	string
 }
+
+// ----------------------------------------------------------------------------- EXCEPTION
 
 export class SolidPluginException extends Error
 {
@@ -22,13 +41,22 @@ export class SolidPluginException extends Error
 	}
 }
 
+// ----------------------------------------------------------------------------- SOLID PLUGIN CLASS
+
 export class SolidPlugin <C extends IBaseSolidPluginConfig = any> implements ISolidMiddleware
 {
+	// ------------------------------------------------------------------------- PROPERTIES
+
 	protected _config:C;
-	get config ():C { return this._config; }
+	get config():C
+	{
+		return this._config;
+	}
 
 	protected _name:string
 	get name () { return this._name; }
+
+	// ------------------------------------------------------------------------- INIT
 
 	constructor ( config:C )
 	{
@@ -39,8 +67,13 @@ export class SolidPlugin <C extends IBaseSolidPluginConfig = any> implements ISo
 
 	init () { }
 
+	// ------------------------------------------------------------------------- MIDDLEWARES
+
 	prepare ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions ) { }
-	beforeBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) {}
+
+	beforeBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) { }
+
 	afterBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) { }
-	clean ( appOptions?:IExtendedAppOptions ) {}
+
+	action ( command:ICommand, appOptions?:IExtendedAppOptions ) { }
 }
