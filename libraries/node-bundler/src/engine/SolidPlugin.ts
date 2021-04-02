@@ -1,4 +1,5 @@
 import { IExtendedAppOptions, TBuildMode } from "./SolidParcel";
+import { newLine, nicePrint } from "@solid-js/cli";
 
 // ----------------------------------------------------------------------------- STRUCT
 
@@ -15,7 +16,7 @@ export interface ISolidMiddleware
 	prepare ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions ) : Promise<any>|void|null
 	beforeBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) : Promise<any>|void|null
 	afterBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) : Promise<any>|void|null
-	action ( command:ICommand, appOptions?:IExtendedAppOptions ) : Promise<any>|void|null
+	action ( command:ICommand, appOptions?:IExtendedAppOptions ):Promise<any> | void | null
 }
 
 export interface IBaseSolidPluginConfig
@@ -48,10 +49,7 @@ export class SolidPlugin <C extends IBaseSolidPluginConfig = any> implements ISo
 	// ------------------------------------------------------------------------- PROPERTIES
 
 	protected _config:C;
-	get config():C
-	{
-		return this._config;
-	}
+	get config():C { return this._config; }
 
 	protected _name:string
 	get name () { return this._name; }
@@ -66,6 +64,12 @@ export class SolidPlugin <C extends IBaseSolidPluginConfig = any> implements ISo
 	}
 
 	init () { }
+
+	// ------------------------------------------------------------------------- ERROR
+
+	protected halt ( method:string, message:string, code = 1 ) {
+		nicePrint(`{b/r}${this.constructor.name}.${method} error : \n${message}`, { code })
+	}
 
 	// ------------------------------------------------------------------------- MIDDLEWARES
 

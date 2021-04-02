@@ -215,23 +215,16 @@ export class SolidParcel
 		const defaultOutput = `dist/public/static/${appName}/`;
 		const appOptions:IExtendedAppOptions = {
 			name: appName,
-
 			input: `src/${appName}/*.{ts,tsx}`,
 			output: defaultOutput,
-
 			appType: "web",
-
 			publicUrl: path.dirname( rawAppOptions.output ?? defaultOutput ),
-
 			hardWatch: false,
-
 			parcelLogLevel: null,
-
 			engines: {
 				browsers: "> 5%",
 				...rawAppOptions.engines
 			},
-
 			...rawAppOptions
 		};
 

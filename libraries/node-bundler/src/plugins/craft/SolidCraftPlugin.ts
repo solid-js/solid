@@ -1,9 +1,25 @@
 import { IBaseSolidPluginConfig, ICommand, SolidPlugin } from "../../engine/SolidPlugin";
 import { IExtendedAppOptions, SolidParcel } from "../../engine/SolidParcel";
 import { File } from "@solid-js/files"
-import { askList, CLICommands, nicePrint, printLoaderLine } from "@solid-js/cli";
+import { askList, CLICommands, printLoaderLine } from "@solid-js/cli";
 import { removeExtensions } from "@solid-js/core";
 const path = require('path')
+
+/**
+ * TODO : V1.1
+ * - Crafter file name can be in config
+ * - Better types in crafter.js file, how to do that ?
+ */
+
+/**
+ * TODO : V1.2
+ * - Add option to craft outside of package root ?
+ * - Create crafter repo with :
+ *    - Solid Preact
+ *    - Solid Yadl
+ *    - Solid Fastify
+ *    - Solid plate fields for WP ACF Field files ?
+ */
 
 // -----------------------------------------------------------------------------
 
@@ -25,6 +41,7 @@ interface ICrafterModuleInit
 	menu : {
 		[index:string] : string
 	}
+	_crafterPath ?:string
 }
 interface ICrafterModuleMethods
 {
@@ -50,14 +67,6 @@ export class SolidCraftPlugin extends SolidPlugin <ISolidCraftPluginConfig>
 	// List of available crafters
 	protected _crafters : { [name:string] : TCrafterModule };
 
-	// App options for current craft action
-	protected _appOptions : IExtendedAppOptions
-
-
-	protected error ( message:string, method = 'init', code = 1 ) {
-		nicePrint(`{b/r}SolidCraftPlugin.${method} error : \n${message}`, { code })
-	}
-
 	// ------------------------------------------------------------------------- INIT
 
 	init ()
@@ -68,7 +77,7 @@ export class SolidCraftPlugin extends SolidPlugin <ISolidCraftPluginConfig>
 
 		// No crafter paths
 		if ( !this._config.paths || this._config.paths.length == 0 )
-			this.error(`{r}Please add path(s) to crafter file(s).`)
+			this.halt('init', `{r}Please add path(s) to crafter file(s).`)
 
 		// Browse all crafters paths and register them
 		this._config.paths.map( craftPath => {
@@ -78,7 +87,7 @@ export class SolidCraftPlugin extends SolidPlugin <ISolidCraftPluginConfig>
 
 			// File not found
 			if ( craftFiles.length == 0 )
-				this.error(`{r}Crafter file {b/r}${ pathToCraftFile }{/}{r} not found.`)
+				this.halt('init', `{r}Crafter file {b/r}${ pathToCraftFile }{/}{r} not found.`)
 
 			// Path to crafter module (from root, for require)
 			const crafterModulePath = removeExtensions(path.join(process.cwd(), pathToCraftFile))
@@ -86,13 +95,16 @@ export class SolidCraftPlugin extends SolidPlugin <ISolidCraftPluginConfig>
 
 			// Check if we have a name
 			if ( typeof crafterModule.name !== 'string')
-				this.error(`{r}Crafter module {b/r}${ pathToCraftFile }{/}{r} invalid.
+				this.halt('init', `{r}Crafter module {b/r}${ pathToCraftFile }{/}{r} invalid.
 				{r}Missing {b/r}name{/}{r} export as string.`)
 
 			// Check if we have a menu
 			if ( typeof crafterModule.menu !== 'object')
-				this.error(`{r}Crafter module {b/r}${ pathToCraftFile }{/}{r} invalid.
+				this.halt('init', `{r}Crafter module {b/r}${ pathToCraftFile }{/}{r} invalid.
 				{r}Missing {b/r}menu{/}{r} export as an object.`)
+
+			// Save crafter directory so it can target templates relatively
+			crafterModule._crafterPath = path.dirname(pathToCraftFile)
 
 			// Register crafter by its name
 			this._crafters[ crafterModule.name ] = crafterModule;
@@ -137,29 +149,29 @@ export class SolidCraftPlugin extends SolidPlugin <ISolidCraftPluginConfig>
 		// Show crafter menu
 		const craftEntity = await askList('What do you want to craft ?', selectedCrafter.menu)
 
-		// Save app options in instance so crafter does not need to handle it
-		this._appOptions = appOptions
-		await selectedCrafter[ craftEntity[2] ]( this.craft, appOptions )
-		this._appOptions = null
+		// Thunk craft to add some parameters from this scope
+		const craftThunk = ( properties, files ) => {
+			this.craft( selectedCrafter._crafterPath, properties, files, appOptions )
+		}
+		await selectedCrafter[ craftEntity[2] ]( craftThunk, appOptions )
 	}
 
 	/**
 	 * Craft list of files from templates
+	 * @param crafterPath Path to crafter directory so it can load template relatively
 	 * @param properties Properties injected into template sources
 	 * @param files List of function which returns template source and generated file destination.
 	 * 				Template path starts from crafter file.
 	 * 				File destination starts from app packageRoot (@see IAppOptions doc)
 	 * @param appOptions App options of current crafted app.
 	 */
-	craft = async <G extends object> ( properties:G, files:( (p:G) => string[])[], appOptions?:IExtendedAppOptions ) =>
+	craft = async <G extends object> ( crafterPath:string, properties:G, files:( (p:G) => string[])[], appOptions?:IExtendedAppOptions ) =>
 	{
 		const generateLoader = printLoaderLine(`Generating files ...`)
 
 		// Get app options
 		if ( !appOptions )
-			appOptions = this._appOptions
-		if ( !appOptions )
-			this.error(`{r}AppOptions parameter missing`, 'craft')
+			this.halt('halt', `{r}AppOptions parameter missing`)
 
 		// Browse files to generate
 		const generatedFiles = []
@@ -170,15 +182,21 @@ export class SolidCraftPlugin extends SolidPlugin <ISolidCraftPluginConfig>
 
 			// Check if to path is not already existing
 			if ( File.find(to).length != 0 )
-				this.error(`File ${to} already exists`, 'craft')
+				this.halt('craft', `File ${to} already exists`)
+
+			// Target template file from crafter
+			const templateFile = new File( path.join(crafterPath, from) )
+			await templateFile.loadAsync()
+			if (!(await templateFile.existsAsync()))
+				this.halt('craft', `Template ${from} not found relatively to ${crafterPath}`)
 
 			// Template from path with properties and save it to to path
-			const templateFile = new File( from )
 			templateFile.template( properties )
-			// FIXME : Add option to craft outside of package root ?
 			await templateFile.saveAsync( path.join(appOptions.packageRoot, to) )
 			generatedFiles.push( to )
 		}
+
+		// Finished
 		const t = generatedFiles.length
 		generateLoader(`{g/b}${t} file${t > 1 ? 's' : ''} generated.`)
 		return generatedFiles;

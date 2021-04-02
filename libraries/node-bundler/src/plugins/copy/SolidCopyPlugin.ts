@@ -1,20 +1,41 @@
 import { IBaseSolidPluginConfig, SolidPlugin } from "../../engine/SolidPlugin";
+import { IExtendedAppOptions, TBuildMode } from "../../engine/SolidParcel";
+import { extractExtensions } from "@solid-js/core"
+import path from "path";
+import { Directory, File, FileFinder } from "@solid-js/files";
 
 // -----------------------------------------------------------------------------
+
+export const SolidCopyPlugin_defaultExtensionsToTemplate = [
+	'txt', 'json', 'yaml', 'template', 'js', 'php', 'html', 'css', 'htaccess', 'htpasswd'
+]
+
+// -----------------------------------------------------------------------------
+
+interface IFileCopy
+{
+	from		: string
+	to			?:string
+	template	?:boolean
+}
+
+type TFilePaths = (string | IFileCopy)[]
 
 interface ISolidCopyPluginConfig extends IBaseSolidPluginConfig
 {
-	[key:string] : string|{
-		from: string,
-		to: string
-	}
+	paths 							?:TFilePaths
+	additionalTemplateProperties	?:object
+	extensionsToTemplate			?:string[]
 }
 
 const _defaultConfig:Partial<ISolidCopyPluginConfig> = {
-
+	paths 							: [],
+	additionalTemplateProperties	: {},
+	extensionsToTemplate			: SolidCopyPlugin_defaultExtensionsToTemplate
 }
 
 // -----------------------------------------------------------------------------
+
 
 export class SolidCopyPlugin extends SolidPlugin <ISolidCopyPluginConfig>
 {
@@ -22,13 +43,74 @@ export class SolidCopyPlugin extends SolidPlugin <ISolidCopyPluginConfig>
 		return new SolidCopyPlugin({ name: 'copy', ..._defaultConfig, ...config })
 	}
 
-	beforeBuild ()
-	{
+	protected _fileCopies:IFileCopy[]
 
+	prepare ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions )
+	{
+		// Browse config
+		this._fileCopies = [];
+		this._config.paths.map( filePath => {
+			// Convert string paths to IFileCopy
+			let fileCopy:IFileCopy
+			if ( typeof filePath === 'string' )
+				fileCopy = {
+					from: filePath
+				}
+
+			// Or use IFileCopy from config
+			else
+				fileCopy = filePath as IFileCopy;
+
+			// Default destination is app output directory
+			if ( !fileCopy.to )
+				fileCopy.to = appOptions.output
+
+			// If dev didn't gave template instruction
+			if ( fileCopy.template === null || fileCopy.template === undefined )
+			{
+				// Get source file extensions
+				const extensions = extractExtensions(
+					path.basename(fileCopy.from).toLowerCase()
+				)
+
+				// If this is a "templatable" file
+				fileCopy.template = (
+					extensions.length >= 1
+					&& this._config.extensionsToTemplate.indexOf( extensions[0] ) !== -1
+				)
+			}
+
+			// Add to file copy list
+			this._fileCopies.push( fileCopy )
+		})
 	}
 
-	afterBuild ()
+	async beforeBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? )
 	{
+		// Browse every file / directory to copy
+		for ( const copy of this._fileCopies )
+		{
+			// Convert to file entity
+			const fileEntity = FileFinder.createEntityFromPath( copy.from )
 
+			// If it's a file to template
+			if ( fileEntity instanceof File && copy.template )
+			{
+				await fileEntity.loadAsync()
+				fileEntity.template({
+					...envProps,
+					...this._config.additionalTemplateProperties
+				})
+				await fileEntity.saveAsync( copy.to )
+				continue;
+			}
+
+			// Can't template a directory
+			else if ( fileEntity instanceof Directory && copy.template )
+				this.halt('beforeBuild', `{r}Directory can't be templated.`)
+
+			// File without template or directory
+			await fileEntity.copyToAsync( copy.to )
+		}
 	}
 }

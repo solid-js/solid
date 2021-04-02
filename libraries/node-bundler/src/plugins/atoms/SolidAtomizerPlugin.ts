@@ -1,26 +1,34 @@
 import { IBaseSolidPluginConfig, SolidPlugin } from "../../engine/SolidPlugin";
 import { File } from "@solid-js/files";
-import { nicePrint } from "@solid-js/cli";
+import { IExtendedAppOptions, TBuildMode } from "../../engine/SolidParcel";
+import { extractExtensions, removeExtensions } from "@solid-js/core";
+import { getChangedAssetsFromBuildEvent } from "../../engine/SolidUtils";
 const path = require('path')
+
+/**
+ * TODO v1.2
+ * - Build fails in dev mode if we remove an atom
+ */
 
 // -----------------------------------------------------------------------------
 
 interface ISolidAtomizerPluginConfig extends IBaseSolidPluginConfig
 {
-	path	:string|string[]
-	// mode	?:'eof'|'json'|'ts'
-
-	// TODO : Publish a .ts file with property list
+	paths			:string|string[]
+	generateTSFile 	?:boolean
 }
 
 const _defaultConfig:Partial<ISolidAtomizerPluginConfig> = {
 	// path	: 'src/app/0-atoms/atoms.module.less',
-	// mode	: 'eof'
+	generateTSFile: true
 }
 
 // -----------------------------------------------------------------------------
 
-let _config:ISolidAtomizerPluginConfig;
+// Min build duration in seconds, to avoid watch loops
+const _watchLoopTimeDelta = 2;
+
+// -----------------------------------------------------------------------------
 
 export class SolidAtomizerPlugin extends SolidPlugin <ISolidAtomizerPluginConfig>
 {
@@ -30,46 +38,88 @@ export class SolidAtomizerPlugin extends SolidPlugin <ISolidAtomizerPluginConfig
 
 	protected _paths:string[]
 
-	init ()
+	protected _previouslyUpdatedAtomFiles = {}
+
+	async init ()
 	{
 		this._paths = (
-			typeof this._config.path === 'string'
-			? [ this._config.path ]
-			: this._config.path
+			typeof this._config.paths === 'string'
+			? [ this._config.paths ]
+			: this._config.paths
 		)
 
 		// Check if atom paths are valid
 		this._paths.map( filePath => {
 			// File must exists
 			if ( File.find(filePath).length == 0 )
-				// TODO : Normalize plugin errors in SolidPlugin class
-				nicePrint(`{b/r}SolidAtomizerPlugin.init
-				Atom file ${filePath} not found.`, { code : 1 })
+				this.halt('init', `{r}Atom file ${filePath} not found.`)
 
 			// File have to be a .module.less file
-			const parts = path.basename( filePath ).toLowerCase().split('.')
-			if ( parts.length < 3 || parts[ parts.length - 1 ] != 'less' || parts[ parts.length - 2 ] != 'module' )
-				nicePrint(`{b/r}SolidAtomizerPlugin.init
-				Atom file must be a .module.less file.`, { code: 1 })
+			const extensions = extractExtensions(
+				path.basename( filePath ).toLowerCase()
+			)
+			if ( extensions.length < 2 || extensions[0] != 'less' || extensions[1] != 'module' )
+				this.halt('init', `{r}Atom file must be a .module.less file.`)
 		})
 	}
 
-	async beforeBuild ()
+	async prepare ()
 	{
-		for ( const filePath of this._paths )
-			await this.atomize( filePath )
+		// Atomize before build start to generate ts file
+		// which can be a coupled dependency in other project files
+		for ( let atomFilePath of this._paths )
+			await this.atomize( path.resolve( atomFilePath ) )
+	}
+
+	async beforeBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? )
+	{
+		// Only build on watch changes, first build was made in prepare
+		if ( !buildEvent ) return;
+
+		for ( let atomFilePath of this._paths )
+		{
+			atomFilePath = path.resolve( atomFilePath );
+
+			// Browse list of updated files
+			const changedAssets = getChangedAssetsFromBuildEvent( buildEvent )
+			for ( const asset of changedAssets )
+			{
+				// This atom file has changed
+				let assetFilePath = path.resolve( asset.filePath )
+				if ( assetFilePath != atomFilePath ) continue;
+
+				// Atom file has been updated by atomizer
+				if ( atomFilePath in this._previouslyUpdatedAtomFiles )
+				{
+					// If last atomizer update was no that long ago
+					// We need to prevent atomizing to avoid watch loop
+					const deltaTime = Date.now() - this._previouslyUpdatedAtomFiles[ atomFilePath ]
+					if ( deltaTime < _watchLoopTimeDelta * 1000 ) {
+						// Here break and do not continue because we do not want
+						// loop if typescript file changed also
+						break;
+					}
+				}
+
+				// Atomize file and remember time to detect dev changes vs atomizer changes
+				this._previouslyUpdatedAtomFiles[ atomFilePath ] = Date.now()
+				await this.atomize( atomFilePath )
+			}
+		}
 	}
 
 	async atomize ( filePath:string )
 	{
+		// console.log('Atomize', filePath);
+
 		// Load atoms module file
-		const file = new File( filePath );
-		await file.loadAsync()
+		const atomLessFile = new File( filePath );
+		await atomLessFile.loadAsync()
 
 		// Read file as text and split lines
 		// Remove extra spaces
 		const lines = (
-			(file.content() as string).split("\n" )
+			(atomLessFile.content() as string).split("\n" )
 			.map( line => line.trim() )
 		);
 
@@ -92,8 +142,8 @@ export class SolidAtomizerPlugin extends SolidPlugin <ISolidAtomizerPluginConfig
 
 		// Get pre-existing export statement line number
 		let exportStartLine = lines
-		.map( (line, i) => (line.indexOf(':export') !== -1 ? i : -1) )
-		.filter( l => (l !== -1) )[0];
+			.map( (line, i) => (line.indexOf(':export') !== -1 ? i : -1) )
+			.filter( l => (l !== -1) )[0];
 
 		let exportEndLine = -1;
 		if ( exportStartLine == null )
@@ -119,7 +169,7 @@ export class SolidAtomizerPlugin extends SolidPlugin <ISolidAtomizerPluginConfig
 		// Generate export statement with all variables and a warning comment
 		const exportStatement = [
 			'// Do not edit code bellow this line.',
-			'// This statement is build automated.',
+			'// This statement is automated.',
 			':export {',
 			...variables.map( parts => {
 				return `	${parts[0].substr(1, parts[0].length)}: ${parts[0]};`;
@@ -147,7 +197,31 @@ export class SolidAtomizerPlugin extends SolidPlugin <ISolidAtomizerPluginConfig
 		});
 
 		// Save new lines to atom files
-		file.content( newLines.join("\n") );
-		await file.save();
+		atomLessFile.content( newLines.join("\n") );
+		await atomLessFile.save();
+
+		if ( this._config.generateTSFile )
+		{
+			// Get property names and generated ts file
+			const properties = variables.map( variableSet => variableSet[0].substr(1, variableSet[0].length) )
+			await this.generateTSFile( properties, filePath )
+		}
+	}
+
+	async generateTSFile ( properties:string[], atomFilePath:string )
+	{
+		// Generate typescript file path
+		let typescriptFileName = removeExtensions( path.basename( atomFilePath ).toLowerCase(), 2 )
+		typescriptFileName += '.ts'
+		const typescriptFilePath = path.join(path.dirname( atomFilePath), typescriptFileName);
+
+		// Template this file and save it along atom file
+		const typescriptFile = new File( typescriptFilePath )
+		typescriptFile.content( require('./atoms-template') )
+		typescriptFile.template({
+			atomFilePath: './'+path.basename(atomFilePath),
+			properties: properties.map( p => `'${p}'`).join('|')
+		})
+		typescriptFile.save()
 	}
 }
