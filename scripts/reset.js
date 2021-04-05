@@ -12,9 +12,11 @@ autoTargetLibrary(false, async (libraryName) =>
 {
 	const libraryPath = path.join( 'libraries', libraryName );
 	const nodeModulesPath = path.join(libraryPath, 'node_modules');
+	const packageLockPath = path.join(libraryPath, 'package-lock.json');
 
 	const cleanTask = task(`Re-installing dependencies ${libraryName}`);
 	rimraf.sync( nodeModulesPath );
+	rimraf.sync( packageLockPath );
 	execSync(`npm i`, 0, { cwd: libraryPath });
 	cleanTask.success();
 });
