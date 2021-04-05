@@ -1,6 +1,6 @@
 {
 	"name": "@solid-js/bundler",
-	"version": "3.0.1",
+	"version": "3.0.2",
 	"description": "Parcel 2 based bundler wrapper for Solid JS",
 	"main": "dist/_index.js",
 	"module": "dist/_index.mjs",
@@ -18,6 +18,9 @@
 	"keywords": [
 		"typescript"
 	],
+	"parcelDependencies": {
+		"@parcel/reporter-cli": "2.0.0-beta.2"
+	},
 	"devDependencies": {
 		"@parcel/reporter-cli": "2.0.0-beta.2",
 		"@parcel/config-default": "2.0.0-beta.2",
