@@ -1,39 +1,37 @@
 import { ICommand, SolidPlugin, SolidPluginException, TMiddlewareType } from "./SolidPlugin";
 import Parcel from "@parcel/core";
 import {
-	nicePrint,
-	newLine,
-	clearPrintedLoaderLines,
-	printLoaderLine,
-	setLoaderScope,
-	execAsync
+	nicePrint, newLine, printLoaderLine, setLoaderScope, execAsync
 } from "@solid-js/cli";
 import { Directory, File, FileFinder } from "@solid-js/files"
 import { delay, noop } from "@solid-js/core"
 import path from "path";
-import * as logger from "@parcel/logger"
-
-// ----------------------------------------------------------------------------- CONSOLE UNPATCHER
-
-const originalConsole = {
-	log: console.log,
-	info: console.info,
-	error: console.error,
-	debug: console.debug,
-	warn: console.warn,
-}
-const revertPatchedConsole = () => {
-	console.log = originalConsole.log;
-	console.info = originalConsole.info;
-	console.error = originalConsole.error;
-	console.debug = originalConsole.debug;
-	console.warn = originalConsole.warn;
-}
 
 // ----------------------------------------------------------------------------- CONFIG
 
 const parcelCacheDirectoryName = '.parcel-cache';
 const solidCacheDirectoryName = path.join(parcelCacheDirectoryName, '.solid-cache');
+
+// ----------------------------------------------------------------------------- UNHANDLED REJECTIONS
+
+process.on('unhandledRejection', async (e) => {
+	nicePrint(`{b/r}Unhandled rejection`)
+	if ('diagnostics' in e) {
+		for (const diagnostic of (e as any)['diagnostics']) {
+			// console.log(diagnostic)
+			const a = await require("@parcel/utils").prettyDiagnostic( diagnostic )
+			// console.log(a)
+			process.stdout.write(a.message);
+			process.stdout.write(a.stack);
+			console.log('')
+			process.stdout.write(a.codeframe);
+			console.log('')
+		}
+	}
+	else console.log(e)
+
+	process.exit(1)
+})
 
 // ----------------------------------------------------------------------------- STRUCT
 
@@ -78,6 +76,8 @@ export interface IAppOptions
 	 * Public URL is where assets are loaded from source of execution.
 	 * For example, if app is starting in /my-app/ and assets are in sub-folder named /assets/
 	 * publicURL can be /my-app/assets/ for absolute based targeting, or ./assets/ for relative targeting.
+	 * Default is './', to load resources relatively to main file.
+	 * Pass 'null' to use Parcel's default.
 	 */
 	publicUrl 			?:string
 
@@ -218,7 +218,8 @@ export class SolidParcel
 			input: `src/${appName}/*.{ts,tsx}`,
 			output: defaultOutput,
 			appType: "web",
-			publicUrl: path.dirname( rawAppOptions.output ?? defaultOutput ),
+			// publicUrl: path.dirname( rawAppOptions.output ?? defaultOutput ),
+			publicUrl: rawAppOptions.publicUrl ?? './',
 			hardWatch: false,
 			parcelLogLevel: null,
 			engines: {
@@ -414,11 +415,15 @@ export class SolidParcel
 			entries: appOptions.input,
 			entryRoot: appOptions.sourcesRoot,
 
+			// TODO : Add option ? If we forget something it will crash or behave wrongly
+			defaultConfig: '.parcelrc',
+			// defaultConfig: require.resolve("@parcel/config-default"),
+
 			targets: {
 				// https://v2.parceljs.org/plugin-system/api/#PackageTargetDescriptor
 				app: {
 					// Optimization and dev options
-					minify: isProd && isWeb,
+					optimize: isProd && isWeb,
 					sourceMap: !isProd,
 					scopeHoist: true,
 
@@ -440,30 +445,22 @@ export class SolidParcel
 			},
 
 			env: envProps,
-
-			disableCache: false,
-			shouldDisableCache: false,
-
 			hmrOptions,
+
+			shouldDisableCache: false, // TODO : Add option ?
+			shouldAutoInstall: false, // TODO : Add option
 
 			// --log-level (none/error/warn/info/verbose)
 			logLevel: appOptions.parcelLogLevel,
-
-			patchConsole: false, // NOTE : Does not seems to work
 			shouldPatchConsole: false,
 
-			autoInstall: true,
-			shouldAutoInstall: true, // NOTE : This one ? Does not seems to work
-
 			mode: isProd ? 'production' : 'development',
-			minify: isProd && isWeb,
-			sourceMaps: !isProd
-		});
 
-		// Unpatch console each time we setup a new parcel project
-		// @ts-ignore
-		logger.unpatchConsole(); // NOTE : Does not work ?
-		revertPatchedConsole();
+			additionalReporters: [
+				{ packageName: '@parcel/reporter-cli', resolveFrom: __filename },
+				// { packageName: '@parcel/reporter-dev-server', resolveFrom: __filename }
+			]
+		});
 
 		// Before build middleware
 		await SolidParcel.callMiddleware( "beforeBuild", buildMode, appOptions, envProps, null, null, bypassPlugins );
@@ -503,11 +500,6 @@ export class SolidParcel
 			let count = 0;
 			const watcher = await bundler.watch( async (buildError, buildEvent) =>
 			{
-				//process.stdout.write(`\nWATCHER EVENT ${appOptions.name} ${count} \n`);
-				// if (count > 0) {
-				// 	console.log(buildEvent)
-				// }
-
 				if ( count == 0 )
 					stopBuildProgress();
 

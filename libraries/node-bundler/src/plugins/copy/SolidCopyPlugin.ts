@@ -4,13 +4,27 @@ import { extractExtensions } from "@solid-js/core"
 import path from "path";
 import { Directory, File, FileFinder } from "@solid-js/files";
 
-// -----------------------------------------------------------------------------
+/**
+ * TODO v1.2
+ * - Possibilité d'avoir les envs dans les chemins de fichier
+ *     ex : input: 'server-config/{{env}}.htaccess'
+ *     Peut-être un truc plus functional avec e => 'server-config/${e.name}.htaccess'
+ *     Comme ça on peut faire des conditions plus complexe
+ */
 
+// ----------------------------------------------------------------------------- TEMPLATE EXTENSIONS
+
+/**
+ * Here we list all text based file extensions which can be templated.
+ * We need this list to binary copy non-templatable files.
+ */
 export const SolidCopyPlugin_defaultExtensionsToTemplate = [
-	'txt', 'json', 'yaml', 'template', 'js', 'php', 'html', 'css', 'htaccess', 'htpasswd'
+	'txt', 'json', 'yaml', 'template', 'js', 'php', 'html', 'css',
+	'htaccess', 'htpasswd', 'csv', 'ts', 'tsx', 'md', 'gitignore',
+	'sh', // ...
 ]
 
-// -----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------- STRUCT
 
 interface IFileCopy
 {
@@ -19,11 +33,9 @@ interface IFileCopy
 	template	?:boolean
 }
 
-type TFilePaths = (string | IFileCopy)[]
-
 interface ISolidCopyPluginConfig extends IBaseSolidPluginConfig
 {
-	paths 							?:TFilePaths
+	paths 							?:(string | IFileCopy)[]
 	additionalTemplateProperties	?:object
 	extensionsToTemplate			?:string[]
 }

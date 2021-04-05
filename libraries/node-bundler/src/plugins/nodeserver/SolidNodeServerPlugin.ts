@@ -4,6 +4,12 @@ import { ChildProcess, exec } from 'child_process'
 import { delay } from '@solid-js/core'
 import { generateLoaderLineTemplate, onProcessKilled, printLine, printLoaderLine } from '@solid-js/cli'
 
+/**
+ * TODO : V1.2
+ * - Patcher le process qui reste ouvert parfois quand ça plante
+ * - Faire en sorte que ça loop pas à l'infini s'il y a un soucis dans le server
+ */
+
 // -----------------------------------------------------------------------------
 
 type TStdStreamType = 'pipe'|'nice'|'none'|false

@@ -2,6 +2,10 @@ import { IBaseSolidPluginConfig, SolidPlugin } from "../../engine/SolidPlugin";
 import { IAppOptions, IExtendedAppOptions, TBuildMode } from "../../engine/SolidParcel";
 import * as path from "path";
 
+/**
+ * TODO V1
+ */
+
 // -----------------------------------------------------------------------------
 
 interface ISolidManifestPluginConfig extends IBaseSolidPluginConfig

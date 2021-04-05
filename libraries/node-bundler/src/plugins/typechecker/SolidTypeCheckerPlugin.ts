@@ -1,26 +1,30 @@
 import { IBaseSolidPluginConfig, SolidPlugin, SolidPluginException } from "../../engine/SolidPlugin";
 import { IExtendedAppOptions, TBuildMode } from "../../engine/SolidParcel";
 import { ChildProcess, exec } from "child_process";
-import { printLoaderLine } from "@solid-js/cli";
-import { delay, untab } from "@solid-js/core";
-import { File, FileFinder } from "@solid-js/files";
+import { newLine, nicePrint, printLoaderLine } from "@solid-js/cli";
+import { untab } from "@solid-js/core";
+import { File } from "@solid-js/files";
 import path from "path";
+import { getBatteryLevel } from "../../engine/SolidUtils";
 
 // -----------------------------------------------------------------------------
 
 interface ISolidTypeCheckerPluginConfig extends IBaseSolidPluginConfig {
 
-	sounds 		?: "full"|"always"|"errors"|"none"|boolean
+	sounds 				?: "all"|"errors"|"none"|boolean
 
-	frequency 	?: number
+	checkBuildMode 		?: 'dev'|'production'|'both'
 
-	// TODO : Check laptop on battery and disable type check
-	// frequency : 'auto'
+	// frequency 			?: number
+
+	batteryThreshold	?:number|'ignore'|boolean
 }
 
 const _defaultConfig:Partial<ISolidTypeCheckerPluginConfig> = {
-	sounds 		: true,
-	frequency 	: 1
+	sounds 				: true,
+	// frequency 			: 0,
+	checkBuildMode		: 'both',
+	batteryThreshold	: 90
 }
 
 // -----------------------------------------------------------------------------
@@ -37,6 +41,8 @@ export class SolidTypeCheckerPlugin extends SolidPlugin <ISolidTypeCheckerPlugin
 	protected _checkingLoader		:any;
 
 	protected _projectRoot			:string;
+
+	protected _lastDevBuildState	:'success'|'fail'|'unknown' = 'unknown'
 
 	protected initProjectRoot ( appOptions:IExtendedAppOptions )
 	{
@@ -80,8 +86,6 @@ export class SolidTypeCheckerPlugin extends SolidPlugin <ISolidTypeCheckerPlugin
 			this._checkingLoader && this._checkingLoader();
 		}
 
-		// TODO : Implement frequency check
-
 		// Start typechecking command with tsc
 		this._checkingLoader = printLoaderLine('Checking typescript ...');
 		const command = `./node_modules/typescript/bin/tsc -p ${this._projectRoot} --noEmit --allowUnreachableCode --incremental --pretty`
@@ -94,25 +98,42 @@ export class SolidTypeCheckerPlugin extends SolidPlugin <ISolidTypeCheckerPlugin
 		this._currentChecker.stdout.on('data', d => outBuffer += d )
 		this._currentChecker.stderr.on('data', d => errBuffer += d )
 
+		const { sounds } = this._config
+		const isMac = process.platform == 'darwin'
+
 		// Type check is finished
 		this._currentChecker.once('exit', ( code ) => {
 			this._currentChecker.kill();
 
 			// Success
 			if ( code === 0 ) {
-				// TODO : Sound
-				this._checkingLoader('Typescript validated', '👌')
+				// Play success sound on mac if state changed
+				if ( buildMode == 'dev' && isMac && (sounds == 'all' || sounds === true) && this._lastDevBuildState != 'success') {
+					// exec(`afplay /System/Library/Sounds/Tink.aiff`)
+					// exec(`afplay /System/Library/Sounds/Morse.aiff`)
+					exec(`afplay /System/Library/Sounds/Ping.aiff`)
+				}
+
+				this._lastDevBuildState = 'success'
+				this._checkingLoader('{b/g}Typescript validated', '👌')
 				resolve();
 			}
 
 			// Fail
 			else {
+				if ( buildMode == 'dev' && isMac && (sounds == 'all' || sounds == 'errors' || sounds === true) ) {
+					// exec(`afplay /System/Library/Sounds/Basso.aiff`)
+					exec(`afplay /System/Library/Sounds/Sosumi.aiff`)
+				}
+
+				this._lastDevBuildState = 'fail'
+				this._checkingLoader('Typescript error', 'error');
+				newLine()
+
 				// Pipe buffers to CLI
 				process.stdout.write( outBuffer );
 				process.stderr.write( errBuffer );
 
-				// TODO : Sound
-				this._checkingLoader('Typescript error', 'error');
 				buildMode == 'production' ? reject() : resolve( new SolidPluginException() );
 			}
 
@@ -124,13 +145,34 @@ export class SolidTypeCheckerPlugin extends SolidPlugin <ISolidTypeCheckerPlugin
 
 	async beforeBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) {
 
-		if ( buildMode === 'production' )
-			await this.typeCheck( buildMode, appOptions );
+		const { checkBuildMode } = this._config
+		if ( buildMode === 'production' && (checkBuildMode == 'both' || checkBuildMode == 'production') ) {
+			try {
+				await this.typeCheck( buildMode, appOptions );
+			}
+			catch (e) {
+				process.exit(1)
+			}
+		}
 	}
 
 	async afterBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) {
-		// TODO : Optimisation, only check changed file from buildEvent;
-		if ( buildMode === 'dev')
+		// TODO : Optimisation, only check changed file from buildEvent if possible
+		const { checkBuildMode } = this._config
+		if ( buildMode === 'dev' && (checkBuildMode == 'both' || checkBuildMode == 'dev') )
+		{
+			// Check battery level and skip type check if not enough battery
+			if ( this._config.batteryThreshold != 'ignore' && this._config.batteryThreshold !== false ) {
+				const batteryPercentage = await getBatteryLevel()
+				if ( batteryPercentage < (this._config.batteryThreshold ?? _defaultConfig.batteryThreshold) ) {
+					nicePrint(`{d}Running on battery (${batteryPercentage}% < ${this._config.batteryThreshold}%), skipping type check.`)
+					return;
+				}
+			}
+
+			// TODO : Frequency skip
+
 			await this.typeCheck( buildMode, appOptions );
+		}
 	}
 }

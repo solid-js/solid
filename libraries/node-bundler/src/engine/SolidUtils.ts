@@ -10,3 +10,26 @@ export function getChangedAssetsFromBuildEvent ( buildEvent )
 		assetPaths.push( asset )
 	return assetPaths
 }
+
+
+// TODO -> To node core or stuff like that
+export const getBatteryLevel = () => new Promise( resolve => {
+	const { platform } = process
+	const _commands = {
+		// TODO : TO Test
+		'linux': 'upower -i /org/freedesktop/UPower/devices/battery_BAT0 | grep -E "state|time to empty|to full|percentage"',
+		'darwin': 'pmset -g batt | egrep "([0-9]+\%).*" -o',
+		// TODO : To test
+		'win32': 'WMIC Path Win32_Battery',
+	}
+
+	if (!(platform in _commands))
+		return resolve( 101 )
+
+	require('child_process').exec(_commands[platform], (err, stdout, stderr) => {
+		if ( typeof stdout === 'string' ) {
+			const percentage = parseFloat(stdout.split('%')[0])
+			resolve( percentage )
+		}
+	});
+});
