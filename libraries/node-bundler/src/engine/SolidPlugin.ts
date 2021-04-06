@@ -68,7 +68,8 @@ export class SolidPlugin <C extends IBaseSolidPluginConfig = any> implements ISo
 	// ------------------------------------------------------------------------- ERROR
 
 	protected halt ( method:string, message:string, code = 1 ) {
-		nicePrint(`{b/r}${this.constructor.name}.${method} error : \n${message}`, { code })
+		// FIXME : Add app name if possible
+		nicePrint(`{b/r}${this.constructor.name}.${method} {${this._config.name}} error : \n${message}`, { code })
 	}
 
 	// ------------------------------------------------------------------------- MIDDLEWARES

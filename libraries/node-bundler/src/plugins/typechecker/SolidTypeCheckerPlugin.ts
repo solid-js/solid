@@ -1,13 +1,18 @@
-import { IBaseSolidPluginConfig, SolidPlugin, SolidPluginException } from "../../engine/SolidPlugin";
+import { IBaseSolidPluginConfig, ICommand, SolidPlugin, SolidPluginException } from "../../engine/SolidPlugin";
 import { IExtendedAppOptions, TBuildMode } from "../../engine/SolidParcel";
 import { ChildProcess, exec } from "child_process";
 import { newLine, nicePrint, printLoaderLine } from "@solid-js/cli";
-import { untab } from "@solid-js/core";
+import { delay, untab } from "@solid-js/core";
 import { File } from "@solid-js/files";
 import path from "path";
 import { getBatteryLevel } from "../../engine/SolidUtils";
 
-// -----------------------------------------------------------------------------
+/**
+ * TODO v1.2 :
+ * - Frequency check
+ */
+
+// ----------------------------------------------------------------------------- STRUCT
 
 interface ISolidTypeCheckerPluginConfig extends IBaseSolidPluginConfig {
 
@@ -27,7 +32,22 @@ const _defaultConfig:Partial<ISolidTypeCheckerPluginConfig> = {
 	batteryThreshold	: 90
 }
 
-// -----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------- CONFIG
+
+const isMac = process.platform == 'darwin'
+
+const _sounds = {
+	'success' 	: 'Ping', 	// Tink / Morse
+	'fail' 		: 'Sosumi', // Basso
+}
+
+function playSound ( type:string )
+{
+	if ( !isMac ) return
+	exec(`afplay /System/Library/Sounds/${_sounds[type]}.aiff`)
+}
+
+// ----------------------------------------------------------------------------- PLUGIN
 
 export class SolidTypeCheckerPlugin extends SolidPlugin <ISolidTypeCheckerPluginConfig>
 {
@@ -35,23 +55,23 @@ export class SolidTypeCheckerPlugin extends SolidPlugin <ISolidTypeCheckerPlugin
 		return new SolidTypeCheckerPlugin({ name: 'typechecker', ..._defaultConfig, ...config })
 	}
 
-	protected _buildIndex 			= 0;
+	// protected _buildIndex 			= 0;
 
 	protected _currentChecker		:ChildProcess;
 	protected _checkingLoader		:any;
 
 	protected _projectRoot			:string;
 
-	protected _lastDevBuildState	:'success'|'fail'|'unknown' = 'unknown'
+	protected _lastDevBuildState	:'success'|'fail'|'unknown' = 'success'
 
 	protected initProjectRoot ( appOptions:IExtendedAppOptions )
 	{
 		// Target tsconfig.json at project's root
 		this._projectRoot = path.join(appOptions.packageRoot, 'tsconfig.json');
-
-		// Check is file exists
 		const projectTsConfigFile = new File( this._projectRoot );
-		if ( projectTsConfigFile.exists() ) return;
+
+		// Target relative source route
+		const relativeSourceRoot = path.relative( appOptions.packageRoot, appOptions.sourcesRoot )
 
 		// Compte parent relative to root tsconfig.json and write tsconfig.json file
 		const relative = path.relative( path.join(this._projectRoot, '../'), './');
@@ -59,26 +79,23 @@ export class SolidTypeCheckerPlugin extends SolidPlugin <ISolidTypeCheckerPlugin
 			{
 			  "extends": "${relative}/tsconfig.json",
 			  "include": [
-				"./**/*.ts",
-				"./**/*.tsx",
+			    "./**/*.ts",
+			    "./**/*.tsx",
 			  ],
 			  "exclude" : [
-			  	"${relative}/node_modules"
+			    "${relative}/node_modules",
+			    "./node_modules",
 			  ],
 			  "compilerOptions" : {
-				"rootDir": "./",
-				"baseUrl": "./"
+			    "rootDir": "${relativeSourceRoot}",
+			    "baseUrl": "./"
 			  }
 			}
 		`, 3));
-		projectTsConfigFile.save();
+		projectTsConfigFile.saveAsync();
 	}
 
-	protected typeCheck = ( buildMode:TBuildMode, appOptions:IExtendedAppOptions ) => new Promise<void|SolidPluginException>( (resolve, reject) => {
-
-		// Init project root
-		if ( !this._projectRoot )
-			this.initProjectRoot( appOptions );
+	protected typeCheck = ( buildMode:TBuildMode, appOptions:IExtendedAppOptions ) => new Promise<void|SolidPluginException>( async (resolve, reject) => {
 
 		// Kill already running type checker
 		if ( this._currentChecker ) {
@@ -98,36 +115,41 @@ export class SolidTypeCheckerPlugin extends SolidPlugin <ISolidTypeCheckerPlugin
 		this._currentChecker.stdout.on('data', d => outBuffer += d )
 		this._currentChecker.stderr.on('data', d => errBuffer += d )
 
-		const { sounds } = this._config
-		const isMac = process.platform == 'darwin'
-
 		// Type check is finished
-		this._currentChecker.once('exit', ( code ) => {
-			this._currentChecker.kill();
+		this._currentChecker.once('exit', async ( code ) => {
+			// Dispose
+			this._currentChecker.kill()
+			this._currentChecker.removeAllListeners()
+
+			// Killed by code, do not continue
+			if ( code === null)
+				return;
+
+			const { sounds } = this._config
 
 			// Success
-			if ( code === 0 ) {
+			if ( code === 0 )
+			{
 				// Play success sound on mac if state changed
-				if ( buildMode == 'dev' && isMac && (sounds == 'all' || sounds === true) && this._lastDevBuildState != 'success') {
-					// exec(`afplay /System/Library/Sounds/Tink.aiff`)
-					// exec(`afplay /System/Library/Sounds/Morse.aiff`)
-					exec(`afplay /System/Library/Sounds/Ping.aiff`)
-				}
+				if ( buildMode == 'dev' && (sounds == 'all' || sounds === true) && this._lastDevBuildState != 'success')
+					playSound('success')
 
+				// Confirm success state
 				this._lastDevBuildState = 'success'
 				this._checkingLoader('{b/g}Typescript validated', '👌')
 				resolve();
 			}
 
 			// Fail
-			else {
-				if ( buildMode == 'dev' && isMac && (sounds == 'all' || sounds == 'errors' || sounds === true) ) {
-					// exec(`afplay /System/Library/Sounds/Basso.aiff`)
-					exec(`afplay /System/Library/Sounds/Sosumi.aiff`)
-				}
+			else
+			{
+				// Play error sound on mac if state changed
+				if ( buildMode == 'dev' && (sounds == 'all' || sounds == 'errors' || sounds === true) )
+					playSound('fail')
 
+				// Confirm fail state
 				this._lastDevBuildState = 'fail'
-				this._checkingLoader('Typescript error', 'error');
+				this._checkingLoader('Typescript error ' + code, 'error');
 				newLine()
 
 				// Pipe buffers to CLI
@@ -143,8 +165,15 @@ export class SolidTypeCheckerPlugin extends SolidPlugin <ISolidTypeCheckerPlugin
 		})
 	});
 
-	async beforeBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) {
+	async prepare ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions )
+	{
+		// Init project root tsconfig now to avoid dealing with watch loops
+		// ( json file creation causing a new build )
+		this.initProjectRoot( appOptions );
+	}
 
+	async beforeBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) {
+		// In production, we check code before building step
 		const { checkBuildMode } = this._config
 		if ( buildMode === 'production' && (checkBuildMode == 'both' || checkBuildMode == 'production') ) {
 			try {
@@ -157,6 +186,7 @@ export class SolidTypeCheckerPlugin extends SolidPlugin <ISolidTypeCheckerPlugin
 	}
 
 	async afterBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) {
+		// In dev mode, we check code after each build (first build and watch triggers)
 		// TODO : Optimisation, only check changed file from buildEvent if possible
 		const { checkBuildMode } = this._config
 		if ( buildMode === 'dev' && (checkBuildMode == 'both' || checkBuildMode == 'dev') )
@@ -173,6 +203,15 @@ export class SolidTypeCheckerPlugin extends SolidPlugin <ISolidTypeCheckerPlugin
 			// TODO : Frequency skip
 
 			await this.typeCheck( buildMode, appOptions );
+		}
+	}
+
+	async action ( command:ICommand, appOptions?:IExtendedAppOptions )
+	{
+		// Remove generated tsconfig files on clean action
+		if ( command.command === 'clean' ) {
+			new File( path.join(appOptions.packageRoot, 'tsconfig.json') ).remove();
+			new File( path.join(appOptions.packageRoot, 'tsconfig.tsbuildinfo') ).remove();
 		}
 	}
 }

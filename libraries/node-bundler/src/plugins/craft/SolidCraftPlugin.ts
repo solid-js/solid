@@ -165,7 +165,7 @@ export class SolidCraftPlugin extends SolidPlugin <ISolidCraftPluginConfig>
 	 * 				File destination starts from app packageRoot (@see IAppOptions doc)
 	 * @param appOptions App options of current crafted app.
 	 */
-	craft = async <G extends object> ( crafterPath:string, properties:G, files:( (p:G) => string[])[], appOptions?:IExtendedAppOptions ) =>
+	craft = async <G extends object> ( crafterPath:string, properties:G, files:( (p:G, crafterPath?:string) => string[]|Promise<any>|void)[], appOptions?:IExtendedAppOptions ) =>
 	{
 		const generateLoader = printLoaderLine(`Generating files ...`)
 
@@ -177,8 +177,24 @@ export class SolidCraftPlugin extends SolidPlugin <ISolidCraftPluginConfig>
 		const generatedFiles = []
 		for ( const file of files )
 		{
+			// Execute crafter file
+			const fileReturn = await file( properties, crafterPath )
+
+			// Check return type, if its not a tuple
+			if (
+				// Void
+				!fileReturn
+				// Promise
+				|| fileReturn instanceof Promise
+				// Array but not a tuple
+				|| (Array.isArray(fileReturn) && fileReturn.length != 2)
+			) {
+				generatedFiles.push('')
+				continue;
+			}
+
 			// Get from path and to path
-			const [ from, to ] = await file( properties )
+			const [ from, to ] = fileReturn
 
 			// Check if to path is not already existing
 			if ( File.find(to).length != 0 )

@@ -5,11 +5,13 @@ import path from "path";
 import { Directory, File, FileFinder } from "@solid-js/files";
 
 /**
- * TODO v1.2
+ * TODO v1.3
  * - Possibilité d'avoir les envs dans les chemins de fichier
  *     ex : input: 'server-config/{{env}}.htaccess'
  *     Peut-être un truc plus functional avec e => 'server-config/${e.name}.htaccess'
  *     Comme ça on peut faire des conditions plus complexe
+ * - Watch !
+ *     Créer un watch dans utils ou utiliser celui de parcel
  */
 
 // ----------------------------------------------------------------------------- TEMPLATE EXTENSIONS
@@ -90,6 +92,17 @@ export class SolidCopyPlugin extends SolidPlugin <ISolidCopyPluginConfig>
 					extensions.length >= 1
 					&& this._config.extensionsToTemplate.indexOf( extensions[0] ) !== -1
 				)
+			}
+
+			// Expand if we detect a globstar
+			if ( fileCopy.from.indexOf('*') !== -1 ) {
+				FileFinder.list( fileCopy.from ).map( filePath => {
+					this._fileCopies.push({
+						...fileCopy,
+						from: filePath
+					})
+				})
+				return;
 			}
 
 			// Add to file copy list
