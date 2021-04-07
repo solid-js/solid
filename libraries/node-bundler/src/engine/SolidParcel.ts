@@ -458,7 +458,7 @@ export class SolidParcel
 
 			additionalReporters: [
 				{ packageName: '@parcel/reporter-cli', resolveFrom: __filename },
-				// { packageName: '@parcel/reporter-dev-server', resolveFrom: __filename }
+				{ packageName: '@parcel/reporter-dev-server', resolveFrom: __filename }
 			]
 		});
 

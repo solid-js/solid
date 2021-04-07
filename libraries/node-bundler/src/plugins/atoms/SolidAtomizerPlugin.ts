@@ -1,8 +1,9 @@
 import { IBaseSolidPluginConfig, SolidPlugin } from "../../engine/SolidPlugin";
 import { File } from "@solid-js/files";
 import { IExtendedAppOptions, TBuildMode } from "../../engine/SolidParcel";
-import { extractExtensions, removeExtensions } from "@solid-js/core";
+import { delay, extractExtensions, removeExtensions } from "@solid-js/core";
 import { getChangedAssetsFromBuildEvent } from "../../engine/SolidUtils";
+import { printLoaderLine } from "@solid-js/cli";
 const path = require('path')
 
 /**
@@ -26,7 +27,7 @@ const _defaultConfig:Partial<ISolidAtomizerPluginConfig> = {
 // -----------------------------------------------------------------------------
 
 // Min build duration in seconds, to avoid watch loops
-const _watchLoopTimeDelta = 2;
+const _watchLoopTimeDelta = 3;
 
 // -----------------------------------------------------------------------------
 
@@ -76,41 +77,51 @@ export class SolidAtomizerPlugin extends SolidPlugin <ISolidAtomizerPluginConfig
 		// Only build on watch changes, first build was made in prepare
 		if ( !buildEvent ) return;
 
+		const changedAssetResolvedPaths = getChangedAssetsFromBuildEvent( buildEvent )
+
+		// SPECIAL CASE :
+		// If atom file is a module, it seems that it never appears in changed assets list.
+		// But the files which import atom file, will appear in list.
+		// With solid framework, we have a good hint that if index.less changed, atoms file changed.
+		// FIXME : Patch this or do it better, this is where solid middlewares are not powerful enough
+		const forceIndexRebuild = changedAssetResolvedPaths.filter( f => (
+			f.indexOf('index.less') !== -1 || f.indexOf('index.module.less') !== -1
+		)).length > 0
+
 		for ( let atomFilePath of this._paths )
 		{
 			atomFilePath = path.resolve( atomFilePath );
 
-			// Browse list of updated files
-			const changedAssets = getChangedAssetsFromBuildEvent( buildEvent )
-			for ( const asset of changedAssets )
-			{
-				// This atom file has changed
-				let assetFilePath = path.resolve( asset.filePath )
-				if ( assetFilePath != atomFilePath ) continue;
-
-				// Atom file has been updated by atomizer
-				if ( atomFilePath in this._previouslyUpdatedAtomFiles )
-				{
-					// If last atomizer update was no that long ago
-					// We need to prevent atomizing to avoid watch loop
-					const deltaTime = Date.now() - this._previouslyUpdatedAtomFiles[ atomFilePath ]
-					if ( deltaTime < _watchLoopTimeDelta * 1000 ) {
-						// Here break and do not continue because we do not want
-						// loop if typescript file changed also
-						break;
-					}
-				}
-
-				// Atomize file and remember time to detect dev changes vs atomizer changes
-				this._previouslyUpdatedAtomFiles[ atomFilePath ] = Date.now()
-				await this.atomize( atomFilePath )
+			if ( !forceIndexRebuild && changedAssetResolvedPaths.filter( f => f == atomFilePath).length === 0 ) {
+				// console.log('ATOM DO NOT CONTINUE 1' + atomFilePath);
+				// await delay(2)
+				break;
 			}
+
+			// Atom file has been updated by atomizer
+			if ( atomFilePath in this._previouslyUpdatedAtomFiles )
+			{
+				// If last atomizer update was no that long ago
+				// We need to prevent atomizing to avoid watch loop
+				const deltaTime = Date.now() - this._previouslyUpdatedAtomFiles[ atomFilePath ]
+				if ( deltaTime < _watchLoopTimeDelta * 1000 ) {
+					// Here break and do not continue because we do not want
+					// loop if typescript file changed also
+					// console.log('ATOM DO NOT CONTINUE 2' + atomFilePath);
+					break;
+				}
+			}
+
+			// Atomize and remember time to avoid watch loop
+			this._previouslyUpdatedAtomFiles[ atomFilePath ] = Date.now()
+			await delay(1)
+			await this.atomize( atomFilePath )
 		}
 	}
 
 	async atomize ( filePath:string )
 	{
-		// console.log('Atomize', filePath);
+		const atomizeLoader = printLoaderLine(`Atomizing ${path.basename(filePath)} ...`);
 
 		// Load atoms module file
 		const atomLessFile = new File( filePath );
@@ -206,6 +217,8 @@ export class SolidAtomizerPlugin extends SolidPlugin <ISolidAtomizerPluginConfig
 			const properties = variables.map( variableSet => variableSet[0].substr(1, variableSet[0].length) )
 			await this.generateTSFile( properties, filePath )
 		}
+
+		atomizeLoader(`Atomized ${path.basename(filePath)}`, 'ok')
 	}
 
 	async generateTSFile ( properties:string[], atomFilePath:string )

@@ -1,17 +1,33 @@
+import path from "path";
+
 /**
  * Get list of changed files from a parcel build event.
  */
-export function getChangedAssetsFromBuildEvent ( buildEvent )
+export function getChangedAssetsFromBuildEvent ( buildEvent, includeErrors = true )
 {
-	const changedAssets = buildEvent.changedAssets as Map<string, {filePath:string}>;
-	if (!changedAssets) return []
 	let assetPaths = []
-	for ( const [key, asset] of changedAssets )
-		assetPaths.push( asset )
+
+	// Add updated files
+	if ( buildEvent.changedAssets ) {
+		const changedAssets = buildEvent.changedAssets as Map<string, {filePath:string}>;
+		for ( const [key, asset] of changedAssets )
+			assetPaths.push( path.resolve(asset.filePath) )
+	}
+
+	// Add errors
+	if ( buildEvent.type == 'buildFailure' && buildEvent.diagnostics ) {
+		buildEvent.diagnostics.map( diagnostic => {
+			assetPaths.push( path.resolve( diagnostic.filePath ) )
+		})
+	}
+
 	return assetPaths
 }
 
+// TODO : Add read .env helper here
+// TODO : So it's available in solid.js
 
+// TODO : DOC
 // TODO -> To node core or stuff like that
 export const getBatteryLevel = () => new Promise( resolve => {
 	const { platform } = process

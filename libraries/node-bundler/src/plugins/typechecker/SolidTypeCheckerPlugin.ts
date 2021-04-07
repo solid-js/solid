@@ -122,8 +122,10 @@ export class SolidTypeCheckerPlugin extends SolidPlugin <ISolidTypeCheckerPlugin
 			this._currentChecker.removeAllListeners()
 
 			// Killed by code, do not continue
-			if ( code === null)
+			if ( code === null) {
+				this._checkingLoader && this._checkingLoader();
 				return;
+			}
 
 			const { sounds } = this._config
 
@@ -185,7 +187,12 @@ export class SolidTypeCheckerPlugin extends SolidPlugin <ISolidTypeCheckerPlugin
 		}
 	}
 
+	protected _firstDevBuild = true;
+
 	async afterBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) {
+
+		if ( buildError ) return;
+
 		// In dev mode, we check code after each build (first build and watch triggers)
 		// TODO : Optimisation, only check changed file from buildEvent if possible
 		const { checkBuildMode } = this._config
@@ -202,7 +209,13 @@ export class SolidTypeCheckerPlugin extends SolidPlugin <ISolidTypeCheckerPlugin
 
 			// TODO : Frequency skip
 
-			await this.typeCheck( buildMode, appOptions );
+			if ( this._firstDevBuild ) {
+				this._firstDevBuild = false
+				await this.typeCheck( buildMode, appOptions );
+				return
+			}
+
+			this.typeCheck( buildMode, appOptions );
 		}
 	}
 

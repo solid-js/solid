@@ -63,7 +63,9 @@ export class SolidPlugin <C extends IBaseSolidPluginConfig = any> implements ISo
 		this.init();
 	}
 
-	init () { }
+	init()
+	{
+	}
 
 	// ------------------------------------------------------------------------- ERROR
 

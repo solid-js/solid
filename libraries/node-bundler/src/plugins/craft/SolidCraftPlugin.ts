@@ -7,12 +7,15 @@ const path = require('path')
 
 /**
  * TODO : V1.1
- * - Crafter file name can be in config
- * - Better types in crafter.js file, how to do that ?
+ * - Demander sur quelle app partir si on a plusieurs plugins craft
+ * - Activer les commandes pour controller le tout
+ *    solid craft preact component AppView --app reem
  */
 
 /**
  * TODO : V1.2
+ * - Crafter file name can be in config
+ * - Better types in crafter.js file, how to do that ?
  * - Add option to craft outside of package root ?
  * - Create crafter repo with :
  *    - Solid Preact
@@ -27,7 +30,7 @@ interface ISolidCraftPluginConfig extends IBaseSolidPluginConfig
 {
 	paths			:string[]
 	templateProps	?:object
-	exposeCommand	?:string
+	exposeCommand	?:string|false
 }
 
 const _defaultConfig:Partial<ISolidCraftPluginConfig> = {
@@ -112,7 +115,7 @@ export class SolidCraftPlugin extends SolidPlugin <ISolidCraftPluginConfig>
 
 		// Expose CLI Command
 		// (only once if we have several apps)
-		if ( SolidCraftPlugin.__cliCommandInit || !this._config.exposeCommand ) return
+		if ( SolidCraftPlugin.__cliCommandInit || this._config.exposeCommand === false ) return
 		SolidCraftPlugin.__cliCommandInit = true
 		CLICommands.add(this._config.exposeCommand, async ( args, options ) => {
 			const parameters = {
