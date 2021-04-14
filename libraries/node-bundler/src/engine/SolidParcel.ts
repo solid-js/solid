@@ -288,7 +288,7 @@ export class SolidParcel
 
 		// Load dot env
 		const dotEnvFile = new File( dotEnvPath ).load();
-		const envProps = ( dotEnvFile.exists() ? dotEnvFile.dotEnv() : {} );
+		const envProps = ( dotEnvFile.exists() ? dotEnvFile.dotEnv() : {} ) as any;
 
 		// This specific dot env does not exists
 		// Do not crash if .env does not exists
@@ -305,6 +305,16 @@ export class SolidParcel
 
 		// Target extended app options
 		const appOptions = SolidParcel._apps[ appName ];
+
+		// Inject package.json version into envs
+		let packageFile = new File( path.join(appOptions.packageRoot, 'package.json') );
+		if ( !packageFile.exists() ) {
+			packageFile = new File( 'package.json' );
+		}
+		if ( packageFile.exists() ) {
+			await packageFile.loadAsync()
+			envProps.VERSION = (packageFile.json() as any).version
+		}
 
 		// Inject envs from passEnvs option
 		appOptions.passEnvs && appOptions.passEnvs.map( key => {
