@@ -2,69 +2,89 @@ import { IBaseSolidPluginConfig, ICommand, SolidPlugin, SolidPluginException } f
 import { IExtendedAppOptions, TBuildMode } from "../../engine/SolidParcel";
 import { ChildProcess, exec } from "child_process";
 import { newLine, nicePrint, printLoaderLine } from "@solid-js/cli";
-import { delay, untab } from "@solid-js/core";
 import { File } from "@solid-js/files";
 import path from "path";
 import { getBatteryLevel } from "../../engine/SolidUtils";
+import { Nanostache } from "@solid-js/nanostache";
+
+// ----------------------------------------------------------------------------- DEFAULT CONFIGS
 
 /**
- * TODO v1.2 :
- * - Frequency check
+ * Default include for generated tsconfig.
+ * Use template {{relativeRoot}} to target something from project root (and not current app root)
  */
+export const SolidTypescriptPlugin_defaultInclude = [
+	// Include all ts and tsx files
+	"./**/*.ts",
+	"./**/*.tsx",
+	// Include all css module files
+	//"./**/*.module.*",
+	// Include all definitions
+	"./**/*.d.ts"
+]
+
+/**
+ * Default exclude for generated tsconfig.
+ * Use template {{relativeRoot}} to target something from project root (and not current app root)
+ */
+export const SolidTypescriptPlugin_defaultExclude = [
+	"{{relativeRoot}}/node_modules",
+	"./node_modules",
+]
 
 // ----------------------------------------------------------------------------- STRUCT
 
-interface ISolidTypeCheckerPluginConfig extends IBaseSolidPluginConfig {
+interface ISolidTypescriptPluginConfig extends IBaseSolidPluginConfig {
+	include				?:string[]
+	exclude				?:string[]
 
-	sounds 				?: "all"|"errors"|"none"|boolean
-
-	checkBuildMode 		?: 'dev'|'production'|'both'
-
-	// frequency 			?: number
-
+	typeCheck 			?:'dev'|'production'|'both'|'none'
+	sounds 				?:"all"|"errors"|"none"|boolean
 	batteryThreshold	?:number|'ignore'|boolean
 }
 
-const _defaultConfig:Partial<ISolidTypeCheckerPluginConfig> = {
+const _defaultConfig:Partial<ISolidTypescriptPluginConfig> = {
+	include				: SolidTypescriptPlugin_defaultInclude,
+	exclude				: SolidTypescriptPlugin_defaultExclude,
+
+	typeCheck			: 'both',
 	sounds 				: true,
-	// frequency 			: 0,
-	checkBuildMode		: 'both',
-	batteryThreshold	: 90
+	batteryThreshold	: 90,
 }
 
 // ----------------------------------------------------------------------------- CONFIG
 
+// Sound config
 const isMac = process.platform == 'darwin'
-
 const _sounds = {
 	'success' 	: 'Ping', 	// Tink / Morse
 	'fail' 		: 'Sosumi', // Basso
 }
 
-function playSound ( type:string )
-{
+// Play a sound without blocking thread
+function playSound ( type:string ) {
 	if ( !isMac ) return
 	exec(`afplay /System/Library/Sounds/${_sounds[type]}.aiff`)
 }
 
 // ----------------------------------------------------------------------------- PLUGIN
 
-export class SolidTypeCheckerPlugin extends SolidPlugin <ISolidTypeCheckerPluginConfig>
+export class SolidTypescriptPlugin extends SolidPlugin <ISolidTypescriptPluginConfig>
 {
-	static init ( config:ISolidTypeCheckerPluginConfig ) {
-		return new SolidTypeCheckerPlugin({ name: 'typechecker', ..._defaultConfig, ...config })
+	static init ( config:ISolidTypescriptPluginConfig ) {
+		return new SolidTypescriptPlugin({ name: 'typechecker', ..._defaultConfig, ...config })
 	}
-
-	// protected _buildIndex 			= 0;
 
 	protected _currentChecker		:ChildProcess;
 	protected _checkingLoader		:any;
 
 	protected _projectRoot			:string;
 
+	// Starting state is success so we have a sound only if it fails
+	// ( sound plays only on first state changes )
 	protected _lastDevBuildState	:'success'|'fail'|'unknown' = 'success'
 
-	protected initProjectRoot ( appOptions:IExtendedAppOptions )
+	protected generateTsConfig ( appOptions:IExtendedAppOptions )
 	{
 		// Target tsconfig.json at project's root
 		this._projectRoot = path.join(appOptions.packageRoot, 'tsconfig.json');
@@ -73,25 +93,24 @@ export class SolidTypeCheckerPlugin extends SolidPlugin <ISolidTypeCheckerPlugin
 		// Target relative source route
 		const relativeSourceRoot = path.relative( appOptions.packageRoot, appOptions.sourcesRoot )
 
-		// Compte parent relative to root tsconfig.json and write tsconfig.json file
-		const relative = path.relative( path.join(this._projectRoot, '../'), './');
-		projectTsConfigFile.content(untab(`
-			{
-			  "extends": "${relative}/tsconfig.json",
-			  "include": [
-			    "./**/*.ts",
-			    "./**/*.tsx",
-			  ],
-			  "exclude" : [
-			    "${relative}/node_modules",
-			    "./node_modules",
-			  ],
-			  "compilerOptions" : {
-			    "rootDir": "${relativeSourceRoot}",
-			    "baseUrl": "./"
-			  }
+		// Compute parent relative to root tsconfig.json and write tsconfig.json file
+		const relativeRoot = path.relative( path.join(this._projectRoot, '../'), './');
+
+		// Convert {{relativeRoot}} to correct path in an array of paths
+		const templateRelativeRoot = (listOfPath:string[]) => listOfPath.map(
+			currentPath => Nanostache(currentPath, { relativeRoot })
+		);
+
+		// Create tsconfig json structure
+		projectTsConfigFile.json({
+			'extends' : `${relativeRoot}/tsconfig.json`,
+			'include' : templateRelativeRoot( this._config.include ),
+			'exclude' : templateRelativeRoot( this._config.exclude ),
+			'compilerOptions' : {
+				'rootDir': `${relativeSourceRoot}`,
+				'baseUrl': "./"
 			}
-		`, 3));
+		})
 		projectTsConfigFile.saveAsync();
 	}
 
@@ -171,13 +190,13 @@ export class SolidTypeCheckerPlugin extends SolidPlugin <ISolidTypeCheckerPlugin
 	{
 		// Init project root tsconfig now to avoid dealing with watch loops
 		// ( json file creation causing a new build )
-		this.initProjectRoot( appOptions );
+		this.generateTsConfig( appOptions );
 	}
 
 	async beforeBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) {
 		// In production, we check code before building step
-		const { checkBuildMode } = this._config
-		if ( buildMode === 'production' && (checkBuildMode == 'both' || checkBuildMode == 'production') ) {
+		const { typeCheck } = this._config
+		if ( buildMode === 'production' && (typeCheck == 'both' || typeCheck == 'production') ) {
 			try {
 				await this.typeCheck( buildMode, appOptions );
 			}
@@ -195,8 +214,8 @@ export class SolidTypeCheckerPlugin extends SolidPlugin <ISolidTypeCheckerPlugin
 
 		// In dev mode, we check code after each build (first build and watch triggers)
 		// TODO : Optimisation, only check changed file from buildEvent if possible
-		const { checkBuildMode } = this._config
-		if ( buildMode === 'dev' && (checkBuildMode == 'both' || checkBuildMode == 'dev') )
+		const { typeCheck } = this._config
+		if ( buildMode === 'dev' && (typeCheck == 'both' || typeCheck == 'dev') )
 		{
 			// Check battery level and skip type check if not enough battery
 			if ( this._config.batteryThreshold != 'ignore' && this._config.batteryThreshold !== false ) {
@@ -206,8 +225,6 @@ export class SolidTypeCheckerPlugin extends SolidPlugin <ISolidTypeCheckerPlugin
 					return;
 				}
 			}
-
-			// TODO : Frequency skip
 
 			if ( this._firstDevBuild ) {
 				this._firstDevBuild = false

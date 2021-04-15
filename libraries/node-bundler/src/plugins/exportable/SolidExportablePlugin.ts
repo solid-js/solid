@@ -45,11 +45,6 @@ export type TExportable${name}Keys = ${ files.map( f => `'${f.name}'`).join('|')
 
 // -----------------------------------------------------------------------------
 
-// Min build duration in seconds, to avoid watch loops
-const _watchLoopTimeDelta = 2;
-
-// -----------------------------------------------------------------------------
-
 export class SolidExportablePlugin extends SolidPlugin <ISolidExportablePluginConfig>
 {
 	static init ( config:ISolidExportablePluginConfig ) {
