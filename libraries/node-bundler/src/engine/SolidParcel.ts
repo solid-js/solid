@@ -316,6 +316,9 @@ export class SolidParcel
 			envProps.VERSION = (packageFile.json() as any).version
 		}
 
+		// Inject NODE_ENV
+		envProps.NODE_ENV = buildMode == 'dev' ? 'development' : 'production'
+
 		// Inject envs from passEnvs option
 		appOptions.passEnvs && appOptions.passEnvs.map( key => {
 			if ( key in process.env )
