@@ -1,4 +1,4 @@
-import { untab } from "@solid-js/core";
+import { untab, indent, repeat } from "@solid-js/core";
 import ora from "ora";
 const chalk = require('chalk');
 const stripAnsi = require('strip-ansi');
@@ -10,25 +10,6 @@ const stripAnsi = require('strip-ansi');
 export let cliTabSize = 3;
 
 // ----------------------------------------------------------------------------- PRINT UTILITIES
-
-/**
- * Create a specified number of char in a string. Default are spaces.
- */
-export function repeat ( total:number, char:string = ' ' ) {
-	let buffer = '';
-	for ( let i = 0; i < total; i ++ ) buffer += char;
-	return buffer
-}
-
-/**
- * Indent tab like. Will repeat a space char.
- * Control tab size with cliTabSize (default is 3 spaces for 1 tab)
- * @param total Number of tab to indent
- * @param content Content to add after indentation
- */
-export function indent ( total:number, content = '' ) {
-	return repeat( total * cliTabSize, " " ) + content;
-}
 
 /**
  * Print to output with process.stdout, without using console log.
@@ -44,7 +25,6 @@ export function print ( content:string, newLine:string|boolean = "\n\r" ) {
  * Print a new line
  */
 export function newLine () { process.stdout.write('\r\n'); }
-
 
 // ----------------------------------------------------------------------------- PRINT REMOVABLE LINE
 
@@ -193,7 +173,7 @@ export function nicePrint ( template:string, options:Partial<INicePrintOptions> 
 
 	// Replace all tabs by spaces
 	if ( options.replaceTabs )
-		content = content.replace(/\t/gmi, indent(1));
+		content = content.replace(/\t/gmi, indent(1, '', cliTabSize));
 
 	// Add new line
 	if ( options.newLine )

@@ -1,5 +1,6 @@
 import chalk from "chalk";
-import { indent } from "./Output";
+import { indent, repeat } from "@solid-js/core";
+import { cliTabSize } from "./Output";
 
 // NOTE : DEMO
 // (async function () {
@@ -90,7 +91,7 @@ export function createTask ( configOrMessage:ITaskConfig|string ):ITask
 		...configOrMessage
 	};
 
-	const taskIndent = indent( totalTasks )
+	const taskIndent = indent( totalTasks, '', cliTabSize )
 	totalTasks ++;
 
 	// Function to build a state message
@@ -115,7 +116,7 @@ export function createTask ( configOrMessage:ITaskConfig|string ):ITask
 			{
 				// Clear all line
 				process.stdout.cursorTo ? process.stdout.cursorTo( 0 ) : process.stdout.write("\n");
-				process.stdout.write( exports.repeat(workingMessage.length + overflowToClear) );
+				process.stdout.write( repeat(workingMessage.length + overflowToClear) );
 			}
 
 			// Build new state
@@ -154,7 +155,7 @@ export function createTask ( configOrMessage:ITaskConfig|string ):ITask
 			process.stdout.write( ' ' + afterProgress );
 
 		if ( afterProgress && previousAfterProgress )
-			process.stdout.write( module.exports.repeat(Math.max(0, previousAfterProgress.length - afterProgress.length), ' ') );
+			process.stdout.write( repeat(Math.max(0, previousAfterProgress.length - afterProgress.length), ' ') );
 
 		previousAfterProgress = afterProgress;
 	}
