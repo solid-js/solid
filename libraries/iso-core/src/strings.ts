@@ -348,14 +348,13 @@ export function parseQueryString (queryString:string):ScalarObject
  */
 export function countStartingChars ( line:string, char = "	" ):number
 {
-	let stopCounting = false;
-	let total = 0
-	line.split("	").filter( t => {
-		if ( stopCounting ) return;
-		if ( t !== '' ) stopCounting = true;
-		total ++;
-	});
-	return total;
+	let caret = 0
+	while ( caret < line.length ) {
+		if ( line.charAt(caret) != char )
+			break
+		caret ++
+	}
+	return caret
 }
 
 /**

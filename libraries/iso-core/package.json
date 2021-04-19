@@ -1,6 +1,6 @@
 {
   "name": "@solid-js/core",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "",
   "main": "dist/_index.js",
   "module": "dist/_index.mjs",
