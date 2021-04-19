@@ -127,6 +127,28 @@ export function nl2br (value:string, breakTag = '<br>')
 	return (value + '').replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1' + breakTag + '$2');
 }
 
+/**
+ * Create a specified number of char in a string. Default are spaces.
+ */
+export function repeat ( total:number, char:string = ' ' ) {
+	let buffer = '';
+	for ( let i = 0; i < total; i ++ ) buffer += char;
+	return buffer
+}
+
+/**
+ * Indent with tabs or spaces. Will repeat a tab or space char.
+ * Set tabSize to 0 (default) to indent with tabs
+ * Set tabSize to any int > 0 to indent with spaces
+ * @param total Number of tab to indent
+ * @param content Content to add after indentation
+ * @param tabSize 0 to indent with tabs, any int to indent with spaces
+ */
+export function indent ( total:number, content = '', tabSize = 0 ) {
+	const indentation = tabSize == 0 ? repeat( total, "	" ) : repeat( total * tabSize, " " )
+	return indentation + content
+}
+
 // ----------------------------------------------------------------------------- CASE
 
 /**
