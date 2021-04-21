@@ -1,34 +1,45 @@
 import { IBaseSolidPluginConfig, ICommand, SolidPlugin, SolidPluginException } from "../../engine/SolidPlugin";
-import { IExtendedAppOptions, TBuildMode } from "../../engine/SolidParcel";
+import { IExtendedAppOptions, targetSolidParcelCacheObject, TBuildMode } from "../../engine/SolidParcel";
 import { ChildProcess, exec } from "child_process";
 import { newLine, nicePrint, printLoaderLine } from "@solid-js/cli";
 import { File } from "@solid-js/files";
 import path from "path";
 import { getBatteryLevel } from "../../engine/SolidUtils";
-import { Nanostache } from "@solid-js/nanostache";
 
 // ----------------------------------------------------------------------------- DEFAULT CONFIGS
 
 /**
  * Default include for generated tsconfig.
- * Use template {{relativeRoot}} to target something from project root (and not current app root)
+ * Start path with / to start from project root.
+ * Start path with ./ to start from application root.
  */
 export const SolidTypescriptPlugin_defaultInclude = [
-	// Include all ts and tsx files
+	// "./index.tsx",
+	// "./index.ts",
+	// Include all sub ts and tsx files, longer but safer (if dynamic imports for example)
 	"./**/*.ts",
 	"./**/*.tsx",
+	// Include al js files
+	// "./**/*.js",
 	// Include all css module files
-	//"./**/*.module.*",
+	"./**/*.module.css",
+	"./**/*.module.less",
+	"./**/*.module.sass",
+	"./**/*.module.scss",
+	"./**/*.module.styl",
 	// Include all definitions
-	"./**/*.d.ts"
+	"./**/*.d.ts",
+	// Include parent declarations type definition
+	"../declarations.d.ts",
 ]
 
 /**
  * Default exclude for generated tsconfig.
- * Use template {{relativeRoot}} to target something from project root (and not current app root)
+ * Start path with / to start from project root.
+ * Start path with ./ to start from application root.
  */
 export const SolidTypescriptPlugin_defaultExclude = [
-	"{{relativeRoot}}/node_modules",
+	"/node_modules",
 	"./node_modules",
 ]
 
@@ -72,46 +83,59 @@ function playSound ( type:string ) {
 export class SolidTypescriptPlugin extends SolidPlugin <ISolidTypescriptPluginConfig>
 {
 	static init ( config:ISolidTypescriptPluginConfig ) {
-		return new SolidTypescriptPlugin({ name: 'typechecker', ..._defaultConfig, ...config })
+		return new SolidTypescriptPlugin({ name: 'typescript', ..._defaultConfig, ...config })
 	}
 
-	protected _currentChecker		:ChildProcess;
-	protected _checkingLoader		:any;
+	protected _currentChecker			:ChildProcess;
+	protected _checkingLoader			:any;
 
-	protected _projectRoot			:string;
+	protected _tsConfigCacheDirectory	:string
 
 	// Starting state is success so we have a sound only if it fails
 	// ( sound plays only on first state changes )
-	protected _lastDevBuildState	:'success'|'fail'|'unknown' = 'success'
+	protected _lastDevBuildState		:'success'|'fail'|'unknown' = 'success'
+
+	protected _firstDevBuild 			= true;
 
 	protected generateTsConfig ( appOptions:IExtendedAppOptions )
 	{
-		// Target tsconfig.json at project's root
-		this._projectRoot = path.join(appOptions.packageRoot, 'tsconfig.json');
-		const projectTsConfigFile = new File( this._projectRoot );
+		// Target tsconfig.json at project's root, create parent folders
+		const tsConfigFilePath = path.join( this._tsConfigCacheDirectory, 'tsconfig.json' )
+		const projectTsConfigFile = (new File( tsConfigFilePath ) as File); // needed for PHPStorm ?
+		projectTsConfigFile.ensureParents()
 
-		// Target relative source route
-		const relativeSourceRoot = path.relative( appOptions.packageRoot, appOptions.sourcesRoot )
+		// Target relative source and package roots from tsconfig directory
+		const relativeSourceRoot = path.relative( this._tsConfigCacheDirectory, appOptions.sourcesRoot )
+		const relativePackageRoot = path.relative( this._tsConfigCacheDirectory, appOptions.packageRoot )
 
-		// Compute parent relative to root tsconfig.json and write tsconfig.json file
-		const relativeRoot = path.relative( path.join(this._projectRoot, '../'), './');
+		// Target project's root tsconfig.json
+		const tsConfigProjectRootRelativeToTsConfigCache = path.join(
+			path.relative( this._tsConfigCacheDirectory, './' ),
+			'tsconfig.json'
+		);
 
-		// Convert {{relativeRoot}} to correct path in an array of paths
-		const templateRelativeRoot = (listOfPath:string[]) => listOfPath.map(
-			currentPath => Nanostache(currentPath, { relativeRoot })
+		// Convert paths to be relative to tsconfig.json
+		const convertRelativePaths = ( listOfPath:string[] ) => listOfPath.map(
+			currentPath => (
+				// Starting with a / -> target from project's root
+				currentPath.indexOf('/') === 0
+				? path.relative( this._tsConfigCacheDirectory, currentPath.substr(1, currentPath.length) )
+				// Starting from app package root
+				: path.relative( this._tsConfigCacheDirectory, path.join( appOptions.packageRoot, currentPath ) )
+			)
 		);
 
 		// Create tsconfig json structure
 		projectTsConfigFile.json({
-			'extends' : `${relativeRoot}/tsconfig.json`,
-			'include' : templateRelativeRoot( this._config.include ),
-			'exclude' : templateRelativeRoot( this._config.exclude ),
+			'extends' : `${ tsConfigProjectRootRelativeToTsConfigCache }`,
+			'include' : convertRelativePaths( this._config.include ),
+			'exclude' : convertRelativePaths( this._config.exclude ),
 			'compilerOptions' : {
 				'rootDir': `${relativeSourceRoot}`,
-				'baseUrl': "./"
+				'baseUrl': `${relativePackageRoot}`
 			}
 		})
-		projectTsConfigFile.saveAsync();
+		projectTsConfigFile.save();
 	}
 
 	protected typeCheck = ( buildMode:TBuildMode, appOptions:IExtendedAppOptions ) => new Promise<void|SolidPluginException>( async (resolve, reject) => {
@@ -122,9 +146,11 @@ export class SolidTypescriptPlugin extends SolidPlugin <ISolidTypescriptPluginCo
 			this._checkingLoader && this._checkingLoader();
 		}
 
+		const startTime = Date.now()
+
 		// Start typechecking command with tsc
 		this._checkingLoader = printLoaderLine('Checking typescript ...');
-		const command = `./node_modules/typescript/bin/tsc -p ${this._projectRoot} --noEmit --allowUnreachableCode --incremental --pretty`
+		const command = `./node_modules/typescript/bin/tsc -p ${this._tsConfigCacheDirectory} --noEmit --allowUnreachableCode --incremental --pretty`
 		this._currentChecker = exec( command );
 
 		// FIXME : Can we do better ?
@@ -157,7 +183,8 @@ export class SolidTypescriptPlugin extends SolidPlugin <ISolidTypescriptPluginCo
 
 				// Confirm success state
 				this._lastDevBuildState = 'success'
-				this._checkingLoader('{b/g}Typescript validated', '👌')
+				const totalDuration = Math.round((Date.now() - startTime) / 10) / 100
+				this._checkingLoader(`{b/g}Typescript validated {/}{l}in ${totalDuration}s`, '👌')
 				resolve();
 			}
 
@@ -188,6 +215,8 @@ export class SolidTypescriptPlugin extends SolidPlugin <ISolidTypescriptPluginCo
 
 	async prepare ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions )
 	{
+		this._tsConfigCacheDirectory = targetSolidParcelCacheObject( appOptions.name, this._name )
+
 		// Init project root tsconfig now to avoid dealing with watch loops
 		// ( json file creation causing a new build )
 		this.generateTsConfig( appOptions );
@@ -205,8 +234,6 @@ export class SolidTypescriptPlugin extends SolidPlugin <ISolidTypescriptPluginCo
 			}
 		}
 	}
-
-	protected _firstDevBuild = true;
 
 	async afterBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) {
 
@@ -240,8 +267,12 @@ export class SolidTypescriptPlugin extends SolidPlugin <ISolidTypescriptPluginCo
 	{
 		// Remove generated tsconfig files on clean action
 		if ( command.command === 'clean' ) {
-			new File( path.join(appOptions.packageRoot, 'tsconfig.json') ).remove();
-			new File( path.join(appOptions.packageRoot, 'tsconfig.tsbuildinfo') ).remove();
+			const paths = [
+				targetSolidParcelCacheObject( appOptions.name, this._name, 'tsconfig.json' ),
+				targetSolidParcelCacheObject( appOptions.name, this._name, 'tsconfig.tsbuildinfo' )
+			]
+			for ( const p of paths )
+				await new File( p ).remove()
 		}
 	}
 }

@@ -9,8 +9,15 @@ import path from "path";
 
 // ----------------------------------------------------------------------------- CONFIG
 
+// Parcel cache
 const parcelCacheDirectoryName = '.parcel-cache';
-const solidCacheDirectoryName = path.join(parcelCacheDirectoryName, '.solid-cache');
+
+const solidCacheDirectoryName = '.solid-cache';
+
+// Target a solid cache object
+export function targetSolidParcelCacheObject ( appName:string, ...objects) {
+	return path.join( solidCacheDirectoryName, appName, ...objects );
+}
 
 // ----------------------------------------------------------------------------- UNHANDLED REJECTIONS
 
@@ -377,7 +384,7 @@ export class SolidParcel
 		else
 		{
 			// Move from cache if available
-			const appCacheDirectory = new Directory( path.join(solidCacheDirectoryName, appOptions.name, 'node_modules') );
+			const appCacheDirectory = new Directory( targetSolidParcelCacheObject(appOptions.name, 'node_modules') );
 			appCacheDirectory.exists()
 			? await appCacheDirectory.moveToAsync( appOptions.output )
 			// Copy from src
@@ -663,7 +670,7 @@ export class SolidParcel
 				if ( keepNodeModules ) {
 					const dir = new Directory( path.join(subAppOptions.output, 'node_modules') );
 					if ( dir.exists() ) {
-						const appCacheDirectory = new Directory( path.join(solidCacheDirectoryName, subAppName) );
+						const appCacheDirectory = new Directory( targetSolidParcelCacheObject(subAppName) );
 						await appCacheDirectory.ensureParentsAsync();
 						await dir.moveToAsync( appCacheDirectory.path );
 					}
