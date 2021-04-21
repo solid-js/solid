@@ -22,11 +22,11 @@ export const SolidTypescriptPlugin_defaultInclude = [
 	// Include al js files
 	// "./**/*.js",
 	// Include all css module files
-	"./**/*.module.css",
-	"./**/*.module.less",
-	"./**/*.module.sass",
-	"./**/*.module.scss",
-	"./**/*.module.styl",
+	// "./**/*.module.css",
+	// "./**/*.module.less",
+	// "./**/*.module.sass",
+	// "./**/*.module.scss",
+	// "./**/*.module.styl",
 	// Include all definitions
 	"./**/*.d.ts",
 	// Include parent declarations type definition
@@ -263,16 +263,19 @@ export class SolidTypescriptPlugin extends SolidPlugin <ISolidTypescriptPluginCo
 		}
 	}
 
-	async action ( command:ICommand, appOptions?:IExtendedAppOptions )
-	{
-		// Remove generated tsconfig files on clean action
-		if ( command.command === 'clean' ) {
-			const paths = [
-				targetSolidParcelCacheObject( appOptions.name, this._name, 'tsconfig.json' ),
-				targetSolidParcelCacheObject( appOptions.name, this._name, 'tsconfig.tsbuildinfo' )
-			]
-			for ( const p of paths )
-				await new File( p ).remove()
-		}
-	}
+	// NOTE : Finally do not remove those objects when cleaning
+	// NOTE : We gain some ts check time and they are removed on cache clear anyway
+
+	// async action ( command:ICommand, appOptions?:IExtendedAppOptions )
+	// {
+	// 	// Remove generated tsconfig files on clean action
+	// 	if ( command.command === 'clean' ) {
+	// 		const paths = [
+	// 			targetSolidParcelCacheObject( appOptions.name, this._name, 'tsconfig.json' ),
+	// 			targetSolidParcelCacheObject( appOptions.name, this._name, 'tsconfig.tsbuildinfo' )
+	// 		]
+	// 		for ( const p of paths )
+	// 			await new File( p ).remove()
+	// 	}
+	// }
 }

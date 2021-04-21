@@ -1,17 +1,57 @@
 import { ICommand, SolidPlugin, SolidPluginException, TMiddlewareType } from "./SolidPlugin";
-import Parcel from "@parcel/core";
-import {
-	nicePrint, newLine, printLoaderLine, setLoaderScope, execAsync
-} from "@solid-js/cli";
+import { nicePrint, newLine, printLoaderLine, setLoaderScope, execAsync, onProcessKilled } from "@solid-js/cli";
 import { Directory, File, FileFinder } from "@solid-js/files"
 import { delay, noop } from "@solid-js/core"
+import Parcel from "@parcel/core";
 import path from "path";
+
+// ----------------------------------------------------------------------------- PARCEL CACHE MANAGEMENT ASSETS
+
+import { NodePackageManager } from '@parcel/package-manager';
+import { NodeFS } from '@parcel/fs';
+require('v8-compile-cache');
+const parcelEvents = require("@parcel/events");
+
+// Running watchers unsubscribers and disposables directories
+const _unsubscribeHandler = {}
+const _disposables = {}
+
+// Listen when user tries to kill process, to save asset graph from RAM before closing
+let _listeningProcessKilled = false
+let _killing = false
+function listenProcessKilled ()
+{
+	// Listen once
+	if ( _listeningProcessKilled ) return
+	_listeningProcessKilled = true
+
+	onProcessKilled(async () => {
+		if ( _killing ) return
+		_killing = true
+
+		const killingLoader = printLoaderLine(`Saving asset graph to cache`)
+
+		// We do not await this one on purpose, to let process open on Win32
+		delay(.3)
+
+		// Unsubscribe all running watchers
+		for ( const appName of Object.keys(_unsubscribeHandler) )
+			await _unsubscribeHandler[appName]();
+
+		// Flush all disposables
+		for ( const appName of Object.keys(_disposables) )
+			await _disposables[appName].dispose();
+
+		killingLoader(`Saved asset graph to cache`)
+	});
+}
 
 // ----------------------------------------------------------------------------- CONFIG
 
-// Parcel cache
+// Parcel cache directory path
 const parcelCacheDirectoryName = '.parcel-cache';
 
+// Solid cache directory
 const solidCacheDirectoryName = '.solid-cache';
 
 // Target a solid cache object
@@ -24,7 +64,7 @@ export function targetSolidParcelCacheObject ( appName:string, ...objects) {
 process.on('unhandledRejection', async (e) => {
 	nicePrint(`{b/r}Unhandled rejection`)
 	if ('diagnostics' in e) {
-		for (const diagnostic of (e as any)['diagnostics']) {
+		for ( const diagnostic of (e as any)['diagnostics'] ) {
 			// console.log(diagnostic)
 			const a = await require("@parcel/utils").prettyDiagnostic( diagnostic )
 			// console.log(a)
@@ -273,6 +313,10 @@ export class SolidParcel
 				code: 1
 			});
 
+		// Save cache if user kills process with ctrl+c in dev mode
+		if ( buildMode == 'dev' )
+			listenProcessKilled();
+
 		// Install and copy node modules of all apps before we build.
 		// We do this now to avoid triggering the watch if we have multiple apps !
 		if ( SolidParcel._isFirstBuildingApp ) {
@@ -356,6 +400,10 @@ export class SolidParcel
 		const packageFile = new File( path.join(appOptions.packageRoot, 'package.json') );
 		if ( !packageFile.exists() ) return;
 
+		// Target destination node_module and do not continue if it exists
+		const destinationNodeModulesDirectory = new Directory( path.join(appOptions.output, 'node_modules') )
+		if ( destinationNodeModulesDirectory.exists() ) return;
+
 		// Copy package.json
 		const copyLoader = printLoaderLine(`Copying modules to output ...`);
 
@@ -396,7 +444,7 @@ export class SolidParcel
 
 	// ------------------------------------------------------------------------- BUILD PARCEL
 
-	protected static bundleParcel = ( buildMode:TBuildMode, appOptions:IExtendedAppOptions, envProps?:object, bypassPlugins?:string[]  ) => new Promise<void>( async resolve =>
+	protected static bundleParcel = ( buildMode:TBuildMode, appOptions:IExtendedAppOptions, envProps?:object, bypassPlugins?:string[], bundler?:any  ) => new Promise<void>( async resolve =>
 	{
 		// Config to booleans
 		const isProd = buildMode === 'production';
@@ -431,56 +479,113 @@ export class SolidParcel
 
 		// Init parcel config
 		await delay(.05);
-		const bundler = new Parcel({
-			entries: appOptions.input,
-			entryRoot: appOptions.sourcesRoot,
 
-			// TODO : Add option ? If we forget something it will crash or behave wrongly
-			defaultConfig: '.parcelrc',
-			// defaultConfig: require.resolve("@parcel/config-default"),
+		if ( !bundler ) {
+			const fs = new NodeFS();
+			const packageManager = new NodePackageManager( fs );
+			bundler = new Parcel({
+				entries: appOptions.input,
+				entryRoot: appOptions.sourcesRoot,
 
-			targets: {
-				// https://v2.parceljs.org/plugin-system/api/#PackageTargetDescriptor
-				app: {
-					// Optimization and dev options
-					optimize: isProd && isWeb,
-					sourceMap: !isProd,
-					scopeHoist: true,
+				packageManager,
 
-					// Output dir
-					distDir: appOptions.output,
-					publicUrl: appOptions.publicUrl,
+				// TODO : Add option ? If we forget something it will crash or behave wrongly
+				defaultConfig: '.parcelrc',
+				// defaultConfig: require.resolve("@parcel/config-default"),
 
-					// Context and format options
-					// https://v2.parceljs.org/plugin-system/api/#EnvironmentContext
-					context: ( isWeb ? 'browser' : 'node' ),
-					// https://v2.parceljs.org/plugin-system/api/#OutputFormat
-					outputFormat: ( isWeb ? 'global' : 'commonjs' ),
+				targets: {
+					// https://v2.parceljs.org/plugin-system/api/#PackageTargetDescriptor
+					app: {
+						// Optimization and dev options
+						optimize: isProd && isWeb,
+						sourceMap: !isProd,
+						// scopeHoist: true,
 
-					// TODO : Add to config or read package.json ?
-					engines : {
-						...appOptions.engines
+						// Output dir
+						distDir: appOptions.output,
+						publicUrl: appOptions.publicUrl,
+
+						// Context and format options
+						// https://v2.parceljs.org/plugin-system/api/#EnvironmentContext
+						context: ( isWeb ? 'browser' : 'node' ),
+						// https://v2.parceljs.org/plugin-system/api/#OutputFormat
+						outputFormat: ( isWeb ? 'global' : 'commonjs' ),
+
+						// TODO : Add to config or read package.json ?
+						engines : {
+							...appOptions.engines
+						}
 					}
-				}
-			},
+				},
 
-			env: envProps,
-			hmrOptions,
+				// defaultTargetOptions: {
+				// 	shouldOptimize: isProd && isWeb,
+				// 	sourceMaps: !isProd,
+				// 	shouldScopeHoist: false,
+				// 	publicUrl: appOptions.publicUrl,
+				// 	distDir: appOptions.output,
+				// },
 
-			shouldDisableCache: false, // TODO : Add option ?
-			shouldAutoInstall: false, // TODO : Add option
+				env: envProps,
+				hmrOptions,
 
-			// --log-level (none/error/warn/info/verbose)
-			logLevel: appOptions.parcelLogLevel,
-			shouldPatchConsole: false,
+				shouldDisableCache: false, // TODO : Add option ?
+				shouldAutoInstall: false, // TODO : Add option
 
-			mode: isProd ? 'production' : 'development',
+				// cacheDir: parcelCacheDirectoryName,
+				// serveOptions: false, // TODO : Add option
+				// shouldContentHash: false,//isProd, // TODO : Add option
+				// shouldProfile: false, // TODO : Add option
+				// shouldBuildLazily: false,
+				// detailedReport: false, // TODO ??
 
-			additionalReporters: [
-				{ packageName: '@parcel/reporter-cli', resolveFrom: __filename },
-				{ packageName: '@parcel/reporter-dev-server', resolveFrom: __filename }
-			]
-		});
+				// --log-level (none/error/warn/info/verbose)
+				logLevel: appOptions.parcelLogLevel,
+				shouldPatchConsole: false,
+
+				mode: isProd ? 'production' : 'development',
+
+				additionalReporters: [
+					{ packageName: '@parcel/reporter-cli', resolveFrom: __filename },
+					{ packageName: '@parcel/reporter-dev-server', resolveFrom: __filename }
+				]
+			});
+			/*bundler = new Parcel({
+				packageManager,
+				entries: ( Array.isArray( appOptions.input ) ? appOptions.input : [appOptions.input] ).map( p => path.resolve(p) ),
+				shouldDisableCache: false,
+				cacheDir: undefined,
+				mode: 'development',
+				hmrOptions: { port: 1234, host: undefined },
+				shouldContentHash: false,
+				serveOptions: { https: false, port: 1234, host: undefined, publicUrl: undefined },
+				targets: null,
+				shouldAutoInstall: true,
+				logLevel: undefined,
+				shouldProfile: undefined,
+				shouldBuildLazily: undefined,
+				detailedReport: { assetsPerBundle: 10 },
+				env: { NODE_ENV: 'development' },
+
+				additionalReporters: [
+					{ packageName: '@parcel/reporter-cli', resolveFrom: __filename },
+					{ packageName: '@parcel/reporter-dev-server', resolveFrom: __filename }
+				],
+
+				defaultTargetOptions: {
+					shouldOptimize: false,
+					sourceMaps: true,
+					shouldScopeHoist: undefined,
+					publicUrl: undefined,
+					distDir: undefined
+				},
+				defaultConfig: '/Users/zouloux/Documents/local/aviv-real-estate-journeys/reem-website/node_modules/@parcel/config-default/index.json',
+				shouldPatchConsole: true
+			});*/
+
+			// Connect disposable to parcel events
+			_disposables[ appOptions.name ] = new ( parcelEvents.Disposable )();
+		}
 
 		// Before build middleware
 		await SolidParcel.callMiddleware( "beforeBuild", buildMode, appOptions, envProps, null, null, bypassPlugins );
@@ -520,10 +625,13 @@ export class SolidParcel
 			let count = 0;
 			const watcher = await bundler.watch( async (buildError, buildEvent) =>
 			{
-				if ( count == 0 )
-					stopBuildProgress();
+				// Register unsubscribe function for this app to be able to stop gracefully
+				_unsubscribeHandler[ appOptions.name ] = watcher.unsubscribe
 
-				count ++;
+				if ( count == 0 )
+					stopBuildProgress()
+
+				count ++
 
 				// FIXME : Sure about that ? Maybe an option ? watchMode = 'classic'|'complete'|'hard'
 				// In regular watch mode, do before middleware now
@@ -542,8 +650,8 @@ export class SolidParcel
 				// This allow to have before and after middleware correctly called
 				if ( appOptions.hardWatch && count == 2) {
 					await watcher.unsubscribe();
-					//clearPrintedLoaderLines();
-					SolidParcel.bundleParcel( buildMode, appOptions, envProps, bypassPlugins );
+					delete _unsubscribeHandler[ appOptions.name ]
+					SolidParcel.bundleParcel( buildMode, appOptions, envProps, bypassPlugins, /*bundler*/ );
 				}
 			});
 		}
