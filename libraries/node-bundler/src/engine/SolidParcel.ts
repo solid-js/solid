@@ -31,9 +31,6 @@ function listenProcessKilled ()
 
 		const killingLoader = printLoaderLine(`Saving asset graph to cache`)
 
-		// We do not await this one on purpose, to let process open on Win32
-		delay(.4)
-
 		// Unsubscribe all running watchers
 		for ( const appName of Object.keys(_unsubscribeHandler) )
 			await _unsubscribeHandler[appName]();
@@ -43,6 +40,7 @@ function listenProcessKilled ()
 			await _disposables[appName].dispose();
 
 		killingLoader(`Saved asset graph to cache`)
+		await delay(.4)
 		process.exit(0)
 	});
 }
