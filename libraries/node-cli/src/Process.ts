@@ -86,13 +86,16 @@ export function execSync ( command:string, verboseLevel:TVerboseLevel = 0, optio
 // ----------------------------------------------------------------------------- LIFECYCLE UTILISES
 
 /**
- * Listen all events when parent process is killed.
+ * Listen all events when parent process is killed or user tries to kill process.
+ * Process will hang while promises are running.
+ * Useful to clean before closing or interrupt use trying to close process.
+ * Use onProcessWillExit if you want to hook just before process is closing.
  * @param handler Called with event name as first argument
  * @param eventsToListen All codes to listen on process.
  */
 export function onProcessKilled (
 	handler: (eventType:string, ...rest) => any,
-	eventsToListen = [`exit`, `SIGINT`, `SIGUSR1`, `SIGUSR2`, `uncaughtException`, `SIGTERM`]
+	eventsToListen = [`SIGINT`, `SIGUSR1`, `SIGUSR2`, `uncaughtException`, `SIGTERM`]
 ) {
 	// Adapted from https://stackoverflow.com/questions/14031763/doing-a-cleanup-action-just-before-node-js-exits
 	eventsToListen.forEach( eventType => {
@@ -100,4 +103,16 @@ export function onProcessKilled (
 			await handler( eventType, ...rest );
 		});
 	})
+}
+
+/**
+ * Listen when node will exit.
+ * This will be called even if exit cause is process.exit() usage.
+ * Please call process.exit after usage, only once.
+ */
+export function onProcessWillExit ( handler:(...rest) => any )
+{
+	process.on('exit', async (...rest) => {
+		await handler( ...rest );
+	});
 }
