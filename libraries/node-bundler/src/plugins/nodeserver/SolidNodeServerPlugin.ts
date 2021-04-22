@@ -2,7 +2,13 @@ import { IBaseSolidPluginConfig, SolidPlugin } from "../../engine/SolidPlugin";
 import { IExtendedAppOptions, TBuildMode } from "../../engine/SolidParcel";
 import { ChildProcess, exec } from 'child_process'
 import { delay } from '@solid-js/core'
-import { generateLoaderLineTemplate, onProcessKilled, printLine, printLoaderLine } from '@solid-js/cli'
+import {
+	generateLoaderLineTemplate,
+	onProcessKilled,
+	onProcessWillExit,
+	printLine,
+	printLoaderLine
+} from '@solid-js/cli'
 
 /**
  * TODO : V1.2
@@ -42,7 +48,7 @@ interface ISolidNodeServerPluginConfig extends IBaseSolidPluginConfig
 }
 
 const _defaultConfig:Partial<ISolidNodeServerPluginConfig> = {
-	delay	: .1,
+	delay	: .2,
 	restartDelay : 2,
 	stdout	: 'nice',
 	stderr	: 'nice',
@@ -59,11 +65,11 @@ export class SolidNodeServerPlugin extends SolidPlugin <ISolidNodeServerPluginCo
 	}
 
 	init () {
-		// Kill running process when exiting parent
-		onProcessKilled( async () => {
-			await this.killRunningServer();
-			// process.exit();
-		});
+		// Kill running server when parent process is killed
+		onProcessKilled( async () => this.killRunningServer(false) );
+
+		// Process will exit (crash or something), force kill node server
+		onProcessWillExit( async () => this.killRunningServer(true) )
 	}
 
 	// ------------------------------------------------------------------------- PROPERTIES
@@ -96,8 +102,9 @@ export class SolidNodeServerPlugin extends SolidPlugin <ISolidNodeServerPluginCo
 		this._runningServer.kill( force ? "SIGKILL" : "SIGTERM" );
 		this._runningServer = null;
 
-		// Safe wait
-		await delay( this._config.delay );
+		// Safe wait if not forcing
+		if ( !force )
+			await delay( this._config.delay );
 		killingServer && killingServer(`${this._config.name} killed`, '💀')
 	}
 
