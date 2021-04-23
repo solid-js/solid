@@ -10,13 +10,16 @@ export function getChangedAssetsFromBuildEvent ( buildEvent, includeErrors = tru
 	// Add updated files
 	if ( buildEvent.changedAssets ) {
 		const changedAssets = buildEvent.changedAssets as Map<string, {filePath:string}>;
-		for ( const [key, asset] of changedAssets )
+		for ( const [key, asset] of changedAssets ) {
+			if ( !asset.filePath ) continue
 			assetPaths.push( path.resolve(asset.filePath) )
+		}
 	}
 
 	// Add errors
 	if ( buildEvent.type == 'buildFailure' && buildEvent.diagnostics ) {
 		buildEvent.diagnostics.map( diagnostic => {
+			if ( !diagnostic.filePath ) return
 			assetPaths.push( path.resolve( diagnostic.filePath ) )
 		})
 	}
