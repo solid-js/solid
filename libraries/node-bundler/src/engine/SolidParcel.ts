@@ -62,21 +62,25 @@ export function targetSolidParcelCacheObject ( appName:string, ...objects) {
 
 process.on('unhandledRejection', async (e) => {
 	nicePrint(`{b/r}Unhandled rejection`)
-	if ('diagnostics' in e) {
+
+	// Show clean diagnostic error if it exists
+	if (e && 'diagnostics' in e)
 		for ( const diagnostic of (e as any)['diagnostics'] ) {
-			// console.log(diagnostic)
 			const a = await require("@parcel/utils").prettyDiagnostic( diagnostic )
-			// console.log(a)
 			process.stdout.write(a.message);
 			process.stdout.write(a.stack);
 			console.log('')
 			process.stdout.write(a.codeframe);
 			console.log('')
 		}
-	}
-	else console.log(e)
 
-	process.exit(1)
+	// Show classic error
+	else {
+		console.log(e)
+		console.error(e)
+	}
+
+	process.exit( 1 )
 })
 
 // ----------------------------------------------------------------------------- STRUCT
@@ -736,8 +740,10 @@ export class SolidParcel
 		// Clear caches of all apps or selected app
 		SolidParcel.appNames.map( subAppName => {
 			if ( !appName || subAppName === appName ) {
-				setLoaderScope( SolidParcel.appNames.length > 1 ? subAppName : null );
-				const dirPath = path.join( SolidParcel._apps[ subAppName ].packageRoot, parcelCacheDirectoryName );
+				//setLoaderScope( SolidParcel.appNames.length > 1 ? subAppName : null );
+				const { packageRoot } = SolidParcel._apps[ subAppName ]
+				if ( !packageRoot ) return;
+				const dirPath = path.join( packageRoot, parcelCacheDirectoryName );
 				dir = new Directory( dirPath );
 				if ( !dir.exists() ) return;
 				clearedPaths.push( dir.path );
@@ -770,7 +776,7 @@ export class SolidParcel
 		for ( const subAppName of SolidParcel.appNames ) {
 			if ( !appName || subAppName === appName ) {
 				// Target app
-				setLoaderScope( SolidParcel.appNames.length > 1 ? subAppName : null );
+				//setLoaderScope( SolidParcel.appNames.length > 1 ? subAppName : null );
 				const subAppOptions = SolidParcel._apps[ subAppName ];
 
 				// Move output node_modules to solid cache to avoid copying it at every build

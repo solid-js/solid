@@ -41,12 +41,12 @@ export class SolidAtomizerPlugin extends SolidPlugin <ISolidAtomizerPluginConfig
 
 	protected _previouslyUpdatedAtomFiles = {}
 
-	async init ()
+	async prepare ()
 	{
 		this._paths = (
 			typeof this._config.paths === 'string'
-			? [ this._config.paths ]
-			: this._config.paths
+				? [ this._config.paths ]
+				: this._config.paths
 		)
 
 		// Check if atom paths are valid
@@ -62,10 +62,7 @@ export class SolidAtomizerPlugin extends SolidPlugin <ISolidAtomizerPluginConfig
 			if ( extensions.length < 2 || extensions[0] != 'less' || extensions[1] != 'module' )
 				this.halt('init', `{r}Atom file must be a .module.less file.`)
 		})
-	}
 
-	async prepare ()
-	{
 		// Atomize before build start to generate ts file
 		// which can be a coupled dependency in other project files
 		for ( let atomFilePath of this._paths )
