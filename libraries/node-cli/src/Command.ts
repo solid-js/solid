@@ -151,12 +151,19 @@ export const CLICommands = {
 				// Start default handler if command has not been found
 				if ( e instanceof CommandError )
 					error = e;
+				// Throw all other errors
+				else
+					throw e
 			}
 		}
 
 		// Call default handler
 		if ( defaultHandler )
 			await defaultHandler( commandName, error, cliArguments, cliOptions, results );
+
+		// Otherwise throw raised error
+		else if ( error )
+			throw error
 	},
 
 	/**
