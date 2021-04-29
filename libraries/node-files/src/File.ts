@@ -231,9 +231,9 @@ export class File extends FileEntity
 	 * @param spaces
 	 * @param replacers
 	 */
-	json ( content ?: TContentArgument<TStructuralWritableContent>, spaces = 2, replacers = null )
+	json ( content ?: TContentArgument<any>, spaces = 2, replacers = null )
 	{
-		return this.processData<TStructuralWritableContent>(
+		return this.processData<any>(
 			content,
 			d => JSON.parse( d ),
 			d => JSON.stringify( d, replacers, spaces )
@@ -246,9 +246,9 @@ export class File extends FileEntity
 	 * TODO
 	 * @param content
 	 */
-	yaml ( content ?: TContentArgument<TStructuralWritableContent> )
+	yaml ( content ?: TContentArgument<any> )
 	{
-		return this.processData<TStructuralWritableContent>(
+		return this.processData<any>(
 			content,
 			d => YAMLParser( d ).json,
 			d => {
