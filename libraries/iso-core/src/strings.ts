@@ -360,37 +360,37 @@ export function countStartingChars ( line:string, char = "	" ):number
 /**
  * Remove tabs from a template string.
  * FIXME : More doc
- * FIXME : Does not work perfectly, if improve, keep compatibility with cli libs
  */
-export function untab ( content:string, level:"last"|"auto"|number = "last" ):string
+export function untab ( content:string, level:"first"|"last"|"auto"|number = "auto" ):string
 {
-	const lines = content.split("\n");
+	// Extract lines and remove empty lines
+	let lines = content.split("\n").filter( v => v.trim() != '' );
 
 	let totalTabsToRemove:number = 0;
-
 	if ( typeof level === 'number' )
 		totalTabsToRemove = level;
-
+	else if ( level === 'first' )
+		totalTabsToRemove = countStartingChars( lines[ 0 ] ?? '' );
 	else if ( level === 'last' )
-		totalTabsToRemove = countStartingChars( lines[ lines.length - 1 ] ) - 1;
-
-	else if ( level === 'auto' )
-	{
+		totalTabsToRemove = countStartingChars( lines[ lines.length - 1 ] ?? '' );
+	else if ( level === 'auto' ) {
 		totalTabsToRemove = -1;
 		lines.map( (line, i) => {
 			if ( i == 0 ) return;
 			const count = countStartingChars( line );
 			totalTabsToRemove = (
-				totalTabsToRemove == -1 ? count
-					: Math.min( totalTabsToRemove, count )
+				totalTabsToRemove == -1
+				? count
+				: Math.min( totalTabsToRemove, count )
 			);
 		});
 	}
 
+	// Create tab removal regex
 	totalTabsToRemove = Math.max(0, totalTabsToRemove);
+	const regex = new RegExp(`^(\\t){${totalTabsToRemove}}`, 'gmi');
 
-	const regex = new RegExp(`\n(\\t){${totalTabsToRemove}}`, 'gmi');
-	//console.log('->', level, totalTabsToRemove, regex);
-	return content.replace( regex, "\n" );
+	// Remove tabs on all lines and concat lines
+	return lines.map( l => l.replace(regex, '') ).join("\n")
 }
 
