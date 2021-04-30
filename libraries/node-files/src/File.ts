@@ -3,7 +3,7 @@ import * as fs from "fs";
 import { TContentArgument, TGlobOptionsArgument, TRawWritableContent, TStructuralWritableContent } from "./Struct";
 import { FileFinder } from "./FileFinder";
 import { ScalarObject, ScalarValue, TFunctionalFilter } from "@solid-js/core";
-import { DotEnvParser, YAMLParser } from "./FileParsers";
+import { DotEnvParser, JSON5Parser, YAMLParser } from "./FileParsers";
 
 
 export class File extends FileEntity
@@ -223,54 +223,41 @@ export class File extends FileEntity
 		return this.processData<TRawWritableContent>( content, d => d, d => d + '' );
 	}
 
-	// ------------------------------------------------------------------------- JSON CONTENT PARSING
+	// ------------------------------------------------------------------------- OBJECTS PARSING
 
-	/**
-	 * TODO DOC
-	 * @param content
-	 * @param spaces
-	 * @param replacers
-	 */
 	json ( content ?: TContentArgument<any>, spaces = 2, replacers = null )
 	{
 		return this.processData<any>(
 			content,
-			d => JSON.parse( d ),
+			b => JSON.parse( b ),
 			d => JSON.stringify( d, replacers, spaces )
-		);
+		)
 	}
 
-	// ------------------------------------------------------------------------- YAML CONTENT PARSING
+	json5 ( content ?: TContentArgument<any>, spaces = 2, replacers = null )
+	{
+		return this.processData<any>(
+			content,
+			b => JSON5Parser().decode( b ),
+			d => JSON5Parser().encode( d, replacers, spaces )
+		)
+	}
 
-	/**
-	 * TODO
-	 * @param content
-	 */
 	yaml ( content ?: TContentArgument<any> )
 	{
 		return this.processData<any>(
 			content,
-			d => YAMLParser( d ).json,
-			d => {
-				const yamlDataToSave = YAMLParser('');
-				yamlDataToSave.json = d;
-				return yamlDataToSave.yaml;
-			}
-		);
+			b => YAMLParser().decode( b ),
+			d => YAMLParser().encode( d )
+		)
 	}
 
-	// ------------------------------------------------------------------------- DOT ENV CONTENT PARSING
-
-	/**
-	 * TODO DOC
-	 * @param content
-	 */
 	dotEnv ( content ?: TContentArgument<ScalarObject> )
 	{
 		return this.processData<ScalarObject>(
 			content,
-			d => DotEnvParser.decode( d ),
-			d => DotEnvParser.encode( d )
+			b => DotEnvParser().decode( b ),
+			d => DotEnvParser().encode( d )
 		);
 	}
 
