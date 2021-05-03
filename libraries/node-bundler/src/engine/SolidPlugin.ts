@@ -1,9 +1,9 @@
-import { IExtendedAppOptions, TBuildMode } from "./SolidParcel";
+import { IExtendedAppOptions, SolidParcel, TBuildMode } from "./SolidParcel";
 import { newLine, nicePrint } from "@solid-js/cli";
 
 // ----------------------------------------------------------------------------- STRUCT
 
-export type TMiddlewareType = "prepare"|"beforeBuild"|"afterBuild"|"action";
+export type TMiddlewareType = "prepare" | "beforeBuild" | "afterBuild" | "action" | "exit";
 
 export interface ICommand
 {
@@ -17,6 +17,7 @@ export interface ISolidMiddleware
 	beforeBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) : Promise<any>|void|null
 	afterBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) : Promise<any>|void|null
 	action ( command:ICommand, appOptions?:IExtendedAppOptions ):Promise<any> | void | null
+	exit ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object ):Promise<any> | void | null
 }
 
 export interface IBaseSolidPluginConfig
@@ -63,15 +64,14 @@ export class SolidPlugin <C extends IBaseSolidPluginConfig = any> implements ISo
 		this.init();
 	}
 
-	init()
-	{
-	}
+	init () { }
 
 	// ------------------------------------------------------------------------- ERROR
 
 	protected halt ( method:string, message:string, code = 1 ) {
 		// FIXME : Add app name if possible
-		nicePrint(`{b/r}${this.constructor.name}.${method} {${this._config.name}} error : \n${message}`, { code })
+		nicePrint(`{b/r}${this.constructor.name}.${method} {${this._config.name}} error : \n${message}`)
+		SolidParcel.exit( code )
 	}
 
 	// ------------------------------------------------------------------------- MIDDLEWARES
@@ -83,4 +83,6 @@ export class SolidPlugin <C extends IBaseSolidPluginConfig = any> implements ISo
 	afterBuild ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object, buildEvent?, buildError? ) { }
 
 	action ( command:ICommand, appOptions?:IExtendedAppOptions ) { }
+
+	exit ( buildMode?:TBuildMode, appOptions?:IExtendedAppOptions, envProps?:object ) { }
 }

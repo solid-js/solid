@@ -1,6 +1,6 @@
 {
 	"name": "@solid-js/bundler",
-	"version": "3.7.7",
+	"version": "3.8.0",
 	"description": "Parcel 2 based bundler wrapper for Solid JS",
 	"main": "dist/_index.js",
 	"module": "dist/_index.mjs",
@@ -32,8 +32,8 @@
 		"typescript": "^4.1.3"
 	},
 	"dependencies": {
-		"@solid-js/core": "^0.4.1",
-		"@solid-js/cli": "^1.4.2",
+		"@solid-js/core": "^0.4.2",
+		"@solid-js/cli": "^1.5.0",
 		"@solid-js/files": "^1.0.6",
 		"@solid-js/nanostache": "^1.0.6"
 	}

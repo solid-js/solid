@@ -1,49 +1,12 @@
 import { ICommand, SolidPlugin, SolidPluginException, TMiddlewareType } from "./SolidPlugin";
-import { nicePrint, newLine, printLoaderLine, setLoaderScope, execAsync, onProcessKilled } from "@solid-js/cli";
+import {
+	nicePrint, newLine, printLoaderLine, setLoaderScope,
+	execAsync, onProcessKilled, onProcessError
+} from "@solid-js/cli";
 import { Directory, File, FileFinder } from "@solid-js/files"
 import { delay, noop } from "@solid-js/core"
 import Parcel from "@parcel/core";
 import path from "path";
-
-// ----------------------------------------------------------------------------- PARCEL CACHE MANAGEMENT ASSETS
-
-import { NodePackageManager } from '@parcel/package-manager';
-import { NodeFS } from '@parcel/fs';
-require('v8-compile-cache');
-const parcelEvents = require("@parcel/events");
-
-// Running watchers unsubscribers and disposables directories
-const _unsubscribeHandler = {}
-const _disposables = {}
-
-// Listen when user tries to kill process, to save asset graph from RAM before closing
-let _listeningProcessKilled = false
-let _killing = false
-function listenProcessKilled ()
-{
-	// Listen once
-	if ( _listeningProcessKilled ) return
-	_listeningProcessKilled = true
-
-	onProcessKilled(async () => {
-		if ( _killing ) return
-		_killing = true
-
-		const killingLoader = printLoaderLine(`Saving asset graph to cache`)
-
-		// Unsubscribe all running watchers
-		for ( const appName of Object.keys(_unsubscribeHandler) )
-			await _unsubscribeHandler[appName]();
-
-		// Flush all disposables
-		for ( const appName of Object.keys(_disposables) )
-			await _disposables[appName].dispose();
-
-		killingLoader(`Saved asset graph to cache`)
-		await delay(.4)
-		process.exit(0)
-	});
-}
 
 // ----------------------------------------------------------------------------- CONFIG
 
@@ -58,13 +21,69 @@ export function targetSolidParcelCacheObject ( appName:string, ...objects) {
 	return path.join( solidCacheDirectoryName, appName, ...objects );
 }
 
+// ----------------------------------------------------------------------------- CLEAN EXIT & ASSET GRAPH SAVING
+
+// Load parcel modules for cache management
+require('v8-compile-cache');
+import { NodePackageManager } from '@parcel/package-manager';
+import { NodeFS } from '@parcel/fs';
+const parcelEvents = require("@parcel/events");
+
+// Running watchers unsubscribers and disposables directories
+const _unsubscribeHandler = {}
+const _disposables = {}
+
+// Clean exit current program
+async function cleanExit ( buildMode:TBuildMode, code = 0 )
+{
+	// Call exit middleware on all apps and plugins
+	for ( const subAppName of SolidParcel.appNames )
+		await SolidParcel.callMiddleware( 'exit', buildMode, SolidParcel.getAppConfig( subAppName ) );
+
+	// Save Parcel's cache
+	const killingLoader = printLoaderLine(`Saving asset graph to cache`)
+
+	// Unsubscribe all running watchers
+	for ( const appName of Object.keys(_unsubscribeHandler) )
+		await _unsubscribeHandler[appName]();
+
+	// Flush all disposables
+	for ( const appName of Object.keys(_disposables) )
+		await _disposables[appName].dispose();
+
+	killingLoader(`Saved asset graph to cache`)
+
+	// Exit cleanly
+	await delay(.4)
+	process.exit( code )
+}
+
+// Listen when user tries to kill process
+let _listeningProcessKilled = false
+let _killing = false
+function listenProcessKilled ( buildMode:TBuildMode )
+{
+	// Listen only once ( can be called several times in SolidParcel.internalBuild )
+	if ( _listeningProcessKilled ) return
+	_listeningProcessKilled = true
+
+	// Listen when program is asked to exits and do a clean exit
+	onProcessKilled(async () => {
+		if ( _killing ) return
+		_killing = true
+		await cleanExit( buildMode )
+	});
+}
+
 // ----------------------------------------------------------------------------- UNHANDLED REJECTIONS
 
-process.on('unhandledRejection', async (e) => {
-	nicePrint(`{b/r}Unhandled rejection`)
+onProcessError(async (eventType:string, e) => {
+	( eventType == 'unhandledRejection' )
+	? nicePrint(`{b/r}Unhandled rejection`)
+	: nicePrint(`{b/r}Uncaught error`)
 
 	// Show clean diagnostic error if it exists
-	if (e && 'diagnostics' in e)
+	if ( e && 'diagnostics' in e )
 		for ( const diagnostic of (e as any)['diagnostics'] ) {
 			const a = await require("@parcel/utils").prettyDiagnostic( diagnostic )
 			process.stdout.write(a.message);
@@ -80,7 +99,8 @@ process.on('unhandledRejection', async (e) => {
 		console.error(e)
 	}
 
-	process.exit( 1 )
+	// This is an internal error, no clean exit to avoid error handling loop !
+	process.exit( 99 )
 })
 
 // ----------------------------------------------------------------------------- STRUCT
@@ -223,6 +243,14 @@ export class SolidParcel
 	 */
 	static get appNames () { return Object.keys(SolidParcel._apps); }
 
+	/**
+	 * Get a processed app config from name
+	 * @param appName
+	 */
+	static getAppConfig ( appName:string ):IExtendedAppOptions {
+		return appName in this._apps ? this._apps[ appName ] : null
+	}
+
 	// ------------------------------------------------------------------------- PUBLIC BUILD
 
 	/**
@@ -312,13 +340,10 @@ export class SolidParcel
 			nicePrint(`
 				{b/r}App ${appName} does not exists.
 				{l}Please use {w/i}Solid.app( ... )
-			`, {
-				code: 1
-			});
+			`, { code: 1 });
 
-		// Save cache if user kills process with ctrl+c in dev mode
-		if ( buildMode == 'dev' )
-			listenProcessKilled();
+		// Listen if program crashes, or if dev hit ctrl+c on keyboard to stop process
+		listenProcessKilled( buildMode );
 
 		// Install and copy node modules of all apps before we build.
 		// We do this now to avoid triggering the watch if we have multiple apps !
@@ -553,38 +578,6 @@ export class SolidParcel
 					{ packageName: '@parcel/reporter-dev-server', resolveFrom: __filename }
 				]
 			});
-			/*bundler = new Parcel({
-				packageManager,
-				entries: ( Array.isArray( appOptions.input ) ? appOptions.input : [appOptions.input] ).map( p => path.resolve(p) ),
-				shouldDisableCache: false,
-				cacheDir: undefined,
-				mode: 'development',
-				hmrOptions: { port: 1234, host: undefined },
-				shouldContentHash: false,
-				serveOptions: { https: false, port: 1234, host: undefined, publicUrl: undefined },
-				targets: null,
-				shouldAutoInstall: true,
-				logLevel: undefined,
-				shouldProfile: undefined,
-				shouldBuildLazily: undefined,
-				detailedReport: { assetsPerBundle: 10 },
-				env: { NODE_ENV: 'development' },
-
-				additionalReporters: [
-					{ packageName: '@parcel/reporter-cli', resolveFrom: __filename },
-					{ packageName: '@parcel/reporter-dev-server', resolveFrom: __filename }
-				],
-
-				defaultTargetOptions: {
-					shouldOptimize: false,
-					sourceMaps: true,
-					shouldScopeHoist: undefined,
-					publicUrl: undefined,
-					distDir: undefined
-				},
-				defaultConfig: '/Users/zouloux/Documents/local/aviv-real-estate-journeys/reem-website/node_modules/@parcel/config-default/index.json',
-				shouldPatchConsole: true
-			});*/
 
 			// Connect disposable to parcel events
 			_disposables[ appOptions.name ] = new ( parcelEvents.Disposable )();
@@ -662,7 +655,7 @@ export class SolidParcel
 
 	// ------------------------------------------------------------------------- MIDDLEWARES & PLUGINS
 
-	protected static async callMiddleware ( middlewareName:TMiddlewareType, buildModeOrCommand:TBuildMode|ICommand, appOptions:IExtendedAppOptions, envProps?:object, buildEvent?, buildError?, bypassPlugins = [] )
+	static async callMiddleware ( middlewareName:TMiddlewareType, buildModeOrCommand:TBuildMode|ICommand, appOptions:IExtendedAppOptions, envProps?:object, buildEvent?, buildError?, bypassPlugins = [] )
 	{
 		// Target current solid app building for logs
 		if ( SolidParcel.appNames.length > 1 )
@@ -826,5 +819,15 @@ export class SolidParcel
 				await SolidParcel.callMiddleware( 'action', command, subAppOptions, null, null, null, bypassPlugins );
 			}
 		}
+	}
+
+	// ------------------------------------------------------------------------- EXIT
+
+	/**
+	 * Clean exit program.
+	 * @param code 0 for a success, 1 or + for an error
+	 */
+	static async exit ( code:number ) {
+		await cleanExit( null, code ) // FIXME : Find build mode here, scope or keep var on top level
 	}
 }

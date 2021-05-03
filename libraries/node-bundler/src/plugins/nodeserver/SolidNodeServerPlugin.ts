@@ -2,13 +2,7 @@ import { IBaseSolidPluginConfig, SolidPlugin } from "../../engine/SolidPlugin";
 import { IExtendedAppOptions, TBuildMode } from "../../engine/SolidParcel";
 import { ChildProcess, exec } from 'child_process'
 import { delay } from '@solid-js/core'
-import {
-	generateLoaderLineTemplate,
-	onProcessKilled,
-	onProcessWillExit,
-	printLine,
-	printLoaderLine
-} from '@solid-js/cli'
+import { generateLoaderLineTemplate, printLine, printLoaderLine } from '@solid-js/cli'
 
 /**
  * TODO : V1.2
@@ -48,10 +42,10 @@ interface ISolidNodeServerPluginConfig extends IBaseSolidPluginConfig
 }
 
 const _defaultConfig:Partial<ISolidNodeServerPluginConfig> = {
-	delay	: .2,
-	restartDelay : 2,
-	stdout	: 'nice',
-	stderr	: 'nice',
+	delay			: .3,
+	restartDelay 	: 2,
+	stdout			: 'nice',
+	stderr			: 'nice',
 }
 
 // -----------------------------------------------------------------------------
@@ -62,14 +56,6 @@ export class SolidNodeServerPlugin extends SolidPlugin <ISolidNodeServerPluginCo
 
 	static init ( config:ISolidNodeServerPluginConfig) {
 		return new SolidNodeServerPlugin({ name:'node server', ..._defaultConfig, ...config })
-	}
-
-	init () {
-		// Kill running server when parent process is killed
-		onProcessKilled( async () => this.killRunningServer(false) );
-
-		// Process will exit (crash or something), force kill node server
-		onProcessWillExit( async () => this.killRunningServer(true) )
 	}
 
 	// ------------------------------------------------------------------------- PROPERTIES
@@ -115,14 +101,38 @@ export class SolidNodeServerPlugin extends SolidPlugin <ISolidNodeServerPluginCo
 			cwd: this._config.cwd ?? appOptions.output,
 			env: envProps as any
 		})
-		await delay( this._config.delay );
-		startingServerLoader && startingServerLoader(`${this._config.name} started`, '🥳');
 
 		// Nice stream piping
+		let started = false
+		let stdout = '';
+		let stderr = ''
 		if ( this.config.stdout === 'nice' )
-			this._runningServer.stdout.on('data', data => printLine( generateLoaderLineTemplate(data, '🔎') ));
+			this._runningServer.stdout.on('data', data => {
+				if ( !started )
+					stdout += data
+				else
+					printLine( generateLoaderLineTemplate(data, '🔎') )
+			});
 		if ( this.config.stderr === 'nice' )
-			this._runningServer.stderr.on('data', data => printLine( generateLoaderLineTemplate(data, '🔥') ));
+			this._runningServer.stderr.on('data', data => {
+				if ( !started )
+					stderr += data
+				else
+					printLine( generateLoaderLineTemplate(data, '🔥') )
+			});
+
+		// Detect if server crash at init
+		const crashedAtInit = () => {
+			startingServerLoader && startingServerLoader(`${this._config.name} Crashed at init`, 'error');
+			console.log( stdout );
+			console.error( stderr );
+			this.halt('startServer', 'Server crashed')
+		}
+		this._runningServer.on('exit', crashedAtInit)
+		await delay( this._config.delay );
+		startingServerLoader && startingServerLoader(`${this._config.name} started`, '🥳');
+		this._runningServer.off('exit', crashedAtInit)
+		started = true
 
 		// Classic stream piping
 		this.config.stdout === 'pipe' && this._runningServer.stdout.pipe( process.stdout );
@@ -168,5 +178,11 @@ export class SolidNodeServerPlugin extends SolidPlugin <ISolidNodeServerPluginCo
 		// Continue only in dev mode
 		if ( buildMode === 'dev' )
 			await this.startServer( appOptions, envProps );
+	}
+
+	// ------------------------------------------------------------------------- EXIT
+
+	async exit () {
+		await this.killRunningServer()
 	}
 }
