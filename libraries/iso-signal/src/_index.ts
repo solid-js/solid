@@ -5,7 +5,7 @@
 export type TSignalHandler <G extends any[], E = void|any> = (...rest:G) => E
 
 // Default interface of a micro signal
-export interface ISignal <G extends any[], E = void|any>
+export interface ISignal <G extends any[] = any[], E = void|any>
 {
 	on: ( handler:TSignalHandler<G, E> ) => () => void
 	off: ( handler:TSignalHandler<G, E> ) => void
@@ -15,7 +15,7 @@ export interface ISignal <G extends any[], E = void|any>
 }
 
 // Extended interface of a state signal
-export interface IStateSignal <G, E> extends ISignal<[G], E>
+export interface IStateSignal <G extends any = any, E = void|any> extends ISignal<[G], E>
 {
 	dispatch: ( state:G ) => E[]
 	readonly state : G
@@ -23,7 +23,7 @@ export interface IStateSignal <G, E> extends ISignal<[G], E>
 
 // ----------------------------------------------------------------------------- CLASSIC SIGNAL
 
-export function Signal <G extends any[], E = void|any> ():ISignal<G, E> {
+export function Signal <G extends any[] = any, E = void|any> ():ISignal<G, E> {
 	let _listeners = []
 	const off = ( handler ) => _listeners.filter( s => s != handler )
 	return {
