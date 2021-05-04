@@ -1,5 +1,10 @@
 ![solid-js](../../doc/media/solid-js.png)
 
+
+# TODO : New v1 alpha DOC
+
+## Everything bellow this line is for v0.1, not v1.0-alpha
+
 # Signal event system
 
 > Signal is an object based event system.
