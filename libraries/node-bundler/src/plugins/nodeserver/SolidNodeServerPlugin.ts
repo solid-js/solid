@@ -2,7 +2,7 @@ import { IBaseSolidPluginConfig, SolidPlugin } from "../../engine/SolidPlugin";
 import { IExtendedAppOptions, TBuildMode } from "../../engine/SolidParcel";
 import { ChildProcess, exec } from 'child_process'
 import { delay } from '@solid-js/core'
-import { generateLoaderLineTemplate, printLine, printLoaderLine } from '@solid-js/cli'
+import { generateLoaderLineTemplate, newLine, printLine, printLoaderLine } from '@solid-js/cli'
 
 /**
  * TODO : V1.2
@@ -110,15 +110,19 @@ export class SolidNodeServerPlugin extends SolidPlugin <ISolidNodeServerPluginCo
 			this._runningServer.stdout.on('data', data => {
 				if ( !started )
 					stdout += data
-				else
+				else {
 					printLine( generateLoaderLineTemplate(data, '🔎') )
+					newLine()
+				}
 			});
 		if ( this.config.stderr === 'nice' )
 			this._runningServer.stderr.on('data', data => {
 				if ( !started )
 					stderr += data
-				else
+				else {
 					printLine( generateLoaderLineTemplate(data, '🔥') )
+					newLine()
+				}
 			});
 
 		// Detect if server crash at init
