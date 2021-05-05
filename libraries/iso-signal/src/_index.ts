@@ -11,28 +11,31 @@ export interface ISignal <G extends any[] = any[], E = void|any>
 	off: ( handler:TSignalHandler<G, E> ) => void
 	dispatch: ( ...rest:G ) => E[]
 	clear: () => void
-	readonly listeners : TSignalHandler<G, E>[]
+	readonly listeners: TSignalHandler<G, E>[]
 }
 
 // Extended interface of a state signal
 export interface IStateSignal <G extends any = any, E = void|any> extends ISignal<[G], E>
 {
 	dispatch: ( state:G ) => E[]
-	readonly state : G
+	readonly state:G
 }
 
 // ----------------------------------------------------------------------------- CLASSIC SIGNAL
 
-export function Signal <G extends any[] = any, E = void|any> ():ISignal<G, E> {
+export function Signal
+	<G extends any[] = any[], E = void|any>
+	():ISignal<G, E>
+{
 	let _listeners = []
-	const off = ( handler ) => _listeners.filter( s => s != handler )
+	const off = ( handler ) => _listeners = _listeners.filter( s => s != handler )
 	return {
 		on ( handler:TSignalHandler<G> ) {
 			_listeners.push( handler )
 			return () => off( handler )
 		},
 		off,
-		dispatch: ( ...rest:G ) => _listeners.map( h => h(...rest) ),
+		dispatch: ( ...rest:G ) => _listeners.map( s => s(...rest) ),
 		clear () { _listeners = [] },
 		get listeners () { return _listeners }
 	}
@@ -41,7 +44,7 @@ export function Signal <G extends any[] = any, E = void|any> ():ISignal<G, E> {
 // ----------------------------------------------------------------------------- STATE SIGNAL
 
 export function StateSignal
-	<G extends any, E = void|any>
+	<G extends any = any[], E = void|any>
 	( _state:G = null, _signal = Signal<[G], E>() )
 	:IStateSignal<G, E>
 {
