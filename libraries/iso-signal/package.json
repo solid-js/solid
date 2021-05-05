@@ -1,6 +1,6 @@
 {
   "name": "@solid-js/signal",
-  "version": "1.0.0-alpha.2",
+  "version": "1.0.0-beta.1",
   "description": "Function based event system. Can replace classic event implementation, with strong typing. Inspired from Robert Penner's AS3 Signals.",
   "main": "dist/_index.js",
   "module": "dist/_index.mjs",

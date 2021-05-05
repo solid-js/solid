@@ -1,41 +1,39 @@
 
 // ----------------------------------------------------------------------------- STRUCT
 
-// Type of a micro signal handler
-export type TSignalHandler <G extends any[], E = void|any> = (...rest:G) => E
+// Type of a signal handler
+export type TSignalHandler <GHP extends any[], GHR = void|any> = ( ...rest:GHP) => GHR
 
-// Default interface of a micro signal
-export interface ISignal <G extends any[] = any[], E = void|any>
+export interface ISignal <GHP extends any[] = any[], GHR = void|any>
 {
-	on: ( handler:TSignalHandler<G, E> ) => () => void
-	off: ( handler:TSignalHandler<G, E> ) => void
-	dispatch: ( ...rest:G ) => E[]
+	on: ( handler:TSignalHandler<GHP, GHR> ) => () => void
+	off: ( handler:TSignalHandler<GHP, GHR> ) => void
+	dispatch: ( ...rest:GHP ) => GHR[]
 	clear: () => void
-	readonly listeners: TSignalHandler<G, E>[]
+	readonly listeners: TSignalHandler<GHP, GHR>[]
 }
 
-// Extended interface of a state signal
-export interface IStateSignal <G extends any = any, E = void|any> extends ISignal<[G], E>
+export interface IStateSignal <GHP extends any = any, GHR = void|any> extends ISignal<[GHP], GHR>
 {
-	dispatch: ( state:G ) => E[]
-	readonly state:G
+	dispatch: ( state:GHP ) => GHR[]
+	readonly state:GHP
 }
 
 // ----------------------------------------------------------------------------- CLASSIC SIGNAL
 
 export function Signal
-	<G extends any[] = any[], E = void|any>
-	():ISignal<G, E>
+	<GHP extends any[] = any[], GHR = void|any>
+	():ISignal<GHP, GHR>
 {
 	let _listeners = []
-	const off = ( handler ) => _listeners = _listeners.filter( s => s != handler )
+	const off = ( handler ) => _listeners = _listeners.filter( l => l != handler )
 	return {
-		on ( handler:TSignalHandler<G> ) {
+		on ( handler ) {
 			_listeners.push( handler )
 			return () => off( handler )
 		},
 		off,
-		dispatch: ( ...rest:G ) => _listeners.map( s => s(...rest) ),
+		dispatch: ( ...rest ) => _listeners.map( l => l(...rest) ),
 		clear () { _listeners = [] },
 		get listeners () { return _listeners }
 	}
@@ -44,16 +42,16 @@ export function Signal
 // ----------------------------------------------------------------------------- STATE SIGNAL
 
 export function StateSignal
-	<G extends any = any[], E = void|any>
-	( _state:G = null, _signal = Signal<[G], E>() )
-	:IStateSignal<G, E>
+	<GHP extends any = any[], GHR = void|any>
+	( _state:GHP = null, _signal = Signal<[GHP], GHR>() )
+	:IStateSignal<GHP, GHR>
 {
 	return {
 		..._signal,
-		dispatch ( state:G ) {
+		dispatch ( state ) {
 			_state = state;
 			return _signal.dispatch( state )
 		},
-		get state ():G { return _state }
+		get state () { return _state }
 	}
 }
