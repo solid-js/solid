@@ -1,6 +1,7 @@
 import chalk from "chalk";
 import { indent, repeat } from "@solid-js/core";
-import { cliTabSize } from "./Output";
+import { cliTabSize, newLine } from "./Output";
+
 
 // NOTE : DEMO
 // (async function () {
@@ -125,7 +126,7 @@ export function createTask ( configOrMessage:ITaskConfig|string ):ITask
 		}
 
 		// Go to new line
-		exports.newLine();
+		newLine();
 	}
 
 	let previousAfterProgress = null;
@@ -174,13 +175,12 @@ export function createTask ( configOrMessage:ITaskConfig|string ):ITask
 		if ( errorObject != null )
 		{
 			// Add a line separator for errors
-			exports.newLine();
+			newLine();
 
 			// In red if this is a string
-			if ( typeof errorObject === 'string' )
-			{
-				console.error( exports.offset(6, chalk.red.bold( errorObject ) ) );
-				exports.newLine();
+			if ( typeof errorObject === 'string' ) {
+				console.error( repeat(6) + chalk.red.bold( errorObject ) )
+				newLine();
 			}
 
 			// stdout and stderr if an exec error

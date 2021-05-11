@@ -1,6 +1,7 @@
 import { createTask, ITask } from "./Task";
-import { compareWithOperator, TCompareOperators } from "@solid-js/core"
+import { compareWithOperator, repeat, TCompareOperators } from "@solid-js/core"
 import chalk from "chalk";
+import { newLine } from "./Output";
 
 // ----------------------------------------------------------------------------- RUN TEST
 
@@ -78,16 +79,16 @@ async function runTest ( name:string, testHandler ) : Promise<void>
 			task.error();
 
 			// Show error message
-			exports.newLine();
-			console.error( exports.offset( 6, chalk.redBright.bold(`${name} failed at :`) ) );
-			console.error( exports.offset( 6, chalk.bold(`It ${assertionResult.should}.`)) );
-			exports.newLine();
+			newLine();
+			console.error( repeat( 6 ) + chalk.redBright.bold(`${name} failed at :`) )
+			console.error( repeat( 6 ) + chalk.bold(`It ${assertionResult.should}.`))
+			newLine();
 
 			// Show values
-			console.error( exports.offset( 6, `Received value : ${chalk.bold(e.result)}` ) );
-			console.error( exports.offset( 6, `Expected value : ${chalk.bold(e.awaitedValue)}` ) );
-			console.error( exports.offset( 6, `With operator : ${chalk.bold(e.operator)}` ) );
-			exports.newLine();
+			console.error( repeat( 6 ) + `Received value : ${chalk.bold(e.result)}` )
+			console.error( repeat( 6 ) + `Expected value : ${chalk.bold(e.awaitedValue)}` )
+			console.error( repeat( 6 ) + `With operator : ${chalk.bold(e.operator)}` )
+			newLine();
 
 			// Stop process here
 			process.exit( 1 );
