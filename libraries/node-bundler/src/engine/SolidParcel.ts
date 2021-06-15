@@ -204,6 +204,13 @@ export interface IAppOptions
 	 * Will use hostname if not defined, so HMR should work across internal network.
 	 */
 	hmrHost				?:string|null
+
+	/**
+	 * Enable scope hoisting.
+	 * Can mess with variable / function / class name, even with correct terserrc.
+	 * Default is false.
+	 */
+	scopeHoist			?:boolean
 }
 
 // Options after setup, we injected the name so plugins know which app it is
@@ -304,6 +311,7 @@ export class SolidParcel
 				browsers: "> 5%",
 				...rawAppOptions.engines
 			},
+			scopeHoist: false,
 			...rawAppOptions
 		};
 
@@ -527,7 +535,7 @@ export class SolidParcel
 						// Optimization and dev options
 						optimize: isProd && isWeb,
 						sourceMap: !isProd,
-						// scopeHoist: true,
+						scopeHoist: appOptions.scopeHoist,
 
 						// Output dir
 						distDir: appOptions.output,
@@ -560,9 +568,10 @@ export class SolidParcel
 				shouldDisableCache: false, // TODO : Add option ?
 				shouldAutoInstall: false, // TODO : Add option
 
+				shouldContentHash: false,//isProd, // TODO : Add option
+
 				// cacheDir: parcelCacheDirectoryName,
 				// serveOptions: false, // TODO : Add option
-				// shouldContentHash: false,//isProd, // TODO : Add option
 				// shouldProfile: false, // TODO : Add option
 				// shouldBuildLazily: false,
 				// detailedReport: false, // TODO ??
