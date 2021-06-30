@@ -1,6 +1,6 @@
 {
   "name": "@solid-js/files",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "File is a NodeJS file operations helper with a super simple API to make build scripts easy and readable.",
   "main": "dist/_index",
   "module": "dist/_index.js",
@@ -11,8 +11,8 @@
     "directory": "libraries/node-files"
   },
   "dependencies": {
-    "@solid-js/core": "^0.1.0",
-    "@solid-js/nanostache": "^0.2.1",
+    "@solid-js/core": "^0.4.2",
+    "@solid-js/nanostache": "^1.0.6",
     "get-folder-size": "^2.0.1",
     "glob": "^7.1.6",
     "mkdirp": "^0.5.5",

@@ -4,6 +4,7 @@ import { TContentArgument, TGlobOptionsArgument, TRawWritableContent, TStructura
 import { FileFinder } from "./FileFinder";
 import { ScalarObject, ScalarValue, TFunctionalFilter } from "@solid-js/core";
 import { DotEnvParser, JSON5Parser, YAMLParser } from "./FileParsers";
+import { resolveHome } from "./_index";
 
 
 export class File extends FileEntity
@@ -158,6 +159,9 @@ export class File extends FileEntity
      */
     async saveAsync ( newPath?:string )
     {
+    	// Patch home dir
+		newPath = resolveHome( newPath );
+
         // Do not save file that were never loaded.
         if ( this._data == null ) return;
 

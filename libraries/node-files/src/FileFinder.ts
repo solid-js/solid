@@ -1,4 +1,4 @@
-import { Directory, File } from "./_index";
+import { Directory, File, resolveHome } from "./_index";
 import { FileEntity } from "./FileEntity";
 import { TFileType, TGlobOptionsArgument } from "./Struct";
 const glob = require('glob');
@@ -12,12 +12,14 @@ export class FileFinder
 
 	static list ( pattern:string, globOptions ?:TGlobOptionsArgument ) : string[]
 	{
+		pattern = resolveHome( pattern )
 		// @ts-ignore
 		return glob.sync( pattern, globOptions );
 	}
 
 	static listAsync ( pattern:string, globOptions ?:TGlobOptionsArgument ) : Promise<string[]>
 	{
+		pattern = resolveHome( pattern )
 		return new Promise( (resolve, reject) => {
 			glob( pattern, globOptions, ( error, paths ) => {
 				error ? reject( error ) : resolve( paths );
@@ -29,6 +31,7 @@ export class FileFinder
 
 	static find <G extends FileEntity = (File|Directory)> ( type:TFileType, pattern:string, globOptions ?:TGlobOptionsArgument ) : G[]
 	{
+		pattern = resolveHome( pattern )
 		return FileFinder.list( pattern, globOptions )
 			.map( path => FileFinder.createEntityFromPath( path ) as unknown as G )
 			.filter( fileEntity => FileFinder.isFileEntityTypeOf(fileEntity, type) )
@@ -36,6 +39,7 @@ export class FileFinder
 
 	static async findAsync <G extends FileEntity> ( type:TFileType, pattern:string, globOptions ?:TGlobOptionsArgument ) : Promise<G[]>
 	{
+		pattern = resolveHome( pattern )
 		const paths = await FileFinder.list( pattern, globOptions );
 		const allEntities:G[] = await Promise.all( paths.map(
 			async path => await FileFinder.createEntityFromPathAsync( path ) as unknown as G

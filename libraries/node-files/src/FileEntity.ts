@@ -2,6 +2,8 @@ const rimraf = require('rimraf');
 const ncp = require('ncp');
 import * as fs from "fs";
 import * as nodePath from "path";
+import { resolveHome } from "./_index";
+
 
 export class FileEntity
 {
@@ -66,7 +68,7 @@ export class FileEntity
 		if ( !path )
 			throw new Error(`FileEntity.constructor // FileEntity needs a path to be initialized.`);
 
-		this._path = path;
+		this._path = resolveHome(path);
 		this._stats = stats;
 
 		this._exists = !!stats;
@@ -302,6 +304,7 @@ export class FileEntity
 	 */
 	async copyToAsync ( to:string )
 	{
+		to = resolveHome( to )
 		return new Promise( async resolve => {
 			to = await this.safeTo(to);
 			ncp( this._path, to, resolve );
@@ -315,6 +318,7 @@ export class FileEntity
 	 */
 	async moveToAsync ( to:string )
 	{
+		to = resolveHome( to )
 		return new Promise( async resolve => {
 			to = await this.safeTo(to);
 			fs.rename( this._path, to, resolve );
@@ -335,6 +339,7 @@ export class FileEntity
 	 * @param to Path of created symbolic link.
 	 */
 	linkTo ( to:string ) {
+		to = resolveHome( to )
 		fs.symlinkSync( this._path, to );
 	}
 
@@ -343,6 +348,7 @@ export class FileEntity
 	 * @param to Path of created symbolic link.
 	 */
 	async linkToAsync ( to:string ) {
+		to = resolveHome( to )
 		await fs.promises.symlink( this._path, to );
 	}
 
