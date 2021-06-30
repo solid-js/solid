@@ -54,8 +54,9 @@ export function runTask <G> ( configOrMessage:ITaskConfig|string, taskHandler?:I
  * Will fail or succeed automatically depending of promise resolve or reject.
  * @param configOrMessage Message as string or task config (ITaskConfig)
  * @param taskHandler Async Handler to test.
+ * @param onError Executed if an error occurs.
  */
-export async function tryTask <G> ( configOrMessage:ITaskConfig|string, taskHandler?:ITaskHandler<G> ) : Promise<G|void>
+export async function tryTask <G> ( configOrMessage:ITaskConfig|string, taskHandler?:ITaskHandler<G>, onError?: ((task:ITask, error) => any) ) : Promise<G|void>
 {
 	const taskObject = createTask( configOrMessage );
 	try {
@@ -63,8 +64,10 @@ export async function tryTask <G> ( configOrMessage:ITaskConfig|string, taskHand
 		taskObject.success()
 		return result;
 	}
-	catch (e) {
-		taskObject.error(
+	catch ( e ) {
+		onError
+		? onError( taskObject, e )
+		: taskObject.error(
 			e?.code ?? 0,
 			e?.message ?? 'Error'
 		)
