@@ -11,6 +11,7 @@ type TShortcutOptions = {
 
 type TAskListOptions = TShortcutOptions & {
 	defaultIndex	:number|string
+	returnType		:"all"|"key"|"value"|"index"
 }
 
 type TAskInputOptions = TShortcutOptions &  {
@@ -37,6 +38,17 @@ export async function askList ( message:string, choices:ScalarObject|string[], o
 	const [ cliArguments, cliOptions ] = getCLIArguments();
 
 	const isNotSep = entry => !( typeof entry === 'string' && entry === '---' )
+
+	const returnValue = r => {
+		if ( !options.returnType || options.returnType == 'all' )
+			return r
+		if ( options.returnType == 'index' )
+			return r[0]
+		if ( options.returnType == 'value' )
+			return r[1]
+		if ( options.returnType == 'key' )
+			return r[2] ?? r[0]
+	}
 
 	// Get choices keys and values, from array or scalar object
 	const choicesKeys = Object.keys( choices ).filter( isNotSep );
@@ -89,7 +101,7 @@ export async function askList ( message:string, choices:ScalarObject|string[], o
 
 	// Return selected choice
 	if ( selectedChoice )
-		return [ selectedIndex, selectedChoice ];
+		return returnValue([ selectedIndex, selectedChoice ])
 
 	// Replace separators
 	const choicesWithSeparators = choicesValues.map( entry => (
@@ -113,7 +125,7 @@ export async function askList ( message:string, choices:ScalarObject|string[], o
 	// Get answer and its index
 	const {answer} = question;
 	selectedIndex = choicesValues.filter( isNotSep ).indexOf( answer );
-	return [ selectedIndex, answer, choicesKeys[selectedIndex] ];
+	return returnValue([ selectedIndex, answer, choicesKeys[selectedIndex] ])
 }
 
 /**

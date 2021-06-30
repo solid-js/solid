@@ -7,6 +7,10 @@ export type TCommandHandler<G extends object> = ( cliArguments?:string[], cliOpt
 
 export type TCommandDefaultHandler = ( commandName:string, error:CommandError, cliArguments:string[], cliOptions?:object, results?:any[] ) => any|Promise<any>
 
+export interface ICommandArguments {
+	[key:string] : string
+}
+
 // Custom CommandError to be able to detect commands not found
 class CommandError extends Error { }
 
@@ -74,8 +78,9 @@ export const CLICommands = {
 	 * @param name Name of the command or list of commands.
 	 * @param handler Handler called with options as first argument.
 	 * @param options Default options of the command.
+	 * @param commandArguments Handler called with options as first argument.
 	 */
-	add <G extends object> ( name:string|string[], handler:TCommandHandler<G>, options:G = {} as any )
+	add <G extends object> ( name:string|string[], handler:TCommandHandler<G>, options:G = {} as any, commandArguments:ICommandArguments = {} )
 	{
 		(typeof name === "string" ? [name] : name).map( n => {
 			n = n.toLowerCase();
@@ -88,6 +93,10 @@ export const CLICommands = {
 				options: {
 					...(alreadyRegisteredConfig.options ?? {}),
 					...options
+				},
+				commandArguments: {
+					...(alreadyRegisteredConfig.commandArguments ?? {}),
+					...commandArguments
 				},
 				handlers: [
 					...(alreadyRegisteredConfig.handlers ?? []),
