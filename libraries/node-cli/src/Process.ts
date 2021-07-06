@@ -44,7 +44,7 @@ export const execAsync = ( command:string, verboseLevel:TVerboseLevel = 0, optio
 
 	// Pipe stdin
 	if ( verboseLevel === 3 || verboseLevel == 'in' ) {
-		process.stdin.pipe( process.stdin )
+		process.stdin.pipe( childProcess.stdin )
 	}
 });
 
