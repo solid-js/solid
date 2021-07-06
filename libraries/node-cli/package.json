@@ -1,6 +1,6 @@
 {
   "name": "@solid-js/cli",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "description": "Node CLI, shell, tests and task runner utilities",
   "main": "dist/_index.js",
   "module": "dist/_index.mjs",

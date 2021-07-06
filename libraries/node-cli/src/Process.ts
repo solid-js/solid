@@ -4,7 +4,7 @@ import { ExecSyncOptions } from "child_process";
 
 // ----------------------------------------------------------------------------- STRUCT
 
-type TVerboseLevel = boolean|number|"out"|"err";
+type TVerboseLevel = boolean|number|"out"|"err"|"in";
 
 // ----------------------------------------------------------------------------- EXEC UTILITIES
 
@@ -25,8 +25,8 @@ export const execAsync = ( command:string, verboseLevel:TVerboseLevel = 0, optio
 		command, options,
 		( error, stdout, stderr) => {
 			error
-				? reject( (stderr ?? '').toString() )
-				: resolve( (stdout ?? '').toString() )
+			? reject( (stderr ?? '').toString() )
+			: resolve( (stdout ?? '').toString() )
 		}
 	);
 
@@ -40,6 +40,11 @@ export const execAsync = ( command:string, verboseLevel:TVerboseLevel = 0, optio
 	if ( verboseLevel === true || verboseLevel === 2 || verboseLevel === 3 || verboseLevel == 'err' ) {
 		// @ts-ignore
 		childProcess.stderr.pipe( process.stderr );
+	}
+
+	// Pipe stdin
+	if ( verboseLevel === 3 || verboseLevel == 'in' ) {
+		process.stdin.pipe( process.stdin )
 	}
 });
 
